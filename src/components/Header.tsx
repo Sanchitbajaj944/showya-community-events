@@ -1,19 +1,30 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Sparkles } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback } from "./ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
         {/* Logo */}
-        <div className="flex items-center space-x-3">
+        <Link to="/" className="flex items-center space-x-3">
           <img src={logo} alt="Showya Logo" className="h-8 w-8" />
           <span className="text-xl font-bold text-foreground">Showya</span>
-        </div>
+        </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
@@ -27,12 +38,47 @@ const Header = () => {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center space-x-3">
-          <Button variant="outline" size="sm">
-            Create Community
-          </Button>
-          <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
-            A
-          </div>
+          {user ? (
+            <>
+              <Button variant="outline" size="sm">
+                Create Community
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="focus:outline-none">
+                    <Avatar className="h-10 w-10 cursor-pointer">
+                      <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                        {user.email?.charAt(0).toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem disabled className="text-sm">
+                    {user.email}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut} className="cursor-pointer">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <>
+              <Link to="/auth/signin">
+                <Button variant="ghost" size="sm">
+                  Sign in
+                </Button>
+              </Link>
+              <Link to="/auth/signup">
+                <Button size="sm">
+                  Get Started
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -64,9 +110,43 @@ const Header = () => {
               Communities
             </a>
             <div className="pt-4 space-y-3">
-              <Button variant="outline" className="w-full">
-                Create Community
-              </Button>
+              {user ? (
+                <>
+                  <Button variant="outline" className="w-full">
+                    Create Community
+                  </Button>
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {user.email?.charAt(0).toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm text-foreground">{user.email}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={signOut}
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Link to="/auth/signin" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full">
+                      Sign in
+                    </Button>
+                  </Link>
+                  <Link to="/auth/signup" onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="w-full">
+                      Get Started
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
         </div>
