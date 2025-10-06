@@ -105,9 +105,9 @@ const Index = () => {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden min-h-[90vh] flex items-center">
-        <div className="absolute inset-0 bg-gradient-hero" />
-        <div className="absolute inset-0 opacity-10">
+      <section className="relative overflow-hidden min-h-[90vh] flex items-center bg-gradient-hero">
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 opacity-30">
           <div className="absolute top-20 left-10 w-72 h-72 bg-secondary rounded-full blur-3xl" />
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent rounded-full blur-3xl" />
         </div>
