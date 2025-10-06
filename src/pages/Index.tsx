@@ -105,26 +105,44 @@ const Index = () => {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden min-h-[70vh] sm:min-h-[75vh] flex items-center bg-gradient-to-br from-primary via-secondary to-accent">
-        <div className="container relative px-4 py-12 sm:py-16 md:py-20 md:px-6">
-          <div className="max-w-4xl mx-auto text-center text-white space-y-4 sm:space-y-6 md:space-y-8">
-            <div className="inline-block px-4 sm:px-6 py-1.5 sm:py-2 rounded-full bg-white/20 backdrop-blur-sm animate-fade-in">
-              <span className="text-xs sm:text-sm font-semibold">✨ India's Creative Hub</span>
+      <section className="relative overflow-hidden py-16 sm:py-20 md:py-28 bg-background">
+        <div className="container px-4 md:px-6">
+          <div className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8">
+            <div className="inline-block px-5 py-2 rounded-full bg-primary/10 border border-primary/20">
+              <span className="text-sm font-semibold text-primary">✨ Where Communities Come Alive</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-extrabold leading-tight animate-fade-in tracking-tight px-2">
-              Discover Creative Communities Near You
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight">
+              Discover Events.
+              <br />
+              <span className="text-gradient">Build Communities.</span>
             </h1>
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 leading-relaxed animate-fade-in max-w-3xl mx-auto font-medium px-4">
-              Join artists, poets, musicians and hosts. Find open mics, art jams, and creative events happening in your city.
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
+              Join Showya to discover amazing events, connect with vibrant communities, and showcase your talent as a performer or host.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-5 justify-center animate-fade-in pt-2 sm:pt-4 px-4">
-              <Button size="lg" variant="secondary" className="text-sm sm:text-base w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+              <Button size="lg" variant="default" className="text-base w-full sm:w-auto">
                 Explore Events
-                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline" className="text-sm sm:text-base w-full sm:w-auto bg-white/10 text-white border-white hover:bg-white hover:text-primary backdrop-blur-sm">
-                Start Your Community
+              <Button size="lg" variant="outline" className="text-base w-full sm:w-auto">
+                Join as Performer
               </Button>
+            </div>
+            
+            {/* Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 pt-12 sm:pt-16">
+              <div className="space-y-2">
+                <div className="text-4xl sm:text-5xl font-extrabold text-primary">100+</div>
+                <div className="text-sm sm:text-base text-muted-foreground">Communities</div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-4xl sm:text-5xl font-extrabold text-accent">500+</div>
+                <div className="text-sm sm:text-base text-muted-foreground">Events Hosted</div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-4xl sm:text-5xl font-extrabold text-secondary">5K+</div>
+                <div className="text-sm sm:text-base text-muted-foreground">Members</div>
+              </div>
             </div>
           </div>
         </div>
@@ -212,20 +230,20 @@ const Index = () => {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-12 sm:py-16 md:py-24 lg:py-32 relative overflow-hidden bg-gradient-to-br from-primary via-secondary to-accent">
-        <div className="container relative px-4 md:px-6">
-          <div className="max-w-4xl mx-auto text-center text-white space-y-4 sm:space-y-6 md:space-y-8">
-            <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight px-2">
-              Ready to join India's creative movement?
+      <section className="py-16 sm:py-20 md:py-24 relative overflow-hidden bg-muted/30">
+        <div className="container px-4 md:px-6">
+          <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
+              Ready to join India's <span className="text-gradient">creative movement?</span>
             </h2>
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 max-w-2xl mx-auto font-medium px-4">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
               Start hosting events or discover your tribe today. No downloads needed.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-5 justify-center pt-2 sm:pt-4 px-4">
-              <Button size="lg" variant="secondary" className="text-sm sm:text-base w-full sm:w-auto shadow-2xl">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+              <Button size="lg" variant="default" className="text-base w-full sm:w-auto">
                 Create Your Community
               </Button>
-              <Button size="lg" variant="outline" className="text-sm sm:text-base w-full sm:w-auto bg-white/10 text-white border-white hover:bg-white hover:text-primary backdrop-blur-sm shadow-2xl">
+              <Button size="lg" variant="outline" className="text-base w-full sm:w-auto">
                 Explore Events
               </Button>
             </div>
