@@ -105,14 +105,9 @@ const Index = () => {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden min-h-[100vh] sm:min-h-[90vh] flex items-center bg-gradient-hero">
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-secondary rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent rounded-full blur-3xl" />
-        </div>
-        <div className="container relative px-4 py-16 sm:py-20 md:py-32 md:px-6">
-          <div className="max-w-4xl mx-auto text-center text-white space-y-6 sm:space-y-8 md:space-y-10">
+      <section className="relative overflow-hidden min-h-[70vh] sm:min-h-[75vh] flex items-center bg-gradient-to-br from-primary via-secondary to-accent">
+        <div className="container relative px-4 py-12 sm:py-16 md:py-20 md:px-6">
+          <div className="max-w-4xl mx-auto text-center text-white space-y-4 sm:space-y-6 md:space-y-8">
             <div className="inline-block px-4 sm:px-6 py-1.5 sm:py-2 rounded-full bg-white/20 backdrop-blur-sm animate-fade-in">
               <span className="text-xs sm:text-sm font-semibold">✨ India's Creative Hub</span>
             </div>
@@ -217,15 +212,9 @@ const Index = () => {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-16 sm:py-20 md:py-32 lg:py-40 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero" />
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-1/4 left-10 w-80 h-80 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-10 w-80 h-80 bg-white rounded-full blur-3xl" />
-        </div>
+      <section className="py-12 sm:py-16 md:py-24 lg:py-32 relative overflow-hidden bg-gradient-to-br from-primary via-secondary to-accent">
         <div className="container relative px-4 md:px-6">
-          <div className="max-w-4xl mx-auto text-center text-white space-y-6 sm:space-y-8 md:space-y-10">
+          <div className="max-w-4xl mx-auto text-center text-white space-y-4 sm:space-y-6 md:space-y-8">
             <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight px-2">
               Ready to join India's creative movement?
             </h2>
