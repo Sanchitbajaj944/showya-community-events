@@ -8,41 +8,41 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --background: 30 100% 99%;
+    --foreground: 0 0% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 0 0% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 0 0% 12%;
 
-    --primary: 348 83% 58%;
+    --primary: 0 73% 75%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 200 18% 46%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 144 65% 71%;
+    --secondary-foreground: 0 0% 12%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 30 100% 97%;
+    --muted-foreground: 0 0% 42%;
 
-    --accent: 348 83% 58%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 144 65% 71%;
+    --accent-foreground: 0 0% 12%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 348 83% 58%;
+    --border: 30 19% 91%;
+    --input: 30 19% 91%;
+    --ring: 0 73% 75%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
     
     /* Custom Showya tokens */
-    --gradient-hero: linear-gradient(135deg, hsl(348 83% 58%) 0%, hsl(338 83% 48%) 100%);
-    --gradient-card: linear-gradient(120deg, hsl(348 83% 58% / 0.08) 0%, hsl(200 18% 46% / 0.08) 100%);
-    --shadow-card: 0 2px 12px hsl(222 47% 11% / 0.08);
-    --shadow-hover: 0 4px 20px hsl(222 47% 11% / 0.12);
+    --gradient-hero: linear-gradient(135deg, hsl(30 100% 97%) 0%, hsl(0 73% 75%) 100%);
+    --gradient-card: linear-gradient(120deg, hsl(0 73% 75% / 0.08) 0%, hsl(144 65% 71% / 0.08) 100%);
+    --shadow-card: 0 2px 12px hsl(0 0% 0% / 0.05);
+    --shadow-hover: 0 4px 20px hsl(0 0% 0% / 0.08);
 
     --sidebar-background: 0 0% 98%;
 
@@ -62,37 +62,37 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 12%;
+    --foreground: 30 100% 99%;
 
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 15%;
+    --card-foreground: 30 100% 99%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 15%;
+    --popover-foreground: 30 100% 99%;
 
-    --primary: 348 83% 58%;
+    --primary: 0 73% 75%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 200 18% 46%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 144 65% 71%;
+    --secondary-foreground: 0 0% 12%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 348 83% 58%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 144 65% 71%;
+    --accent-foreground: 0 0% 12%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 348 83% 58%;
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --ring: 0 73% 75%;
     
     /* Dark mode gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(348 83% 58%) 0%, hsl(338 83% 48%) 100%);
-    --gradient-card: linear-gradient(120deg, hsl(348 83% 58% / 0.12) 0%, hsl(200 18% 46% / 0.12) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 20%) 0%, hsl(0 73% 75%) 100%);
+    --gradient-card: linear-gradient(120deg, hsl(0 73% 75% / 0.12) 0%, hsl(144 65% 71% / 0.12) 100%);
     --shadow-card: 0 2px 12px hsl(0 0% 0% / 0.3);
     --shadow-hover: 0 4px 20px hsl(0 0% 0% / 0.4);
     --sidebar-background: 240 5.9% 10%;
@@ -112,12 +112,13 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
-    font-family: 'Poppins', sans-serif;
+    @apply bg-background text-foreground;
+    font-family: 'Inter', 'Poppins', sans-serif;
   }
   
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Poppins', sans-serif;
+    font-weight: 500;
   }
 }
 
