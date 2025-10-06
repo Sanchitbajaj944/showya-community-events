@@ -27,7 +27,7 @@ const Header = () => {
             <Button variant="ghost" size="sm">
               Sign in
             </Button>
-            <Button size="sm" className="gap-2">
+            <Button variant="default" size="sm" className="gap-2 bg-gradient-hero text-white shadow-lg hover:shadow-glow">
               <Sparkles className="h-4 w-4" />
               Join Now
             </Button>
@@ -65,7 +65,7 @@ const Header = () => {
               <Button variant="ghost" className="w-full">
                 Sign in
               </Button>
-              <Button className="w-full gap-2">
+              <Button variant="default" className="w-full gap-2 bg-gradient-hero text-white shadow-lg hover:shadow-glow">
                 <Sparkles className="h-4 w-4" />
                 Join Now
               </Button>
