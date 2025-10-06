@@ -127,7 +127,7 @@ const Index = () => {
                 Explore Events
                 <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
-              <Button size="lg" variant="outline" className="text-sm sm:text-base w-full sm:w-auto bg-white/10 text-white border-2 border-white hover:bg-white hover:text-primary backdrop-blur-sm">
+              <Button size="lg" variant="outline" className="text-sm sm:text-base w-full sm:w-auto bg-white/10 text-white border-white hover:bg-white hover:text-primary backdrop-blur-sm">
                 Start Your Community
               </Button>
             </div>
@@ -236,7 +236,7 @@ const Index = () => {
               <Button size="lg" variant="secondary" className="text-sm sm:text-base w-full sm:w-auto shadow-2xl">
                 Create Your Community
               </Button>
-              <Button size="lg" variant="outline" className="text-sm sm:text-base w-full sm:w-auto bg-white/10 text-white border-2 border-white hover:bg-white hover:text-primary backdrop-blur-sm shadow-2xl">
+              <Button size="lg" variant="outline" className="text-sm sm:text-base w-full sm:w-auto bg-white/10 text-white border-white hover:bg-white hover:text-primary backdrop-blur-sm shadow-2xl">
                 Explore Events
               </Button>
             </div>
