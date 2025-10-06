@@ -22,34 +22,43 @@ const EventCard = ({
   image,
 }: EventCardProps) => {
   return (
-    <Card className="min-w-[280px] md:min-w-[320px] overflow-hidden hover:shadow-hover transition-all duration-300 cursor-pointer group">
-      <div className="relative h-48 overflow-hidden bg-gradient-card">
+    <Card className="min-w-[300px] md:min-w-[340px] overflow-hidden hover:shadow-glow transition-all duration-500 cursor-pointer group border-2 hover:border-primary/50">
+      <div className="relative h-56 overflow-hidden bg-gradient-card">
         {image ? (
-          <img src={image} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+          <img 
+            src={image} 
+            alt={title} 
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+          />
         ) : (
-          <div className="w-full h-full bg-gradient-card" />
+          <div className="w-full h-full bg-gradient-card flex items-center justify-center">
+            <div className="text-6xl opacity-20">🎭</div>
+          </div>
         )}
-        <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        <Badge className="absolute top-4 left-4 bg-gradient-hero text-white border-0 shadow-lg font-semibold">
           {category}
         </Badge>
       </div>
-      <CardContent className="p-4 space-y-3">
-        <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
-          {title}
-        </h3>
-        <p className="text-sm text-muted-foreground font-medium">{community}</p>
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <div className="flex items-center space-x-2">
-            <Calendar className="h-4 w-4" />
+      <CardContent className="p-5 space-y-4">
+        <div>
+          <h3 className="font-bold text-xl line-clamp-2 group-hover:text-primary transition-colors mb-2">
+            {title}
+          </h3>
+          <p className="text-sm text-muted-foreground font-semibold">{community}</p>
+        </div>
+        <div className="space-y-2.5 text-sm">
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <Calendar className="h-4 w-4 text-primary" />
             <span>{date}</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <MapPin className="h-4 w-4" />
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <MapPin className="h-4 w-4 text-secondary" />
             <span className="line-clamp-1">{location}</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <Users className="h-4 w-4" />
-            <span>{attendees} attending</span>
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <Users className="h-4 w-4 text-accent" />
+            <span className="font-semibold">{attendees} attending</span>
           </div>
         </div>
       </CardContent>

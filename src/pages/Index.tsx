@@ -105,31 +105,30 @@ const Index = () => {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero opacity-90" />
-        <div className="absolute inset-0">
-          <img
-            src={heroImage}
-            alt="Creative community"
-            className="w-full h-full object-cover mix-blend-overlay"
-          />
+      <section className="relative overflow-hidden min-h-[90vh] flex items-center">
+        <div className="absolute inset-0 bg-gradient-hero" />
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-secondary rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent rounded-full blur-3xl" />
         </div>
         <div className="container relative px-4 py-20 md:py-32 md:px-6">
-          <div className="max-w-3xl mx-auto text-center text-white space-y-8">
-            <h1 className="text-4xl md:text-6xl font-bold leading-tight animate-fade-in">
-              Discover Indian creative communities & open mics around you
+          <div className="max-w-4xl mx-auto text-center text-white space-y-10">
+            <div className="inline-block px-6 py-2 rounded-full bg-white/20 backdrop-blur-sm mb-4 animate-fade-in">
+              <span className="text-sm font-semibold">✨ India's Creative Hub</span>
+            </div>
+            <h1 className="text-5xl md:text-7xl font-extrabold leading-tight animate-fade-in tracking-tight">
+              Discover Creative Communities Near You
             </h1>
-            <p className="text-lg md:text-xl text-white/90 leading-relaxed animate-fade-in">
-              Join India's growing network of artists, poets, musicians and hosts.
-              Find events, join communities, or start your own.
+            <p className="text-xl md:text-2xl text-white/90 leading-relaxed animate-fade-in max-w-3xl mx-auto font-medium">
+              Join artists, poets, musicians and hosts. Find open mics, art jams, and creative events happening in your city.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in">
-              <Button size="lg" variant="secondary" className="text-base font-semibold">
+            <div className="flex flex-col sm:flex-row gap-5 justify-center animate-fade-in pt-4">
+              <Button size="lg" variant="secondary" className="text-base">
                 Explore Events
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline" className="text-base font-semibold bg-white/10 text-white border-white hover:bg-white hover:text-primary backdrop-blur-sm">
-                Start a Community
+              <Button size="lg" variant="outline" className="text-base bg-white/10 text-white border-2 border-white hover:bg-white hover:text-primary backdrop-blur-sm">
+                Start Your Community
               </Button>
             </div>
           </div>
@@ -137,60 +136,79 @@ const Index = () => {
       </section>
 
       {/* Upcoming Events Section */}
-      <section id="events" className="py-16 md:py-24 bg-muted/30">
+      <section id="events" className="py-20 md:py-32">
         <div className="container px-4 md:px-6">
-          <div className="max-w-3xl mb-12 space-y-4">
-            <h2 className="text-3xl md:text-4xl font-bold">What's happening near you</h2>
-            <p className="text-lg text-muted-foreground">
-              Browse open mics, art jams, and creative meetups hosted by communities.
+          <div className="max-w-3xl mb-16 space-y-5">
+            <div className="inline-block px-4 py-1.5 rounded-full bg-gradient-card border-2 border-primary/20 mb-2">
+              <span className="text-sm font-bold text-primary">Featured Events</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+              What's happening <span className="text-gradient">near you</span>
+            </h2>
+            <p className="text-xl text-muted-foreground leading-relaxed">
+              Browse open mics, art jams, and creative meetups hosted by passionate communities.
             </p>
           </div>
-          <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory hide-scrollbar">
+          <div className="flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory hide-scrollbar">
             {upcomingEvents.map((event, index) => (
               <div key={index} className="snap-start">
                 <EventCard {...event} />
               </div>
             ))}
           </div>
-          <div className="mt-8 text-center">
-            <Button variant="link" className="text-primary text-base font-semibold">
-              Explore all events
-              <ArrowRight className="ml-2 h-5 w-5" />
+          <div className="mt-12 text-center">
+            <Button size="lg" className="gap-2">
+              Explore All Events
+              <ArrowRight className="h-5 w-5" />
             </Button>
           </div>
         </div>
       </section>
 
       {/* Featured Communities Section */}
-      <section id="communities" className="py-16 md:py-24">
+      <section id="communities" className="py-20 md:py-32 bg-muted/30">
         <div className="container px-4 md:px-6">
-          <div className="max-w-3xl mb-12 space-y-4">
-            <h2 className="text-3xl md:text-4xl font-bold">Communities you'll love</h2>
-            <p className="text-lg text-muted-foreground">
-              Follow communities that host the best creative experiences.
+          <div className="max-w-3xl mb-16 space-y-5">
+            <div className="inline-block px-4 py-1.5 rounded-full bg-gradient-card border-2 border-secondary/20 mb-2">
+              <span className="text-sm font-bold text-secondary">Top Communities</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+              Communities <span className="text-gradient">you'll love</span>
+            </h2>
+            <p className="text-xl text-muted-foreground leading-relaxed">
+              Connect with passionate groups hosting amazing creative experiences across India.
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {communities.map((community, index) => (
               <CommunityCard key={index} {...community} />
             ))}
           </div>
-          <div className="mt-12 text-center">
-            <Button variant="link" className="text-primary text-base font-semibold">
-              See more communities
-              <ArrowRight className="ml-2 h-5 w-5" />
+          <div className="mt-16 text-center">
+            <Button size="lg" variant="outline" className="gap-2">
+              Discover More Communities
+              <ArrowRight className="h-5 w-5" />
             </Button>
           </div>
         </div>
       </section>
 
       {/* Why Showya Section */}
-      <section className="py-16 md:py-24 bg-muted/30">
-        <div className="container px-4 md:px-6">
-          <div className="max-w-3xl mx-auto text-center mb-12 space-y-4">
-            <h2 className="text-3xl md:text-4xl font-bold">Made for creators, by creators</h2>
+      <section className="py-20 md:py-32 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary rounded-full blur-3xl" />
+        </div>
+        <div className="container relative px-4 md:px-6">
+          <div className="max-w-3xl mx-auto text-center mb-16 space-y-5">
+            <div className="inline-block px-4 py-1.5 rounded-full bg-gradient-card border-2 border-accent/20 mb-2">
+              <span className="text-sm font-bold text-accent">Why Showya</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+              Made for <span className="text-gradient">creators</span>, by creators
+            </h2>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {features.map((feature, index) => (
               <FeatureCard key={index} {...feature} />
             ))}
@@ -199,24 +217,28 @@ const Index = () => {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-20 md:py-32 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero opacity-95" />
+      <section className="py-24 md:py-40 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-hero" />
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-1/4 left-10 w-80 h-80 bg-white rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-10 w-80 h-80 bg-white rounded-full blur-3xl" />
+        </div>
         <div className="container relative px-4 md:px-6">
-          <div className="max-w-3xl mx-auto text-center text-white space-y-8">
-            <h2 className="text-3xl md:text-5xl font-bold leading-tight">
-              Ready to join the next big creative movement?
+          <div className="max-w-4xl mx-auto text-center text-white space-y-10">
+            <h2 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
+              Ready to join India's creative movement?
             </h2>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary" className="text-base font-semibold">
-                Start Your Community
+            <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto font-medium">
+              Start hosting events or discover your tribe today. No downloads needed.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-5 justify-center pt-4">
+              <Button size="lg" variant="secondary" className="text-base shadow-2xl">
+                Create Your Community
               </Button>
-              <Button size="lg" variant="outline" className="text-base font-semibold bg-white/10 text-white border-white hover:bg-white hover:text-primary backdrop-blur-sm">
-                Find Events
+              <Button size="lg" variant="outline" className="text-base bg-white/10 text-white border-2 border-white hover:bg-white hover:text-primary backdrop-blur-sm shadow-2xl">
+                Explore Events
               </Button>
             </div>
-            <p className="text-sm text-white/80">
-              No downloads needed — everything runs right in your browser.
-            </p>
           </div>
         </div>
       </section>
