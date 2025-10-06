@@ -22,16 +22,37 @@ export default function ResetPassword() {
   });
 
   useEffect(() => {
-    // Check if we have a valid session from the reset link
+    // Listen for auth state changes to detect password recovery session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "PASSWORD_RECOVERY") {
+          setValidToken(true);
+        } else if (event === "SIGNED_IN" && session) {
+          setValidToken(true);
+        }
+      }
+    );
+
+    // Also check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setValidToken(true);
-      } else {
+      }
+    });
+
+    // Set a timeout to show error if no valid session after 3 seconds
+    const timeout = setTimeout(() => {
+      if (!validToken) {
         toast.error("This link has expired. Request a new one.");
         navigate("/auth/forgot-password");
       }
-    });
-  }, [navigate]);
+    }, 3000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
+  }, [navigate, validToken]);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     try {
