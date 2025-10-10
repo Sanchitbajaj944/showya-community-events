@@ -239,26 +239,22 @@ export default function Profile() {
                   ))}
                 </div>
               )}
+
+              {/* Performance Counter */}
+              <div className="pt-4 border-t border-border w-full animate-fade-in">
+                {performanceCount > 0 ? (
+                  <p className="text-sm text-muted-foreground font-medium">
+                    Performed in <span className="text-foreground font-semibold">{performanceCount}</span> {performanceCount === 1 ? 'event' : 'events'}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    no performances yet
+                  </p>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Performance Counter */}
-        <div className="animate-fade-in">
-          {performanceCount > 0 ? (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground font-medium">
-                Performed in <span className="text-foreground font-semibold">{performanceCount}</span> {performanceCount === 1 ? 'event' : 'events'}
-              </p>
-            </div>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground">
-                No performances yet — your first one will appear here soon 🎤
-              </p>
-            </div>
-          )}
-        </div>
 
         {/* Spotlights */}
         {spotlights.length > 0 && (
