@@ -34,7 +34,7 @@ interface EventParticipation {
     community_name: string;
     category: string;
   };
-  role: string;
+  role: "performer" | "audience";
   ticket_code?: string;
 }
 
@@ -50,10 +50,11 @@ export default function Profile() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [performedEvents, setPerformedEvents] = useState<EventParticipation[]>([]);
-  const [attendedEvents, setAttendedEvents] = useState<EventParticipation[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<EventParticipation[]>([]);
+  const [pastEvents, setPastEvents] = useState<EventParticipation[]>([]);
   const [spotlights, setSpotlights] = useState<Spotlight[]>([]);
   const [loading, setLoading] = useState(true);
+  const [performanceCount, setPerformanceCount] = useState(0);
 
   const isOwnProfile = !userId || userId === user?.id;
   const targetUserId = userId || user?.id;
@@ -102,11 +103,20 @@ export default function Profile() {
 
       if (participationsError) throw participationsError;
 
-      const performed = participations?.filter((p: any) => p.role === "performer") || [];
-      const attended = participations?.filter((p: any) => p.role === "audience") || [];
+      const now = new Date();
+      const upcoming = participations?.filter((p: any) => new Date(p.event.event_date) >= now) || [];
+      const past = participations?.filter((p: any) => new Date(p.event.event_date) < now) || [];
 
-      setPerformedEvents(performed as EventParticipation[]);
-      setAttendedEvents(attended as EventParticipation[]);
+      // Sort upcoming by date (earliest first), past by date (most recent first)
+      upcoming.sort((a: any, b: any) => new Date(a.event.event_date).getTime() - new Date(b.event.event_date).getTime());
+      past.sort((a: any, b: any) => new Date(b.event.event_date).getTime() - new Date(a.event.event_date).getTime());
+
+      setUpcomingEvents(upcoming as EventParticipation[]);
+      setPastEvents(past as EventParticipation[]);
+
+      // Count performances (past performer events)
+      const performanceCount = past.filter((p: any) => p.role === "performer").length;
+      setPerformanceCount(performanceCount);
 
       // Fetch spotlights
       const { data: spotlightsData, error: spotlightsError } = await supabase
@@ -216,6 +226,15 @@ export default function Profile() {
                   ))}
                 </div>
               )}
+
+              {/* Performance Counter */}
+              {performanceCount > 0 && (
+                <div className="pt-4 border-t border-border">
+                  <p className="text-sm text-muted-foreground">
+                    🎭 Performed in <span className="font-semibold text-primary">{performanceCount}</span> {performanceCount === 1 ? 'event' : 'events'}
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -248,45 +267,46 @@ export default function Profile() {
         {/* Experience Tabs */}
         <Card>
           <CardContent className="pt-6">
-            <Tabs defaultValue="performed" className="w-full">
+            <Tabs defaultValue="upcoming" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="performed">
-                  Performed ({performedEvents.length})
+                <TabsTrigger value="upcoming">
+                  Upcoming ({upcomingEvents.length})
                 </TabsTrigger>
-                <TabsTrigger value="attended">
-                  Attended ({attendedEvents.length})
+                <TabsTrigger value="past">
+                  Past ({pastEvents.length})
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="performed" className="mt-4 space-y-3">
-                {performedEvents.length === 0 ? (
+              <TabsContent value="upcoming" className="mt-4 space-y-3">
+                {upcomingEvents.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Your first performance will appear here!</p>
+                    <p>No upcoming events yet!</p>
                   </div>
                 ) : (
-                  performedEvents.map((participation) => (
+                  upcomingEvents.map((participation) => (
                     <EventCard
                       key={participation.id}
                       event={participation.event}
-                      role="Performer"
+                      role={participation.role === "performer" ? "Performer" : "Audience"}
+                      ticketCode={participation.ticket_code}
                     />
                   ))
                 )}
               </TabsContent>
 
-              <TabsContent value="attended" className="mt-4 space-y-3">
-                {attendedEvents.length === 0 ? (
+              <TabsContent value="past" className="mt-4 space-y-3">
+                {pastEvents.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Your first event will appear here!</p>
+                    <p>Your event history will appear here!</p>
                   </div>
                 ) : (
-                  attendedEvents.map((participation) => (
+                  pastEvents.map((participation) => (
                     <EventCard
                       key={participation.id}
                       event={participation.event}
-                      role="Audience"
+                      role={participation.role === "performer" ? "Performer" : "Audience"}
                       ticketCode={participation.ticket_code}
                     />
                   ))
