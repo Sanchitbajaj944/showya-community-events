@@ -196,6 +196,19 @@ export default function Profile() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col items-center text-center space-y-4">
+              {/* Desktop/Tablet Edit Button */}
+              {isOwnProfile && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/profile/edit")}
+                  className="hidden md:flex absolute top-6 right-6"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
+              )}
+              
               <UserAvatar
                 src={profile.profile_picture_url}
                 name={displayName}
