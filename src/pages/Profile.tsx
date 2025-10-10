@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserAvatar } from "@/components/UserAvatar";
 import { BottomNav } from "@/components/BottomNav";
+import Header from "@/components/Header";
 import { MapPin, Edit, Calendar, Star, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -149,8 +150,10 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-8">
-      {/* Header */}
-      <div className="bg-card border-b border-border sticky top-0 z-40">
+      <Header />
+      
+      {/* Mobile-only sub-header */}
+      <div className="md:hidden bg-card border-b border-border sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {userId && (

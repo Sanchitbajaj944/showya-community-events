@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/UserAvatar";
 import { SkillsSelect } from "@/components/SkillsSelect";
+import Header from "@/components/Header";
 import { ArrowLeft, Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -190,9 +191,11 @@ export default function EditProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b border-border sticky top-0 z-40">
+    <div className="min-h-screen bg-background pb-8">
+      <Header />
+      
+      {/* Mobile-only sub-header */}
+      <div className="md:hidden bg-card border-b border-border sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Button
