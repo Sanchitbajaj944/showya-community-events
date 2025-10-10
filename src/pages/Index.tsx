@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import EventCard from "@/components/EventCard";
 import CommunityCard from "@/components/CommunityCard";
 import FeatureCard from "@/components/FeatureCard";
+import { BottomNav } from "@/components/BottomNav";
 import heroImage from "@/assets/hero-image.jpg";
 
 const Index = () => {
@@ -252,6 +253,8 @@ const Index = () => {
       </section>
 
       <Footer />
+
+      <BottomNav />
 
       <style>{`
         .hide-scrollbar {

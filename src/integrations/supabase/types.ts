@@ -14,29 +14,159 @@ export type Database = {
   }
   public: {
     Tables: {
-      profiles: {
+      event_participants: {
         Row: {
-          created_at: string
+          event_id: string
           id: string
-          name: string
-          skills: string[] | null
+          joined_at: string | null
+          role: Database["public"]["Enums"]["participant_role"]
+          ticket_code: string | null
           user_id: string
         }
         Insert: {
-          created_at?: string
+          event_id: string
           id?: string
-          name: string
-          skills?: string[] | null
+          joined_at?: string | null
+          role: Database["public"]["Enums"]["participant_role"]
+          ticket_code?: string | null
           user_id: string
         }
         Update: {
+          event_id?: string
+          id?: string
+          joined_at?: string | null
+          role?: Database["public"]["Enums"]["participant_role"]
+          ticket_code?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          category: string | null
+          city: string | null
+          community_id: string | null
+          community_name: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          event_date: string
+          id: string
+          location: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          city?: string | null
+          community_id?: string | null
+          community_name: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          event_date: string
+          id?: string
+          location?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          city?: string | null
+          community_id?: string | null
+          community_name?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          event_date?: string
+          id?: string
+          location?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          bio: string | null
+          city: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          name: string
+          profile_picture_url: string | null
+          skills: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          city?: string | null
           created_at?: string
+          display_name?: string | null
+          id?: string
+          name: string
+          profile_picture_url?: string | null
+          skills?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          city?: string | null
+          created_at?: string
+          display_name?: string | null
           id?: string
           name?: string
+          profile_picture_url?: string | null
           skills?: string[] | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
+      }
+      spotlights: {
+        Row: {
+          community_name: string
+          created_at: string | null
+          event_id: string | null
+          feature_text: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          community_name: string
+          created_at?: string | null
+          event_id?: string | null
+          feature_text: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          community_name?: string
+          created_at?: string | null
+          event_id?: string | null
+          feature_text?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spotlights_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -46,7 +176,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      participant_role: "performer" | "audience"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -173,6 +303,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      participant_role: ["performer", "audience"],
+    },
   },
 } as const
