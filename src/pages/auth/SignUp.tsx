@@ -17,9 +17,10 @@ export default function SignUp() {
     register,
     handleSubmit,
     control,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
+    mode: "onChange",
     defaultValues: {
       skills: [],
     },
@@ -138,7 +139,7 @@ export default function SignUp() {
           <Button
             type="submit"
             className="w-full"
-            disabled={isLoading}
+            disabled={isLoading || !isValid}
           >
             {isLoading ? "Creating account..." : "Create account"}
           </Button>
