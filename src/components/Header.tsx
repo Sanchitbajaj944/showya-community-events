@@ -29,12 +29,20 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          <a href="#events" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+          <Link to="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+            Home
+          </Link>
+          <Link to="/events" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
             Events
-          </a>
-          <a href="#communities" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+          </Link>
+          <Link to="/communities" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
             Communities
-          </a>
+          </Link>
+          {user && (
+            <Link to="/profile" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              Profile
+            </Link>
+          )}
         </nav>
 
         {/* Desktop Actions */}
@@ -101,20 +109,36 @@ const Header = () => {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-background">
           <nav className="container px-4 py-6 space-y-4">
-            <a
-              href="#events"
+            <Link
+              to="/"
+              className="block text-base font-medium text-foreground hover:text-primary transition-colors py-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link
+              to="/events"
               className="block text-base font-medium text-foreground hover:text-primary transition-colors py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
               Events
-            </a>
-            <a
-              href="#communities"
+            </Link>
+            <Link
+              to="/communities"
               className="block text-base font-medium text-foreground hover:text-primary transition-colors py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
               Communities
-            </a>
+            </Link>
+            {user && (
+              <Link
+                to="/profile"
+                className="block text-base font-medium text-foreground hover:text-primary transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Profile
+              </Link>
+            )}
             <div className="pt-4 space-y-3">
               {user ? (
                 <>
