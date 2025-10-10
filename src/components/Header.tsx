@@ -38,11 +38,6 @@ const Header = () => {
           <Link to="/communities" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
             Communities
           </Link>
-          {user && (
-            <Link to="/profile" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Profile
-            </Link>
-          )}
         </nav>
 
         {/* Desktop Actions */}
