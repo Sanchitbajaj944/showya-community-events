@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/UserAvatar";
 import { SkillsSelect } from "@/components/SkillsSelect";
-import { ArrowLeft, Camera } from "lucide-react";
+import { ArrowLeft, Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const editProfileSchema = z.object({
@@ -29,6 +29,8 @@ export default function EditProfile() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -75,6 +77,76 @@ export default function EditProfile() {
       toast.error("Failed to load profile");
     } finally {
       setInitialLoading(false);
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Please upload a valid image (JPEG, PNG, or WebP)");
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+
+      // Delete old profile picture if exists
+      if (profilePicture) {
+        const oldPath = profilePicture.split('/').pop();
+        if (oldPath) {
+          await supabase.storage
+            .from("profile-pictures")
+            .remove([`${user.id}/${oldPath}`]);
+        }
+      }
+
+      // Upload new image
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("profile-pictures")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("profile-pictures")
+        .getPublicUrl(filePath);
+
+      // Update profile in database
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ profile_picture_url: publicUrl })
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      setProfilePicture(publicUrl);
+      toast.success("Profile picture updated!");
+    } catch (error: any) {
+      console.error("Error uploading image:", error);
+      toast.error("Failed to upload profile picture");
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -146,18 +218,31 @@ export default function EditProfile() {
                 name={user?.user_metadata?.name}
                 size="xl"
               />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="hidden"
+                onChange={handleImageUpload}
+                disabled={uploadingImage}
+              />
               <Button
                 type="button"
                 size="icon"
                 variant="secondary"
                 className="absolute bottom-0 right-0 rounded-full shadow-lg"
-                onClick={() => toast.info("Photo upload coming soon!")}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImage}
               >
-                <Camera className="h-4 w-4" />
+                {uploadingImage ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
-              Tap to change profile picture
+              {uploadingImage ? "Uploading..." : "Tap to change profile picture (max 5MB)"}
             </p>
           </div>
 
