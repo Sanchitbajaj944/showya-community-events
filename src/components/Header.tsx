@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut, User } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { UserAvatar } from "./UserAvatar";
 import {
   DropdownMenu,
@@ -17,6 +18,38 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [profileData, setProfileData] = useState<{
+    display_name?: string;
+    name?: string;
+    profile_picture_url?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfileData();
+    }
+  }, [user]);
+
+  const fetchProfileData = async () => {
+    if (!user) return;
+
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name, name, profile_picture_url")
+        .eq("user_id", user.id)
+        .single();
+
+      if (data) {
+        setProfileData(data);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
+
+  const displayName = profileData?.display_name || profileData?.name || user?.email || "User";
+  const profilePicture = profileData?.profile_picture_url;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
@@ -51,8 +84,8 @@ const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <button className="focus:outline-none">
                     <UserAvatar
-                      src={user.user_metadata?.avatar_url}
-                      name={user.user_metadata?.name || user.email}
+                      src={profilePicture}
+                      name={displayName}
                       size="md"
                       className="cursor-pointer"
                     />
@@ -149,8 +182,8 @@ const Header = () => {
                   <div className="flex items-center justify-between pt-2 border-t">
                     <div className="flex items-center gap-2">
                       <UserAvatar
-                        src={user.user_metadata?.avatar_url}
-                        name={user.user_metadata?.name || user.email}
+                        src={profilePicture}
+                        name={displayName}
                         size="sm"
                       />
                       <span className="text-sm text-foreground truncate">{user.email}</span>
