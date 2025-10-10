@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { signUpSchema, type SignUpFormData } from "@/lib/validations/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SkillsSelect } from "@/components/SkillsSelect";
 import { toast } from "sonner";
 
 export default function SignUp() {
@@ -15,9 +16,13 @@ export default function SignUp() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      skills: [],
+    },
   });
 
   const onSubmit = async (data: SignUpFormData) => {
@@ -32,6 +37,7 @@ export default function SignUp() {
           emailRedirectTo: redirectUrl,
           data: {
             name: data.name,
+            skills: data.skills,
           },
         },
       });
@@ -108,6 +114,24 @@ export default function SignUp() {
             />
             {errors.password && (
               <p className="text-sm text-destructive">{errors.password.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Skills</Label>
+            <Controller
+              name="skills"
+              control={control}
+              render={({ field }) => (
+                <SkillsSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  disabled={isLoading}
+                />
+              )}
+            />
+            {errors.skills && (
+              <p className="text-sm text-destructive">{errors.skills.message}</p>
             )}
           </div>
 

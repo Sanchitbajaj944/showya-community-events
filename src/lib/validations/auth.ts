@@ -11,6 +11,8 @@ export const signUpSchema = z.object({
     .trim(),
   password: z.string()
     .min(8, "Password must be at least 8 characters"),
+  skills: z.array(z.string())
+    .min(1, "Please select at least one skill"),
 });
 
 export const signInSchema = z.object({
