@@ -47,23 +47,24 @@ serve(async (req) => {
       .single();
 
     if (existingAccount) {
-      // Account exists, check status
-      if (existingAccount.kyc_status === 'IN_PROGRESS') {
+      // Account exists, return onboarding URL if available
+      if (existingAccount.onboarding_url) {
         return new Response(
           JSON.stringify({ 
             success: true,
             razorpay_account_id: existingAccount.razorpay_account_id,
-            kyc_status: 'IN_PROGRESS',
-            message: 'KYC verification is in progress. Please check back later or use the refresh button.'
+            kyc_status: existingAccount.kyc_status,
+            onboarding_url: existingAccount.onboarding_url,
+            message: 'Redirecting to Razorpay KYC onboarding...'
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
-      } else if (existingAccount.kyc_status === 'APPROVED') {
+      } else if (existingAccount.kyc_status === 'ACTIVATED' || existingAccount.kyc_status === 'APPROVED') {
         return new Response(
           JSON.stringify({ 
             success: true,
-            message: 'KYC already approved',
-            kyc_status: 'APPROVED'
+            message: 'KYC already activated',
+            kyc_status: existingAccount.kyc_status
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -150,12 +151,16 @@ serve(async (req) => {
     const accountData = await response.json();
     console.log('Razorpay account created:', accountData);
 
+    // Extract onboarding URL from response
+    const onboardingUrl = accountData.onboarding_url || '';
+
     // Store Razorpay account in database
     const { error: insertError } = await supabaseClient
       .from('razorpay_accounts')
       .insert({
         community_id: communityId,
         razorpay_account_id: accountData.id,
+        onboarding_url: onboardingUrl,
         kyc_status: 'IN_PROGRESS',
         last_updated: new Date().toISOString()
       });
@@ -171,13 +176,14 @@ serve(async (req) => {
       .update({ kyc_status: 'IN_PROGRESS' })
       .eq('id', communityId);
 
-    // Return success without redirect
+    // Return success with onboarding URL
     return new Response(
       JSON.stringify({ 
         success: true,
         razorpay_account_id: accountData.id,
+        onboarding_url: onboardingUrl,
         kyc_status: 'IN_PROGRESS',
-        message: 'KYC verification initiated. We will verify your details and update the status within 1-2 business days.'
+        message: 'Redirecting to Razorpay for KYC completion...'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

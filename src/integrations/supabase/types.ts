@@ -320,27 +320,33 @@ export type Database = {
           bank_masked: string | null
           community_id: string
           created_at: string
+          error_reason: string | null
           id: string
           kyc_status: Database["public"]["Enums"]["kyc_status"]
           last_updated: string
+          onboarding_url: string | null
           razorpay_account_id: string
         }
         Insert: {
           bank_masked?: string | null
           community_id: string
           created_at?: string
+          error_reason?: string | null
           id?: string
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           last_updated?: string
+          onboarding_url?: string | null
           razorpay_account_id: string
         }
         Update: {
           bank_masked?: string | null
           community_id?: string
           created_at?: string
+          error_reason?: string | null
           id?: string
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           last_updated?: string
+          onboarding_url?: string | null
           razorpay_account_id?: string
         }
         Relationships: [

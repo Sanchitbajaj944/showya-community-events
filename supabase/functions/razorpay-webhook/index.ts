@@ -54,22 +54,42 @@ serve(async (req) => {
     // Handle account KYC status updates
     if (event.event === 'account.activated' || 
         event.event === 'account.suspended' ||
-        event.event === 'account.rejected') {
+        event.event === 'account.rejected' ||
+        event.event === 'account.kyc.pending_verification' ||
+        event.event === 'account.requirements.needs_attention' ||
+        event.event === 'account.verified') {
       
       const accountId = event.payload.account.entity.id;
       let kycStatus = 'IN_PROGRESS';
+      let errorReason = null;
 
-      if (event.event === 'account.activated') {
-        kycStatus = 'APPROVED';
+      // Map Razorpay events to KYC statuses
+      if (event.event === 'account.kyc.pending_verification') {
+        kycStatus = 'IN_PROGRESS';
+      } else if (event.event === 'account.requirements.needs_attention') {
+        kycStatus = 'NEEDS_INFO';
+        errorReason = event.payload.account.entity.error_reason || 'Additional information required';
       } else if (event.event === 'account.rejected') {
         kycStatus = 'REJECTED';
+        errorReason = event.payload.account.entity.error_reason || 'KYC verification rejected';
+      } else if (event.event === 'account.verified') {
+        kycStatus = 'VERIFIED';
+      } else if (event.event === 'account.activated') {
+        kycStatus = 'ACTIVATED';
       }
+
+      // Extract bank details if available
+      const bankMasked = event.payload.account.entity.bank_account?.ifsc_code 
+        ? `${event.payload.account.entity.bank_account.ifsc_code.substring(0, 4)}****`
+        : null;
 
       // Update razorpay_accounts table
       const { error } = await supabaseClient
         .from('razorpay_accounts')
         .update({ 
           kyc_status: kycStatus,
+          error_reason: errorReason,
+          bank_masked: bankMasked,
           last_updated: new Date().toISOString()
         })
         .eq('razorpay_account_id', accountId);

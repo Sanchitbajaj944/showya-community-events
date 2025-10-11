@@ -68,12 +68,14 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
       if (error) throw error;
 
-      if (data.kyc_status === 'APPROVED') {
-        toast.success("KYC already approved!");
-      } else if (data.kyc_status === 'IN_PROGRESS') {
-        toast.success(data.message || "KYC verification initiated!");
+      // If we have an onboarding URL, redirect to Razorpay
+      if (data.onboarding_url) {
+        toast.success("Redirecting to Razorpay KYC...");
+        window.open(data.onboarding_url, '_blank');
+      } else if (data.kyc_status === 'ACTIVATED' || data.kyc_status === 'APPROVED') {
+        toast.success("KYC already activated!");
       } else {
-        toast.success("KYC process started successfully!");
+        toast.success(data.message || "KYC process started!");
       }
       
       onRefresh();
@@ -136,13 +138,34 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
   const getKycCard = (status: string) => {
     switch (status) {
+      case 'ACTIVATED':
       case 'APPROVED':
         return (
           <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
             <CheckCircle className="h-4 w-4 text-green-500" />
             <AlertDescription className="text-green-700 dark:text-green-300">
-              <strong>Payouts Active</strong>
-              <p className="mt-1">Ticket sales auto-settle to your bank account.</p>
+              <strong>Payouts Active ✅</strong>
+              <p className="mt-1">Your KYC is approved. Ticket sales will auto-settle to your bank account.</p>
+            </AlertDescription>
+          </Alert>
+        );
+      
+      case 'VERIFIED':
+        return (
+          <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950">
+            <CheckCircle className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="text-blue-700 dark:text-blue-300">
+              <strong>Verified — Activating Soon</strong>
+              <p className="mt-1">Your details are verified. Activation typically takes 1 business day.</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={handleCheckStatus}
+                disabled={checking}
+              >
+                {checking ? "Checking..." : "Refresh Status"}
+              </Button>
             </AlertDescription>
           </Alert>
         );
@@ -153,15 +176,42 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
             <Clock className="h-4 w-4 text-yellow-500" />
             <AlertDescription className="text-yellow-700 dark:text-yellow-300">
               <strong>KYC In Progress</strong>
-              <p className="mt-1">We're verifying your details. This usually takes 1-2 business days.</p>
+              <p className="mt-1">Complete your KYC verification on Razorpay's secure platform.</p>
+              <div className="flex gap-2 mt-2">
+                <Button 
+                  size="sm" 
+                  onClick={handleStartKyc}
+                  disabled={loading}
+                >
+                  {loading ? "Loading..." : "Complete KYC on Razorpay"}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleCheckStatus}
+                  disabled={checking}
+                >
+                  {checking ? "Checking..." : "Refresh"}
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        );
+      
+      case 'NEEDS_INFO':
+        return (
+          <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
+            <AlertCircle className="h-4 w-4 text-orange-500" />
+            <AlertDescription className="text-orange-700 dark:text-orange-300">
+              <strong>Action Needed — More Details Required</strong>
+              <p className="mt-1">Razorpay needs additional information to complete your KYC.</p>
               <Button 
-                variant="outline" 
                 size="sm" 
                 className="mt-2"
                 onClick={handleStartKyc}
                 disabled={loading}
               >
-                {loading ? "Loading..." : "Resume KYC"}
+                {loading ? "Loading..." : "Complete on Razorpay"}
               </Button>
             </AlertDescription>
           </Alert>
@@ -172,10 +222,9 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           <Alert className="border-red-500 bg-red-50 dark:bg-red-950">
             <XCircle className="h-4 w-4 text-red-500" />
             <AlertDescription className="text-red-700 dark:text-red-300">
-              <strong>KYC Needs Action</strong>
-              <p className="mt-1">Additional information required. Please retry KYC verification.</p>
+              <strong>KYC Rejected</strong>
+              <p className="mt-1">Your KYC verification was rejected. You can retry with corrected information.</p>
               <Button 
-                variant="outline" 
                 size="sm" 
                 className="mt-2"
                 onClick={handleStartKyc}
@@ -189,19 +238,29 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
       
       default:
         return (
-          <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
-            <AlertCircle className="h-4 w-4 text-orange-500" />
-            <AlertDescription className="text-orange-700 dark:text-orange-300">
-              <strong>Complete KYC to Receive Ticket Sales</strong>
-              <p className="mt-1">Verify your identity to start accepting payments for paid events.</p>
-              <Button 
-                size="sm" 
-                className="mt-2"
-                onClick={handleStartKyc}
-                disabled={loading}
-              >
-                {loading ? "Starting..." : "Start KYC"}
-              </Button>
+          <Alert className="border-primary bg-primary/5">
+            <AlertCircle className="h-4 w-4 text-primary" />
+            <AlertDescription>
+              <strong>Start Your KYC to Enable Payouts</strong>
+              <p className="mt-1 text-muted-foreground">
+                Verify your identity on Razorpay's secure platform to start accepting payments for paid events.
+              </p>
+              <div className="flex gap-2 mt-3">
+                <Button 
+                  size="sm" 
+                  onClick={handleStartKyc}
+                  disabled={loading}
+                >
+                  {loading ? "Starting..." : "Start KYC"}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open('https://razorpay.com/docs/partners/route/onboarding/', '_blank')}
+                >
+                  Learn More
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         );
