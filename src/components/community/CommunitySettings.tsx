@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2 } from "lucide-react";
+import { Trash2, Upload, X } from "lucide-react";
+import { SkillsSelect } from "@/components/SkillsSelect";
 
 interface CommunitySettingsProps {
   community: any;
@@ -20,9 +21,50 @@ export const CommunitySettings = ({ community, onUpdate }: CommunitySettingsProp
     name: community.name,
     description: community.description || "",
     categories: community.categories || [],
+    banner_url: community.banner_url || "",
   });
   const [isPublic, setIsPublic] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${community.id}-${Date.now()}.${fileExt}`;
+      const filePath = `community-banners/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("profile-pictures")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("profile-pictures")
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, banner_url: publicUrl });
+      toast.success("Image uploaded");
+    } catch (error: any) {
+      console.error("Error uploading image:", error);
+      toast.error("Failed to upload image");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData({ ...formData, banner_url: "" });
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -33,6 +75,7 @@ export const CommunitySettings = ({ community, onUpdate }: CommunitySettingsProp
           name: formData.name,
           description: formData.description,
           categories: formData.categories,
+          banner_url: formData.banner_url,
         })
         .eq("id", community.id);
 
@@ -74,6 +117,41 @@ export const CommunitySettings = ({ community, onUpdate }: CommunitySettingsProp
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
+            <Label>Community Banner</Label>
+            {formData.banner_url ? (
+              <div className="relative">
+                <img
+                  src={formData.banner_url}
+                  alt="Community banner"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2"
+                  onClick={handleRemoveImage}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mb-2">
+                  Upload a banner image for your community
+                </p>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={uploading}
+                  className="max-w-xs mx-auto"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="name">Community Name</Label>
             <Input
               id="name"
@@ -91,6 +169,14 @@ export const CommunitySettings = ({ community, onUpdate }: CommunitySettingsProp
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
               maxLength={500}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Categories / Skills</Label>
+            <SkillsSelect
+              value={formData.categories}
+              onChange={(categories) => setFormData({ ...formData, categories })}
             />
           </div>
 

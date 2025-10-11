@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Users, Search, UserPlus } from "lucide-react";
+import { Users, Search } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
 import { supabase } from "@/integrations/supabase/client";
+import { InviteMembersDialog } from "./InviteMembersDialog";
+import { toast } from "sonner";
 
 interface CommunityMembersProps {
   community: any;
@@ -36,10 +38,28 @@ export const CommunityMembers = ({ community, userRole }: CommunityMembersProps)
     setMembers(data || []);
   };
 
+  const handleRemoveMember = async (memberId: string, userId: string) => {
+    try {
+      const { error } = await supabase
+        .from("community_members")
+        .delete()
+        .eq("id", memberId);
+
+      if (error) throw error;
+
+      toast.success("Member removed");
+      fetchMembers();
+    } catch (error: any) {
+      console.error("Error removing member:", error);
+      toast.error("Failed to remove member");
+    }
+  };
+
   const filteredMembers = members.filter(m => {
     const name = m.profile?.display_name || m.profile?.name || "";
     return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
+
   return (
     <div className="space-y-6">
       <Card>
@@ -49,10 +69,9 @@ export const CommunityMembers = ({ community, userRole }: CommunityMembersProps)
               <CardTitle>Members</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">{members.length} members</p>
             </div>
-            <Button>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Invite Members
-            </Button>
+            {userRole === 'owner' && (
+              <InviteMembersDialog communityId={community.id} />
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -91,7 +110,13 @@ export const CommunityMembers = ({ community, userRole }: CommunityMembersProps)
                     )}
                   </div>
                   {userRole === 'owner' && member.role !== 'owner' && (
-                    <Button variant="ghost" size="sm">Remove</Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleRemoveMember(member.id, member.user_id)}
+                    >
+                      Remove
+                    </Button>
                   )}
                 </div>
               ))}

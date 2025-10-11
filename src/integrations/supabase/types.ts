@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       communities: {
         Row: {
+          banner_url: string | null
           categories: string[]
           created_at: string
           description: string | null
@@ -26,6 +27,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          banner_url?: string | null
           categories?: string[]
           created_at?: string
           description?: string | null
@@ -36,6 +38,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          banner_url?: string | null
           categories?: string[]
           created_at?: string
           description?: string | null
