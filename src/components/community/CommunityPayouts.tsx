@@ -68,22 +68,22 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
       if (error) throw error;
 
-      // If we have an onboarding URL, open it (works in both test and live mode)
+      // If we have an onboarding URL, redirect to it (works in both test and live mode)
       if (data.onboarding_url) {
-        toast.success("Redirecting to Razorpay KYC...");
-        window.open(data.onboarding_url, '_blank');
+        // Use window.location.href for reliable redirect (popup blockers won't interfere)
+        window.location.href = data.onboarding_url;
       } 
       // KYC already complete
       else if (data.kyc_status === 'ACTIVATED' || data.kyc_status === 'APPROVED') {
         toast.success("KYC already activated!");
+        onRefresh();
       } 
       // No onboarding URL available (rare case)
       else {
         toast.error("Onboarding link unavailable. Check server logs.");
         console.error('Start KYC response:', data);
+        onRefresh();
       }
-      
-      onRefresh();
     } catch (error: any) {
       console.error("Error starting KYC:", error);
       toast.error(error.message || "Failed to start KYC process");
