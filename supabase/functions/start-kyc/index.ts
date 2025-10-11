@@ -107,20 +107,27 @@ serve(async (req) => {
         );
       }
 
-      // Check if this is test mode
-      const isTestMode = razorpayKeyId?.startsWith('rzp_test_');
-      
-      // Return status with test mode instructions if no real onboarding URL
+      // Return onboarding URL if available (works in both test and live mode)
+      if (existingAccount.onboarding_url) {
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            razorpay_account_id: existingAccount.razorpay_account_id,
+            kyc_status: existingAccount.kyc_status,
+            onboarding_url: existingAccount.onboarding_url,
+            message: 'Redirecting to Razorpay KYC onboarding...'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // No onboarding URL available
       return new Response(
         JSON.stringify({ 
           success: true,
           razorpay_account_id: existingAccount.razorpay_account_id,
           kyc_status: existingAccount.kyc_status,
-          test_mode: isTestMode,
-          requires_webhook: isTestMode,
-          message: isTestMode 
-            ? 'TEST MODE: Razorpay account created. Use test webhooks to simulate KYC completion.'
-            : 'Razorpay account exists. Waiting for KYC completion.'
+          message: 'Onboarding URL not available. Check server logs or contact support.'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -206,12 +213,9 @@ serve(async (req) => {
     const accountData = await response.json();
     console.log('Razorpay account created:', accountData);
 
-    // Check for real onboarding URL from Razorpay
+    // Get onboarding URL from Razorpay response
     const onboardingUrl = accountData.onboarding_url || '';
-    const isTestMode = razorpayKeyId?.startsWith('rzp_test_');
-    
     console.log('Onboarding URL from Razorpay:', onboardingUrl);
-    console.log('Test mode:', isTestMode);
 
     // Store Razorpay account in database
     const { error: insertError } = await supabaseClient
@@ -235,20 +239,16 @@ serve(async (req) => {
       .update({ kyc_status: 'IN_PROGRESS' })
       .eq('id', communityId);
 
-    // Return appropriate response based on mode and URL availability
+    // Return success with onboarding URL (works in both test and live mode)
     return new Response(
       JSON.stringify({ 
         success: true,
         razorpay_account_id: accountData.id,
         kyc_status: 'IN_PROGRESS',
-        test_mode: isTestMode,
-        requires_webhook: isTestMode && !onboardingUrl,
         onboarding_url: onboardingUrl || undefined,
-        message: isTestMode && !onboardingUrl
-          ? 'TEST MODE: Account created. Simulate KYC completion using Razorpay test webhooks.'
-          : onboardingUrl 
+        message: onboardingUrl 
           ? 'Redirecting to Razorpay for KYC completion...'
-          : 'KYC process started'
+          : 'Account created. Onboarding URL not available - check logs.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
