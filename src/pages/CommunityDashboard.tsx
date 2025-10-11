@@ -92,13 +92,15 @@ export default function CommunityDashboard() {
   }
 
   // Redirect to appropriate view based on role
-  if (userRole === 'public') {
-    window.location.href = `/community/${communityId}/public`;
-    return null;
-  }
+  useEffect(() => {
+    if (userRole === 'public') {
+      navigate(`/community/${communityId}/public`, { replace: true });
+    } else if (userRole === 'member') {
+      navigate(`/community/${communityId}/member`, { replace: true });
+    }
+  }, [userRole, communityId, navigate]);
 
-  if (userRole === 'member') {
-    window.location.href = `/community/${communityId}/member`;
+  if (userRole === 'public' || userRole === 'member') {
     return null;
   }
 
