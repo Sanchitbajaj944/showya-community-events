@@ -47,7 +47,58 @@ serve(async (req) => {
       .single();
 
     if (existingAccount) {
-      // Account exists, return onboarding URL if available
+      // Account exists, fetch latest details from Razorpay
+      const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
+      const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
+      const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
+
+      try {
+        // Fetch account details from Razorpay
+        const response = await fetch(`https://api.razorpay.com/v2/accounts/${existingAccount.razorpay_account_id}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error('Error fetching Razorpay account:', errorData);
+        } else {
+          const accountData = await response.json();
+          console.log('Fetched Razorpay account:', accountData);
+
+          // Update database with latest onboarding URL if available
+          if (accountData.onboarding_url && accountData.onboarding_url !== existingAccount.onboarding_url) {
+            await supabaseClient
+              .from('razorpay_accounts')
+              .update({ 
+                onboarding_url: accountData.onboarding_url,
+                last_updated: new Date().toISOString()
+              })
+              .eq('id', existingAccount.id);
+            
+            existingAccount.onboarding_url = accountData.onboarding_url;
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching Razorpay account:', error);
+      }
+
+      // Return appropriate response based on status
+      if (existingAccount.kyc_status === 'ACTIVATED' || existingAccount.kyc_status === 'APPROVED') {
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            message: 'KYC already activated',
+            kyc_status: existingAccount.kyc_status
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Return onboarding URL if available
       if (existingAccount.onboarding_url) {
         return new Response(
           JSON.stringify({ 
@@ -59,16 +110,22 @@ serve(async (req) => {
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
-      } else if (existingAccount.kyc_status === 'ACTIVATED' || existingAccount.kyc_status === 'APPROVED') {
-        return new Response(
-          JSON.stringify({ 
-            success: true,
-            message: 'KYC already activated',
-            kyc_status: existingAccount.kyc_status
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
       }
+
+      // No onboarding URL available (test mode)
+      const isTestMode = razorpayKeyId?.startsWith('rzp_test_');
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          razorpay_account_id: existingAccount.razorpay_account_id,
+          kyc_status: existingAccount.kyc_status,
+          test_mode: isTestMode,
+          message: isTestMode 
+            ? 'TEST MODE: Razorpay account exists. Onboarding URLs may not be available in test mode. You can manually update KYC status or switch to live mode.'
+            : 'Razorpay account exists but no onboarding URL available. Please contact support.'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Get user profile for KYC details
