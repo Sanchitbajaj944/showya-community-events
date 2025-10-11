@@ -68,14 +68,21 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
       if (error) throw error;
 
+      // Handle test mode
+      if (data.test_mode) {
+        toast.info(
+          "Test Mode: Onboarding only works in live mode. For testing, you can manually update the KYC status in the database or switch to live Razorpay keys.",
+          { duration: 8000 }
+        );
+      }
       // If we have an onboarding URL, redirect to Razorpay
-      if (data.onboarding_url) {
+      else if (data.onboarding_url) {
         toast.success("Redirecting to Razorpay KYC...");
         window.open(data.onboarding_url, '_blank');
       } else if (data.kyc_status === 'ACTIVATED' || data.kyc_status === 'APPROVED') {
         toast.success("KYC already activated!");
       } else {
-        toast.success(data.message || "KYC process started!");
+        toast.info(data.message || "KYC process started!");
       }
       
       onRefresh();

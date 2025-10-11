@@ -102,11 +102,15 @@ serve(async (req) => {
     // Truncate community ID to meet Razorpay's 20 character limit for reference_id
     const shortReferenceId = communityId.substring(0, 20);
 
+    // Generate unique code for Razorpay account
+    const uniqueCode = `${communityId.substring(0, 10)}_${Date.now()}`.substring(0, 30);
+
     const accountPayload = {
       email: user.email,
       phone: userPhone,
       type: 'route',
       reference_id: shortReferenceId,
+      code: uniqueCode,
       legal_business_name: community.name,
       business_type: 'individual',
       contact_name: profile?.name || user.user_metadata?.name || 'Community Owner',
@@ -151,8 +155,9 @@ serve(async (req) => {
     const accountData = await response.json();
     console.log('Razorpay account created:', accountData);
 
-    // Extract onboarding URL from response
+    // Extract onboarding URL from response (may not be available in test mode)
     const onboardingUrl = accountData.onboarding_url || '';
+    const isTestMode = razorpayKeyId?.startsWith('rzp_test_');
 
     // Store Razorpay account in database
     const { error: insertError } = await supabaseClient
@@ -176,14 +181,29 @@ serve(async (req) => {
       .update({ kyc_status: 'IN_PROGRESS' })
       .eq('id', communityId);
 
-    // Return success with onboarding URL
+    // Return appropriate response based on mode
+    if (isTestMode && !onboardingUrl) {
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          razorpay_account_id: accountData.id,
+          kyc_status: 'IN_PROGRESS',
+          test_mode: true,
+          message: 'TEST MODE: Razorpay account created. Onboarding URLs are only available in live mode. For testing, manually update KYC status or switch to live mode.'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Return success with onboarding URL for live mode
     return new Response(
       JSON.stringify({ 
         success: true,
         razorpay_account_id: accountData.id,
         onboarding_url: onboardingUrl,
         kyc_status: 'IN_PROGRESS',
-        message: 'Redirecting to Razorpay for KYC completion...'
+        test_mode: false,
+        message: onboardingUrl ? 'Redirecting to Razorpay for KYC completion...' : 'KYC process started'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
