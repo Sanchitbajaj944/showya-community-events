@@ -1,1 +1,13 @@
 project_id = "loitjamnkuvgcpovfkpf"
+
+[functions.create-community]
+verify_jwt = true
+
+[functions.check-kyc-status]
+verify_jwt = true
+
+[functions.create-payment-order]
+verify_jwt = true
+
+[functions.razorpay-webhook]
+verify_jwt = false
