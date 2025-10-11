@@ -116,7 +116,17 @@ serve(async (req) => {
       profile: {
         category: 'entertainment',
         subcategory: 'live_events',
-        description: community.description || `${community.name} - Community Events`
+        description: community.description || `${community.name} - Community Events`,
+        addresses: {
+          registered: {
+            street1: profile?.city || 'Address Line 1',
+            street2: '',
+            city: profile?.city || 'City',
+            state: 'State',
+            postal_code: '000000',
+            country: 'IN'
+          }
+        }
       },
       legal_info: {
         pan: '',
