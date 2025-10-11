@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,8 @@ interface CommunityManagementCardProps {
 }
 
 export const CommunityManagementCard = ({ community, onCommunityCreated }: CommunityManagementCardProps) => {
+  const navigate = useNavigate();
+  
   const getKycStatusBadge = (status: string) => {
     switch (status) {
       case 'APPROVED':
@@ -109,11 +112,15 @@ export const CommunityManagementCard = ({ community, onCommunityCreated }: Commu
             <Button 
               variant="outline" 
               className="w-full"
-              onClick={() => window.location.href = `/community/${community.id}`}
+              onClick={() => navigate(`/community/${community.id}`)}
             >
               Manage Community
             </Button>
-            <Button variant="ghost" className="w-full text-xs">
+            <Button 
+              variant="ghost" 
+              className="w-full text-xs"
+              onClick={() => navigate(`/community/${community.id}/public`)}
+            >
               View Public Profile
             </Button>
           </div>
