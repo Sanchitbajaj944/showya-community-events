@@ -107,31 +107,20 @@ serve(async (req) => {
         );
       }
 
-      // Return onboarding URL if available
-      if (existingAccount.onboarding_url) {
-        return new Response(
-          JSON.stringify({ 
-            success: true,
-            razorpay_account_id: existingAccount.razorpay_account_id,
-            kyc_status: existingAccount.kyc_status,
-            onboarding_url: existingAccount.onboarding_url,
-            message: 'Redirecting to Razorpay KYC onboarding...'
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // No onboarding URL available (test mode)
+      // Check if this is test mode
       const isTestMode = razorpayKeyId?.startsWith('rzp_test_');
+      
+      // Return status with test mode instructions if no real onboarding URL
       return new Response(
         JSON.stringify({ 
           success: true,
           razorpay_account_id: existingAccount.razorpay_account_id,
           kyc_status: existingAccount.kyc_status,
           test_mode: isTestMode,
+          requires_webhook: isTestMode,
           message: isTestMode 
-            ? 'TEST MODE: Razorpay account exists. Onboarding URLs may not be available in test mode. You can manually update KYC status or switch to live mode.'
-            : 'Razorpay account exists but no onboarding URL available. Please contact support.'
+            ? 'TEST MODE: Razorpay account created. Use test webhooks to simulate KYC completion.'
+            : 'Razorpay account exists. Waiting for KYC completion.'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -217,12 +206,12 @@ serve(async (req) => {
     const accountData = await response.json();
     console.log('Razorpay account created:', accountData);
 
-    // Construct onboarding URL (Razorpay doesn't always return it in API response)
-    const onboardingUrl = accountData.onboarding_url || 
-      `https://dashboard.razorpay.com/app/onboarding/${accountData.id}`;
+    // Check for real onboarding URL from Razorpay
+    const onboardingUrl = accountData.onboarding_url || '';
     const isTestMode = razorpayKeyId?.startsWith('rzp_test_');
     
-    console.log('Onboarding URL:', onboardingUrl);
+    console.log('Onboarding URL from Razorpay:', onboardingUrl);
+    console.log('Test mode:', isTestMode);
 
     // Store Razorpay account in database
     const { error: insertError } = await supabaseClient
@@ -246,29 +235,20 @@ serve(async (req) => {
       .update({ kyc_status: 'IN_PROGRESS' })
       .eq('id', communityId);
 
-    // Return appropriate response based on mode
-    if (isTestMode && !onboardingUrl) {
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          razorpay_account_id: accountData.id,
-          kyc_status: 'IN_PROGRESS',
-          test_mode: true,
-          message: 'TEST MODE: Razorpay account created. Onboarding URLs are only available in live mode. For testing, manually update KYC status or switch to live mode.'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Return success with onboarding URL for live mode
+    // Return appropriate response based on mode and URL availability
     return new Response(
       JSON.stringify({ 
         success: true,
         razorpay_account_id: accountData.id,
-        onboarding_url: onboardingUrl,
         kyc_status: 'IN_PROGRESS',
-        test_mode: false,
-        message: onboardingUrl ? 'Redirecting to Razorpay for KYC completion...' : 'KYC process started'
+        test_mode: isTestMode,
+        requires_webhook: isTestMode && !onboardingUrl,
+        onboarding_url: onboardingUrl || undefined,
+        message: isTestMode && !onboardingUrl
+          ? 'TEST MODE: Account created. Simulate KYC completion using Razorpay test webhooks.'
+          : onboardingUrl 
+          ? 'Redirecting to Razorpay for KYC completion...'
+          : 'KYC process started'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

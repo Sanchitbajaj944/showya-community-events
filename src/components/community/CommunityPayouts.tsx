@@ -68,13 +68,24 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
       if (error) throw error;
 
+      // Handle test mode without onboarding URL
+      if (data.requires_webhook) {
+        toast.info(
+          "TEST MODE: Razorpay account created. To complete testing:\n1. Go to Razorpay Dashboard > Webhooks\n2. Send test webhook: account.activated\n3. Refresh status here",
+          { duration: 10000 }
+        );
+      }
       // If we have an onboarding URL, redirect to Razorpay
-      if (data.onboarding_url) {
+      else if (data.onboarding_url) {
         toast.success("Redirecting to Razorpay KYC...");
         window.open(data.onboarding_url, '_blank');
-      } else if (data.kyc_status === 'ACTIVATED' || data.kyc_status === 'APPROVED') {
+      } 
+      // KYC already complete
+      else if (data.kyc_status === 'ACTIVATED' || data.kyc_status === 'APPROVED') {
         toast.success("KYC already activated!");
-      } else {
+      } 
+      // Other cases
+      else {
         toast.info(data.message || "KYC process started!");
       }
       
