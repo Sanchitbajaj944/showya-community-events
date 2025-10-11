@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserAvatar } from "@/components/UserAvatar";
 import { BottomNav } from "@/components/BottomNav";
 import Header from "@/components/Header";
+import { CommunityManagementCard } from "@/components/CommunityManagementCard";
 import { MapPin, Edit, Calendar, Star, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -55,6 +56,7 @@ export default function Profile() {
   const [spotlights, setSpotlights] = useState<Spotlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [performanceCount, setPerformanceCount] = useState(0);
+  const [userCommunity, setUserCommunity] = useState<any>(null);
 
   const isOwnProfile = !userId || userId === user?.id;
   const targetUserId = userId || user?.id;
@@ -126,6 +128,17 @@ export default function Profile() {
 
       if (spotlightsError) throw spotlightsError;
       setSpotlights(spotlightsData || []);
+
+      // Fetch user's community if viewing own profile
+      if (isOwnProfile) {
+        const { data: communityData } = await supabase
+          .from("communities")
+          .select("*")
+          .eq("owner_id", targetUserId)
+          .single();
+        
+        setUserCommunity(communityData || null);
+      }
     } catch (error: any) {
       console.error("Error fetching profile:", error);
       toast.error("Failed to load profile");
@@ -279,6 +292,14 @@ export default function Profile() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Community Management - Only for own profile */}
+        {isOwnProfile && (
+          <CommunityManagementCard 
+            community={userCommunity} 
+            onCommunityCreated={fetchProfileData}
+          />
         )}
 
         {/* Experience Tabs */}

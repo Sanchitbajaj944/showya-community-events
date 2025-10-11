@@ -5,15 +5,12 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Users, Calendar, MapPin, CheckCircle, Clock, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { CreateCommunityDialog } from "@/components/CreateCommunityDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Communities() {
   const { user } = useAuth();
   const [communities, setCommunities] = useState<any[]>([]);
-  const [userCommunity, setUserCommunity] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchCommunities = async () => {
@@ -26,12 +23,6 @@ export default function Communities() {
 
       if (error) throw error;
       setCommunities(data || []);
-
-      // Check if user has a community
-      if (user) {
-        const userComm = data?.find(c => c.owner_id === user.id);
-        setUserCommunity(userComm || null);
-      }
     } catch (error) {
       console.error('Error fetching communities:', error);
     } finally {
@@ -89,18 +80,6 @@ export default function Communities() {
           </p>
         </div>
 
-        {/* User's Community Status */}
-        {user && userCommunity && (
-          <Alert className="mb-6">
-            <AlertDescription className="flex items-center justify-between">
-              <div>
-                <strong>Your Community:</strong> {userCommunity.name}
-              </div>
-              {getKycStatusBadge(userCommunity.kyc_status)}
-            </AlertDescription>
-          </Alert>
-        )}
-
         {/* Communities Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
@@ -156,19 +135,7 @@ export default function Communities() {
           )}
         </div>
 
-        {/* CTA Section */}
-        {user && !userCommunity && (
-          <div className="mt-12 text-center p-12 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-border">
-            <Users className="h-12 w-12 mx-auto mb-4 text-primary" />
-            <h3 className="text-2xl font-bold mb-2">Start Your Own Community</h3>
-            <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-              Have a passion you want to share? Create your own community and bring people together around what you love.
-            </p>
-            <CreateCommunityDialog onSuccess={fetchCommunities}>
-              <Button size="lg">Create Community</Button>
-            </CreateCommunityDialog>
-          </div>
-        )}
+        {/* CTA Section - Hidden as communities are created from profile */}
       </div>
 
       <BottomNav />

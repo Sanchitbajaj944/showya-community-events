@@ -77,7 +77,7 @@ const Header = () => {
         <div className="hidden md:flex items-center space-x-3">
           {user ? (
             <>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => navigate("/profile")}>
                 Create Community
               </Button>
               <DropdownMenu>
@@ -170,7 +170,7 @@ const Header = () => {
             <div className="pt-4 space-y-3">
               {user ? (
                 <>
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full" onClick={() => { navigate("/profile"); setMobileMenuOpen(false); }}>
                     Create Community
                   </Button>
                   <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>
