@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      communities: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          kyc_status: Database["public"]["Enums"]["kyc_status"]
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          kyc_status?: Database["public"]["Enums"]["kyc_status"]
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          kyc_status?: Database["public"]["Enums"]["kyc_status"]
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_participants: {
         Row: {
           event_id: string
@@ -61,6 +94,8 @@ export type Database = {
           event_date: string
           id: string
           location: string | null
+          price: number | null
+          ticket_type: string | null
           title: string
           updated_at: string | null
         }
@@ -75,6 +110,8 @@ export type Database = {
           event_date: string
           id?: string
           location?: string | null
+          price?: number | null
+          ticket_type?: string | null
           title: string
           updated_at?: string | null
         }
@@ -89,6 +126,8 @@ export type Database = {
           event_date?: string
           id?: string
           location?: string | null
+          price?: number | null
+          ticket_type?: string | null
           title?: string
           updated_at?: string | null
         }
@@ -133,6 +172,44 @@ export type Database = {
         }
         Relationships: []
       }
+      razorpay_accounts: {
+        Row: {
+          bank_masked: string | null
+          community_id: string
+          created_at: string
+          id: string
+          kyc_status: Database["public"]["Enums"]["kyc_status"]
+          last_updated: string
+          razorpay_account_id: string
+        }
+        Insert: {
+          bank_masked?: string | null
+          community_id: string
+          created_at?: string
+          id?: string
+          kyc_status?: Database["public"]["Enums"]["kyc_status"]
+          last_updated?: string
+          razorpay_account_id: string
+        }
+        Update: {
+          bank_masked?: string | null
+          community_id?: string
+          created_at?: string
+          id?: string
+          kyc_status?: Database["public"]["Enums"]["kyc_status"]
+          last_updated?: string
+          razorpay_account_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "razorpay_accounts_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: true
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       spotlights: {
         Row: {
           community_name: string
@@ -176,6 +253,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      kyc_status:
+        | "NOT_STARTED"
+        | "IN_PROGRESS"
+        | "VERIFIED"
+        | "ACTIVATED"
+        | "NEEDS_INFO"
+        | "REJECTED"
       participant_role: "performer" | "audience"
     }
     CompositeTypes: {
@@ -304,6 +388,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      kyc_status: [
+        "NOT_STARTED",
+        "IN_PROGRESS",
+        "VERIFIED",
+        "ACTIVATED",
+        "NEEDS_INFO",
+        "REJECTED",
+      ],
       participant_role: ["performer", "audience"],
     },
   },
