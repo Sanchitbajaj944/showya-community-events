@@ -263,8 +263,12 @@ export type Database = {
           id: string
           name: string
           phone: string | null
+          postal_code: string | null
           profile_picture_url: string | null
           skills: string[] | null
+          state: string | null
+          street1: string | null
+          street2: string | null
           updated_at: string | null
           user_id: string
         }
@@ -276,8 +280,12 @@ export type Database = {
           id?: string
           name: string
           phone?: string | null
+          postal_code?: string | null
           profile_picture_url?: string | null
           skills?: string[] | null
+          state?: string | null
+          street1?: string | null
+          street2?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -289,8 +297,12 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+          postal_code?: string | null
           profile_picture_url?: string | null
           skills?: string[] | null
+          state?: string | null
+          street1?: string | null
+          street2?: string | null
           updated_at?: string | null
           user_id?: string
         }

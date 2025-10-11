@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { KycPhoneDialog } from "./KycPhoneDialog";
+import { KycAddressDialog } from "./KycAddressDialog";
 
 interface CommunityPayoutsProps {
   community: any;
@@ -17,7 +18,9 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
   const [phoneDialogOpen, setPhoneDialogOpen] = useState(false);
+  const [addressDialogOpen, setAddressDialogOpen] = useState(false);
   const [userPhone, setUserPhone] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
 
   const handleStartKyc = async () => {
     try {
@@ -27,15 +30,24 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         return;
       }
 
-      // Check if user has a phone number in profile
+      setUserId(session.user.id);
+
+      // Check if user has complete profile information
       const { data: profile } = await supabase
         .from("profiles")
-        .select("phone")
+        .select("phone, street1, city, state, postal_code")
         .eq("user_id", session.user.id)
         .single();
 
+      // Check for phone number first
       if (!profile?.phone || profile.phone.trim() === '') {
         setPhoneDialogOpen(true);
+        return;
+      }
+
+      // Check for address information
+      if (!profile?.street1 || !profile?.city || !profile?.state || !profile?.postal_code) {
+        setAddressDialogOpen(true);
         return;
       }
 
@@ -78,6 +90,27 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
   const handlePhoneSubmit = async (phone: string) => {
     setUserPhone(phone);
+    setPhoneDialogOpen(false);
+    
+    // After phone is saved, check for address
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("street1, city, state, postal_code")
+      .eq("user_id", session.user.id)
+      .single();
+
+    if (!profile?.street1 || !profile?.city || !profile?.state || !profile?.postal_code) {
+      setAddressDialogOpen(true);
+    } else {
+      await initiateKyc();
+    }
+  };
+
+  const handleAddressComplete = async () => {
+    setAddressDialogOpen(false);
     await initiateKyc();
   };
 
@@ -185,6 +218,13 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         onOpenChange={setPhoneDialogOpen}
         onPhoneSubmit={handlePhoneSubmit}
         loading={loading}
+      />
+      
+      <KycAddressDialog
+        open={addressDialogOpen}
+        onOpenChange={setAddressDialogOpen}
+        userId={userId}
+        onComplete={handleAddressComplete}
       />
       
       {/* KYC Status */}

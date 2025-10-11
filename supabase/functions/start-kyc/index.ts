@@ -89,9 +89,18 @@ serve(async (req) => {
     // Get user profile for KYC details
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('*')
+      .select('name, phone, street1, street2, city, state, postal_code')
       .eq('user_id', user.id)
       .single();
+
+    // Validate required fields
+    if (!profile) {
+      throw new Error('Profile not found. Please complete your profile.');
+    }
+
+    if (!profile.street1 || !profile.city || !profile.state || !profile.postal_code) {
+      throw new Error('Complete address information is required. Please update your address in the KYC section.');
+    }
 
     // Use phone from profile, fallback to auth phone if available
     const userPhone = profile?.phone || user.phone || '';
@@ -119,11 +128,11 @@ serve(async (req) => {
         description: community.description || `${community.name} - Community Events`,
         addresses: {
           registered: {
-            street1: profile?.city || 'Address Line 1',
-            street2: '',
-            city: profile?.city || 'City',
-            state: 'State',
-            postal_code: '000000',
+            street1: profile.street1,
+            street2: profile.street2 || '',
+            city: profile.city,
+            state: profile.state,
+            postal_code: profile.postal_code,
             country: 'IN'
           }
         }
