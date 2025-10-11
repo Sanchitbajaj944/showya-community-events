@@ -114,11 +114,14 @@ serve(async (req) => {
     const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
     const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
+    // Truncate community ID to meet Razorpay's 20 character limit for reference_id
+    const shortReferenceId = communityId.substring(0, 20);
+
     const accountPayload = {
       email: user.email,
       phone: userPhone,
       type: 'route',
-      reference_id: communityId,
+      reference_id: shortReferenceId,
       legal_business_name: community.name,
       business_type: 'individual',
       contact_name: profile?.name || user.user_metadata?.name || 'Community Owner',
