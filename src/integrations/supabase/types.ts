@@ -434,7 +434,14 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      is_community_member: {
+        Args: { _community_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_community_owner: {
+        Args: { _community_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       kyc_status:
