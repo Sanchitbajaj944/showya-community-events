@@ -69,17 +69,26 @@ serve(async (req) => {
           const accountData = await response.json();
           console.log('Fetched Razorpay account:', accountData);
 
-          // Update database with latest onboarding URL if available
-          if (accountData.onboarding_url && accountData.onboarding_url !== existingAccount.onboarding_url) {
+          // Construct onboarding URL if not provided by Razorpay
+          let onboardingUrl = accountData.onboarding_url;
+          if (!onboardingUrl) {
+            // Razorpay doesn't always return onboarding_url in API response
+            // Construct it manually: https://dashboard.razorpay.com/app/onboarding/{account_id}
+            onboardingUrl = `https://dashboard.razorpay.com/app/onboarding/${existingAccount.razorpay_account_id}`;
+            console.log('Constructed onboarding URL:', onboardingUrl);
+          }
+
+          // Update database with onboarding URL
+          if (onboardingUrl && onboardingUrl !== existingAccount.onboarding_url) {
             await supabaseClient
               .from('razorpay_accounts')
               .update({ 
-                onboarding_url: accountData.onboarding_url,
+                onboarding_url: onboardingUrl,
                 last_updated: new Date().toISOString()
               })
               .eq('id', existingAccount.id);
             
-            existingAccount.onboarding_url = accountData.onboarding_url;
+            existingAccount.onboarding_url = onboardingUrl;
           }
         }
       } catch (error) {
@@ -208,9 +217,12 @@ serve(async (req) => {
     const accountData = await response.json();
     console.log('Razorpay account created:', accountData);
 
-    // Extract onboarding URL from response (may not be available in test mode)
-    const onboardingUrl = accountData.onboarding_url || '';
+    // Construct onboarding URL (Razorpay doesn't always return it in API response)
+    const onboardingUrl = accountData.onboarding_url || 
+      `https://dashboard.razorpay.com/app/onboarding/${accountData.id}`;
     const isTestMode = razorpayKeyId?.startsWith('rzp_test_');
+    
+    console.log('Onboarding URL:', onboardingUrl);
 
     // Store Razorpay account in database
     const { error: insertError } = await supabaseClient
