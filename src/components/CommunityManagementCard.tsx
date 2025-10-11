@@ -106,7 +106,11 @@ export const CommunityManagementCard = ({ community, onCommunityCreated }: Commu
           )}
 
           <div className="pt-4 border-t border-border space-y-2">
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => window.location.href = `/community/${community.id}`}
+            >
               Manage Community
             </Button>
             <Button variant="ghost" className="w-full text-xs">

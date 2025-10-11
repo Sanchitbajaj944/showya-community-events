@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import Events from "./pages/Events";
 import Communities from "./pages/Communities";
+import CommunityDashboard from "./pages/CommunityDashboard";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route path="/events" element={<Events />} />
             <Route path="/communities" element={<Communities />} />
+            <Route path="/community/:communityId" element={<CommunityDashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/profile/edit" element={<EditProfile />} />

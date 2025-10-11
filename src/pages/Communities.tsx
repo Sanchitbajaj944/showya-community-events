@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function Communities() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [communities, setCommunities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -126,7 +127,11 @@ export default function Communities() {
                     {getKycStatusBadge(community.kyc_status)}
                   </div>
 
-                  <Button className="w-full mt-4" variant="outline">
+                  <Button 
+                    className="w-full mt-4" 
+                    variant="outline"
+                    onClick={() => navigate(`/community/${community.id}`)}
+                  >
                     View Community
                   </Button>
                 </div>
