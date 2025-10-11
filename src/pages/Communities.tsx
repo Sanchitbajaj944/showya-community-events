@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
-import { Users, Calendar, MapPin, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,38 +35,6 @@ export default function Communities() {
     fetchCommunities();
   }, [user]);
 
-  const getKycStatusBadge = (status: string) => {
-    switch (status) {
-      case 'APPROVED':
-        return (
-          <Badge variant="outline" className="border-green-500 text-green-500">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            KYC Approved
-          </Badge>
-        );
-      case 'IN_PROGRESS':
-        return (
-          <Badge variant="outline" className="border-yellow-500 text-yellow-500">
-            <Clock className="h-3 w-3 mr-1" />
-            KYC In Progress
-          </Badge>
-        );
-      case 'REJECTED':
-        return (
-          <Badge variant="outline" className="border-red-500 text-red-500">
-            <XCircle className="h-3 w-3 mr-1" />
-            KYC Rejected
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline">
-            <Clock className="h-3 w-3 mr-1" />
-            KYC Not Started
-          </Badge>
-        );
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-8">
@@ -123,11 +91,7 @@ export default function Communities() {
                     </p>
                   )}
 
-                  <div className="flex flex-wrap gap-2">
-                    {getKycStatusBadge(community.kyc_status)}
-                  </div>
-
-                  <Button 
+                  <Button
                     className="w-full mt-3 sm:mt-4" 
                     variant="outline"
                     onClick={() => navigate(`/community/${community.id}`)}
