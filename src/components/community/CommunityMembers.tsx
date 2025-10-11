@@ -64,45 +64,45 @@ export const CommunityMembers = ({ community, userRole }: CommunityMembersProps)
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
             <div>
-              <CardTitle>Members</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">{members.length} members</p>
+              <CardTitle className="text-lg sm:text-xl">Members</CardTitle>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">{members.length} members</p>
             </div>
             {userRole === 'owner' && (
               <InviteMembersDialog communityId={community.id} />
             )}
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
           <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 text-muted-foreground" />
             <Input 
               placeholder="Search members..." 
-              className="pl-9" 
+              className="pl-9 text-sm sm:text-base h-9 sm:h-10" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
           {filteredMembers.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>
+            <div className="text-center py-8 sm:py-12 text-muted-foreground">
+              <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
+              <p className="text-sm sm:text-base px-4">
                 {searchQuery ? "No members found" : "No members yet — invite a few artists to join!"}
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
               {filteredMembers.map((member) => (
-                <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted">
+                <div key={member.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg hover:bg-muted">
                   <UserAvatar
                     src={member.profile?.profile_picture_url}
                     name={member.profile?.display_name || member.profile?.name || "User"}
                     size="md"
                   />
-                  <div className="flex-1">
-                    <p className="font-medium">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm sm:text-base truncate">
                       {member.profile?.display_name || member.profile?.name || "User"}
                     </p>
                     {member.role === 'owner' && (
@@ -113,6 +113,7 @@ export const CommunityMembers = ({ community, userRole }: CommunityMembersProps)
                     <Button 
                       variant="ghost" 
                       size="sm"
+                      className="text-xs sm:text-sm h-8 px-2 sm:px-3"
                       onClick={() => handleRemoveMember(member.id, member.user_id)}
                     >
                       Remove

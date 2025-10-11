@@ -125,17 +125,17 @@ export default function CommunityPublicView() {
     <div className="min-h-screen bg-background pb-20 md:pb-8">
       <Header />
       
-      <div className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl space-y-4 sm:space-y-6">
         {/* Community Header */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6">
             {/* Banner placeholder */}
-            <div className="w-full h-48 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 mb-6" />
+            <div className="w-full h-32 sm:h-48 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 mb-4 sm:mb-6" />
             
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold mb-2">{community.name}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-2">{community.name}</h1>
                   {community.categories && community.categories.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">
                       {community.categories.map((cat: string) => (
@@ -164,18 +164,19 @@ export default function CommunityPublicView() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 border-t">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
                 <Button 
-                  className="flex-1" 
+                  className="flex-1 w-full" 
                   size="lg" 
                   onClick={handleJoin}
                   disabled={joining}
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
-                  {joining ? "Joining..." : "Join Community"}
+                  <span className="text-sm sm:text-base">{joining ? "Joining..." : "Join Community"}</span>
                 </Button>
-                <Button variant="outline" size="lg" onClick={handleShare}>
-                  <Share2 className="h-4 w-4" />
+                <Button variant="outline" size="lg" onClick={handleShare} className="w-full sm:w-auto">
+                  <Share2 className="h-4 w-4 sm:mr-0" />
+                  <span className="sm:hidden ml-2">Share</span>
                 </Button>
               </div>
             </div>
@@ -184,11 +185,11 @@ export default function CommunityPublicView() {
 
         {/* Upcoming Events Preview */}
         <Card>
-          <CardContent className="pt-6">
-            <h3 className="font-semibold text-lg mb-4">Upcoming Events</h3>
-            <div className="text-center py-12 text-muted-foreground">
-              <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p className="mb-4">Join this community to see upcoming events!</p>
+          <CardContent className="pt-4 sm:pt-6">
+            <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Upcoming Events</h3>
+            <div className="text-center py-8 sm:py-12 text-muted-foreground">
+              <Calendar className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
+              <p className="text-sm sm:text-base mb-3 sm:mb-4 px-4">Join this community to see upcoming events!</p>
             </div>
           </CardContent>
         </Card>

@@ -112,16 +112,18 @@ export default function CommunityDashboard() {
       <div className="min-h-screen bg-background pb-20 md:pb-8">
         <Header />
         
-        <div className="container mx-auto px-4 py-6 max-w-7xl">
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6 lg:w-auto">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="members">Members</TabsTrigger>
-              <TabsTrigger value="events">Events</TabsTrigger>
-              <TabsTrigger value="chat">Chat</TabsTrigger>
-              <TabsTrigger value="payouts">Payouts</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
+          <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
+            <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+              <TabsList className="inline-flex w-auto min-w-full sm:min-w-0">
+                <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+                <TabsTrigger value="members" className="text-xs sm:text-sm">Members</TabsTrigger>
+                <TabsTrigger value="events" className="text-xs sm:text-sm">Events</TabsTrigger>
+                <TabsTrigger value="chat" className="text-xs sm:text-sm">Chat</TabsTrigger>
+                <TabsTrigger value="payouts" className="text-xs sm:text-sm">Payouts</TabsTrigger>
+                <TabsTrigger value="settings" className="text-xs sm:text-sm">Settings</TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="overview">
               <CommunityOverview community={community} userRole={userRole} />

@@ -149,17 +149,17 @@ export default function CommunityMemberView() {
     <div className="min-h-screen bg-background pb-20 md:pb-8">
       <Header />
       
-      <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl space-y-4 sm:space-y-6">
         {/* Community Header */}
         <Card>
-          <CardContent className="pt-6">
-            <div className="w-full h-48 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 mb-6" />
+          <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6">
+            <div className="w-full h-32 sm:h-48 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 mb-4 sm:mb-6" />
             
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold mb-2">{community.name}</h1>
-                  <p className="text-sm text-muted-foreground mb-3">
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-2">{community.name}</h1>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
                     Hosted by @{ownerName}
                   </p>
                   {community.categories && community.categories.length > 0 && (
@@ -180,12 +180,12 @@ export default function CommunityMemberView() {
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline">
+                    <Button variant="outline" className="w-full sm:w-auto">
                       <LogOut className="h-4 w-4 mr-2" />
-                      Leave Community
+                      <span className="text-sm sm:text-base">Leave Community</span>
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -203,9 +203,9 @@ export default function CommunityMemberView() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-                <Button variant="outline" onClick={handleShare}>
+                <Button variant="outline" onClick={handleShare} className="w-full sm:w-auto">
                   <Share2 className="h-4 w-4 mr-2" />
-                  Share
+                  <span className="text-sm sm:text-base">Share</span>
                 </Button>
               </div>
             </div>
@@ -213,31 +213,33 @@ export default function CommunityMemberView() {
         </Card>
 
         {/* Tabs */}
-        <Tabs defaultValue="about" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="about">About</TabsTrigger>
-            <TabsTrigger value="events">Events</TabsTrigger>
-            <TabsTrigger value="members">Members</TabsTrigger>
-            <TabsTrigger value="chat">Chat</TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="about" className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0">
+              <TabsTrigger value="about" className="flex-1 sm:flex-none text-xs sm:text-sm">About</TabsTrigger>
+              <TabsTrigger value="events" className="flex-1 sm:flex-none text-xs sm:text-sm">Events</TabsTrigger>
+              <TabsTrigger value="members" className="flex-1 sm:flex-none text-xs sm:text-sm">Members</TabsTrigger>
+              <TabsTrigger value="chat" className="flex-1 sm:flex-none text-xs sm:text-sm">Chat</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="about">
             <Card>
-              <CardContent className="pt-6 space-y-4">
+              <CardContent className="pt-4 sm:pt-6 space-y-3 sm:space-y-4">
                 <div>
-                  <h3 className="font-semibold mb-2">Description</h3>
-                  <p className="text-muted-foreground">
+                  <h3 className="font-semibold text-sm sm:text-base mb-2">Description</h3>
+                  <p className="text-muted-foreground text-sm sm:text-base">
                     {community.description || "No description provided"}
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t">
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Members</p>
-                    <p className="text-2xl font-bold">{members.length}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Total Members</p>
+                    <p className="text-xl sm:text-2xl font-bold">{members.length}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">You Joined</p>
-                    <p className="text-2xl font-bold">{joinDate}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">You Joined</p>
+                    <p className="text-xl sm:text-2xl font-bold break-words">{joinDate}</p>
                   </div>
                 </div>
               </CardContent>
@@ -246,10 +248,10 @@ export default function CommunityMemberView() {
 
           <TabsContent value="events">
             <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-12 text-muted-foreground">
-                  <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No upcoming events. Stay tuned!</p>
+              <CardContent className="pt-4 sm:pt-6">
+                <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                  <Calendar className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
+                  <p className="text-sm sm:text-base">No upcoming events. Stay tuned!</p>
                 </div>
               </CardContent>
             </Card>
@@ -257,20 +259,20 @@ export default function CommunityMemberView() {
 
           <TabsContent value="members">
             <Card>
-              <CardHeader>
-                <CardTitle>{members.length} Members</CardTitle>
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="text-lg sm:text-xl">{members.length} Members</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {members.map((member) => (
-                    <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted">
+                    <div key={member.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg hover:bg-muted">
                       <UserAvatar
                         src={member.profile?.profile_picture_url}
                         name={member.profile?.display_name || member.profile?.name || "User"}
                         size="md"
                       />
-                      <div className="flex-1">
-                        <p className="font-medium">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm sm:text-base truncate">
                           {member.profile?.display_name || member.profile?.name || "User"}
                         </p>
                         {member.role === 'owner' && (
@@ -286,10 +288,10 @@ export default function CommunityMemberView() {
 
           <TabsContent value="chat">
             <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-12 text-muted-foreground">
-                  <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>Start a conversation!</p>
+              <CardContent className="pt-4 sm:pt-6">
+                <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                  <MessageCircle className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
+                  <p className="text-sm sm:text-base">Start a conversation!</p>
                 </div>
               </CardContent>
             </Card>

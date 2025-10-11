@@ -72,17 +72,17 @@ export default function Communities() {
     <div className="min-h-screen bg-background pb-20 md:pb-8">
       <Header />
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-6xl">
         {/* Page Header */}
-        <div className="mb-8 space-y-4">
-          <h1 className="text-3xl md:text-4xl font-bold">Creative Communities</h1>
-          <p className="text-muted-foreground text-lg">
+        <div className="mb-6 sm:mb-8 space-y-3 sm:space-y-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">Creative Communities</h1>
+          <p className="text-muted-foreground text-base sm:text-lg">
             Connect with passionate groups hosting amazing experiences across India
           </p>
         </div>
 
         {/* Communities Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {loading ? (
             <div className="col-span-full text-center py-12">
               <p className="text-muted-foreground">Loading communities...</p>
@@ -95,17 +95,17 @@ export default function Communities() {
             communities.map((community, index) => (
             <div
               key={index}
-              className="group rounded-xl border border-border bg-card p-6 hover:shadow-lg transition-all duration-300"
+              className="group rounded-xl border border-border bg-card p-4 sm:p-6 hover:shadow-lg transition-all duration-300"
             >
                 {/* Community Avatar */}
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4">
-                  <Users className="h-8 w-8 text-primary" />
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-3 sm:mb-4">
+                  <Users className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
                 </div>
 
                 {/* Community Info */}
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   <div>
-                    <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
+                    <h3 className="font-semibold text-base sm:text-lg mb-1 group-hover:text-primary transition-colors">
                       {community.name}
                     </h3>
                     <div className="flex flex-wrap gap-1 mb-2">
@@ -128,11 +128,11 @@ export default function Communities() {
                   </div>
 
                   <Button 
-                    className="w-full mt-4" 
+                    className="w-full mt-3 sm:mt-4" 
                     variant="outline"
                     onClick={() => navigate(`/community/${community.id}`)}
                   >
-                    View Community
+                    <span className="text-sm sm:text-base">View Community</span>
                   </Button>
                 </div>
               </div>
