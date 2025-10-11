@@ -130,7 +130,7 @@ export default function Communities() {
                   <Button 
                     className="w-full mt-4" 
                     variant="outline"
-                    onClick={() => navigate(`/community/${community.id}/public`)}
+                    onClick={() => navigate(`/community/${community.id}`)}
                   >
                     View Community
                   </Button>
