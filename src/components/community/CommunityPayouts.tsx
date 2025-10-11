@@ -68,18 +68,15 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
       if (error) throw error;
 
-      if (data.onboarding_url) {
-        toast.success("Redirecting to KYC onboarding...");
-        window.open(data.onboarding_url, '_blank');
-        
-        // Refresh after a short delay
-        setTimeout(() => {
-          onRefresh();
-        }, 2000);
-      } else if (data.kyc_status === 'APPROVED') {
+      if (data.kyc_status === 'APPROVED') {
         toast.success("KYC already approved!");
-        onRefresh();
+      } else if (data.kyc_status === 'IN_PROGRESS') {
+        toast.success(data.message || "KYC verification initiated!");
+      } else {
+        toast.success("KYC process started successfully!");
       }
+      
+      onRefresh();
     } catch (error: any) {
       console.error("Error starting KYC:", error);
       toast.error(error.message || "Failed to start KYC process");

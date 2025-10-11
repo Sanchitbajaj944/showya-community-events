@@ -47,33 +47,17 @@ serve(async (req) => {
       .single();
 
     if (existingAccount) {
-      // Account exists, return the onboarding URL if still in progress
+      // Account exists, check status
       if (existingAccount.kyc_status === 'IN_PROGRESS') {
-        const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
-        const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
-        const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
-
-        const response = await fetch(
-          `https://api.razorpay.com/v2/accounts/${existingAccount.razorpay_account_id}`,
-          {
-            headers: {
-              'Authorization': `Basic ${auth}`,
-            }
-          }
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            razorpay_account_id: existingAccount.razorpay_account_id,
+            kyc_status: 'IN_PROGRESS',
+            message: 'KYC verification is in progress. Please check back later or use the refresh button.'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
-
-        if (response.ok) {
-          const accountData = await response.json();
-          return new Response(
-            JSON.stringify({ 
-              success: true,
-              onboarding_url: `https://dashboard.razorpay.com/route/linked-account/${existingAccount.razorpay_account_id}`,
-              razorpay_account_id: existingAccount.razorpay_account_id,
-              status: accountData.status
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
       } else if (existingAccount.kyc_status === 'APPROVED') {
         return new Response(
           JSON.stringify({ 
@@ -187,13 +171,13 @@ serve(async (req) => {
       .update({ kyc_status: 'IN_PROGRESS' })
       .eq('id', communityId);
 
-    // Return onboarding URL
+    // Return success without redirect
     return new Response(
       JSON.stringify({ 
         success: true,
-        onboarding_url: `https://dashboard.razorpay.com/route/linked-account/${accountData.id}`,
         razorpay_account_id: accountData.id,
-        message: 'KYC process started. Please complete the onboarding.'
+        kyc_status: 'IN_PROGRESS',
+        message: 'KYC verification initiated. We will verify your details and update the status within 1-2 business days.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
