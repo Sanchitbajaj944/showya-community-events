@@ -262,6 +262,7 @@ export type Database = {
           display_name: string | null
           id: string
           name: string
+          phone: string | null
           profile_picture_url: string | null
           skills: string[] | null
           updated_at: string | null
@@ -274,6 +275,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           name: string
+          phone?: string | null
           profile_picture_url?: string | null
           skills?: string[] | null
           updated_at?: string | null
@@ -286,6 +288,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           name?: string
+          phone?: string | null
           profile_picture_url?: string | null
           skills?: string[] | null
           updated_at?: string | null

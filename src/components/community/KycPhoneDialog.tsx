@@ -35,12 +35,17 @@ export const KycPhoneDialog = ({ open, onOpenChange, onPhoneSubmit, loading }: K
 
     setSaving(true);
     try {
-      // Update user phone in auth
-      const { error: authError } = await supabase.auth.updateUser({
-        phone: formattedPhone
-      });
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
-      if (authError) throw authError;
+      // Update phone in profile table
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ phone: formattedPhone })
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
 
       toast.success("Phone number saved!");
       onPhoneSubmit(formattedPhone);

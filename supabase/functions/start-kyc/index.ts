@@ -93,6 +93,13 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single();
 
+    // Use phone from profile, fallback to auth phone if available
+    const userPhone = profile?.phone || user.phone || '';
+    
+    if (!userPhone) {
+      throw new Error('Phone number is required for KYC. Please add your phone number in the profile.');
+    }
+
     // Create new Razorpay linked account
     const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
     const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
@@ -100,7 +107,7 @@ serve(async (req) => {
 
     const accountPayload = {
       email: user.email,
-      phone: user.phone || '',
+      phone: userPhone,
       type: 'route',
       reference_id: communityId,
       legal_business_name: community.name,

@@ -27,14 +27,19 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         return;
       }
 
-      // Check if user has a phone number
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.phone || user.phone.trim() === '') {
+      // Check if user has a phone number in profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("phone")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (!profile?.phone || profile.phone.trim() === '') {
         setPhoneDialogOpen(true);
         return;
       }
 
-      setUserPhone(user.phone);
+      setUserPhone(profile.phone);
       await initiateKyc();
     } catch (error: any) {
       console.error("Error starting KYC:", error);
