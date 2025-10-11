@@ -102,15 +102,11 @@ serve(async (req) => {
     // Truncate community ID to meet Razorpay's 20 character limit for reference_id
     const shortReferenceId = communityId.substring(0, 20);
 
-    // Generate unique code for Razorpay account
-    const uniqueCode = `${communityId.substring(0, 10)}_${Date.now()}`.substring(0, 30);
-
     const accountPayload = {
       email: user.email,
       phone: userPhone,
       type: 'route',
       reference_id: shortReferenceId,
-      code: uniqueCode,
       legal_business_name: community.name,
       business_type: 'individual',
       contact_name: profile?.name || user.user_metadata?.name || 'Community Owner',
