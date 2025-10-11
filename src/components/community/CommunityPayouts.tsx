@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Clock, XCircle, AlertCircle, RefreshCw, DollarSign } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface CommunityPayoutsProps {
   community: any;
@@ -11,6 +13,67 @@ interface CommunityPayoutsProps {
 }
 
 export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps) => {
+  const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(false);
+
+  const handleStartKyc = async () => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Please sign in to continue");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('start-kyc', {
+        body: { communityId: community.id }
+      });
+
+      if (error) throw error;
+
+      if (data.onboarding_url) {
+        toast.success("Redirecting to KYC onboarding...");
+        window.open(data.onboarding_url, '_blank');
+        
+        // Refresh after a short delay
+        setTimeout(() => {
+          onRefresh();
+        }, 2000);
+      } else if (data.kyc_status === 'APPROVED') {
+        toast.success("KYC already approved!");
+        onRefresh();
+      }
+    } catch (error: any) {
+      console.error("Error starting KYC:", error);
+      toast.error(error.message || "Failed to start KYC process");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckStatus = async () => {
+    setChecking(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Please sign in to continue");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('check-kyc-status');
+
+      if (error) throw error;
+
+      toast.success("Status updated!");
+      onRefresh();
+    } catch (error: any) {
+      console.error("Error checking KYC status:", error);
+      toast.error(error.message || "Failed to check KYC status");
+    } finally {
+      setChecking(false);
+    }
+  };
+
   const getKycCard = (status: string) => {
     switch (status) {
       case 'APPROVED':
@@ -31,8 +94,14 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
             <AlertDescription className="text-yellow-700 dark:text-yellow-300">
               <strong>KYC In Progress</strong>
               <p className="mt-1">We're verifying your details. This usually takes 1-2 business days.</p>
-              <Button variant="outline" size="sm" className="mt-2">
-                Resume KYC
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={handleStartKyc}
+                disabled={loading}
+              >
+                {loading ? "Loading..." : "Resume KYC"}
               </Button>
             </AlertDescription>
           </Alert>
@@ -45,8 +114,14 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
             <AlertDescription className="text-red-700 dark:text-red-300">
               <strong>KYC Needs Action</strong>
               <p className="mt-1">Additional information required. Please retry KYC verification.</p>
-              <Button variant="outline" size="sm" className="mt-2">
-                Retry KYC
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={handleStartKyc}
+                disabled={loading}
+              >
+                {loading ? "Loading..." : "Retry KYC"}
               </Button>
             </AlertDescription>
           </Alert>
@@ -59,8 +134,13 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
             <AlertDescription className="text-orange-700 dark:text-orange-300">
               <strong>Complete KYC to Receive Ticket Sales</strong>
               <p className="mt-1">Verify your identity to start accepting payments for paid events.</p>
-              <Button size="sm" className="mt-2">
-                Start KYC
+              <Button 
+                size="sm" 
+                className="mt-2"
+                onClick={handleStartKyc}
+                disabled={loading}
+              >
+                {loading ? "Starting..." : "Start KYC"}
               </Button>
             </AlertDescription>
           </Alert>
@@ -78,9 +158,14 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         <CardContent className="space-y-4">
           {getKycCard(community.kyc_status)}
           
-          <Button variant="outline" className="w-full" onClick={onRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh Status
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={handleCheckStatus}
+            disabled={checking}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
+            {checking ? "Checking..." : "Refresh Status"}
           </Button>
         </CardContent>
       </Card>
