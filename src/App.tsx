@@ -16,6 +16,8 @@ import EditProfile from "./pages/EditProfile";
 import Events from "./pages/Events";
 import Communities from "./pages/Communities";
 import CommunityDashboard from "./pages/CommunityDashboard";
+import CommunityMemberView from "./pages/CommunityMemberView";
+import CommunityPublicView from "./pages/CommunityPublicView";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +37,8 @@ const App = () => (
             <Route path="/events" element={<Events />} />
             <Route path="/communities" element={<Communities />} />
             <Route path="/community/:communityId" element={<CommunityDashboard />} />
+            <Route path="/community/:communityId/member" element={<CommunityMemberView />} />
+            <Route path="/community/:communityId/public" element={<CommunityPublicView />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/profile/edit" element={<EditProfile />} />

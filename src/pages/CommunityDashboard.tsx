@@ -45,11 +45,20 @@ export default function CommunityDashboard() {
       if (communityError) throw communityError;
       setCommunity(communityData);
 
+      // Check if user is a member
+      const { data: memberData } = await supabase
+        .from("community_members")
+        .select("role")
+        .eq("community_id", communityId)
+        .eq("user_id", user.id)
+        .single();
+
       // Determine user role
       if (communityData.owner_id === user.id) {
         setUserRole('owner');
+      } else if (memberData) {
+        setUserRole('member');
       } else {
-        // TODO: Check if user is a member
         setUserRole('public');
       }
     } catch (error: any) {
@@ -80,6 +89,17 @@ export default function CommunityDashboard() {
         </div>
       </div>
     );
+  }
+
+  // Redirect to appropriate view based on role
+  if (userRole === 'public') {
+    window.location.href = `/community/${communityId}/public`;
+    return null;
+  }
+
+  if (userRole === 'member') {
+    window.location.href = `/community/${communityId}/member`;
+    return null;
   }
 
   // Owner view
@@ -131,13 +151,5 @@ export default function CommunityDashboard() {
   }
 
   // Member/Public view will be implemented later
-  return (
-    <div className="min-h-screen bg-background pb-20 md:pb-8">
-      <Header />
-      <div className="container mx-auto px-4 py-6">
-        <p>Member/Public view coming soon...</p>
-      </div>
-      <BottomNav />
-    </div>
-  );
+  return null;
 }

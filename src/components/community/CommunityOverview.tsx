@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, Calendar, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CommunityOverviewProps {
   community: any;
@@ -12,6 +13,25 @@ interface CommunityOverviewProps {
 
 export const CommunityOverview = ({ community, userRole }: CommunityOverviewProps) => {
   const navigate = useNavigate();
+  const [memberCount, setMemberCount] = React.useState(0);
+  const [eventCount, setEventCount] = React.useState(0);
+
+  React.useEffect(() => {
+    fetchStats();
+  }, [community.id]);
+
+  const fetchStats = async () => {
+    // Get member count
+    const { count: members } = await supabase
+      .from("community_members")
+      .select("*", { count: 'exact', head: true })
+      .eq("community_id", community.id);
+
+    setMemberCount(members || 0);
+
+    // Get event count (TODO: when events table is ready)
+    setEventCount(0);
+  };
 
   const getKycBadge = (status: string) => {
     switch (status) {
@@ -80,12 +100,12 @@ export const CommunityOverview = ({ community, userRole }: CommunityOverviewProp
             <div className="grid grid-cols-2 gap-4 pt-4 border-t">
               <div className="text-center p-4 rounded-lg bg-muted">
                 <Users className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p className="text-2xl font-bold">0</p>
+                <p className="text-2xl font-bold">{memberCount}</p>
                 <p className="text-sm text-muted-foreground">Members</p>
               </div>
               <div className="text-center p-4 rounded-lg bg-muted">
                 <Calendar className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p className="text-2xl font-bold">0</p>
+                <p className="text-2xl font-bold">{eventCount}</p>
                 <p className="text-sm text-muted-foreground">Events Hosted</p>
               </div>
             </div>
