@@ -29,6 +29,17 @@ export default function CommunityDashboard() {
     fetchCommunityData();
   }, [communityId, user]);
 
+  // Redirect based on user role
+  useEffect(() => {
+    if (loading || !community) return;
+    
+    if (userRole === 'public') {
+      navigate(`/community/${communityId}/public`, { replace: true });
+    } else if (userRole === 'member') {
+      navigate(`/community/${communityId}/member`, { replace: true });
+    }
+  }, [userRole, loading, community, communityId, navigate]);
+
   const fetchCommunityData = async () => {
     if (!communityId || !user) return;
 
@@ -90,15 +101,6 @@ export default function CommunityDashboard() {
       </div>
     );
   }
-
-  // Redirect to appropriate view based on role
-  useEffect(() => {
-    if (userRole === 'public') {
-      navigate(`/community/${communityId}/public`, { replace: true });
-    } else if (userRole === 'member') {
-      navigate(`/community/${communityId}/member`, { replace: true });
-    }
-  }, [userRole, communityId, navigate]);
 
   if (userRole === 'public' || userRole === 'member') {
     return null;
