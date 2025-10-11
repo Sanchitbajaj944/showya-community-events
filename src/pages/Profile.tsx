@@ -75,12 +75,26 @@ export default function Profile() {
     try {
       setLoading(true);
 
-      // Fetch profile
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", targetUserId)
-        .single();
+      // Fetch profile - use full profiles table for own profile, public view for others
+      let profileData, profileError;
+      
+      if (isOwnProfile) {
+        const result = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", targetUserId)
+          .single();
+        profileData = result.data;
+        profileError = result.error;
+      } else {
+        const result = await supabase
+          .from("profiles_public")
+          .select("*")
+          .eq("user_id", targetUserId)
+          .single();
+        profileData = result.data;
+        profileError = result.error;
+      }
 
       if (profileError) throw profileError;
       setProfile(profileData);

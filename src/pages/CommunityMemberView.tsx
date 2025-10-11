@@ -47,21 +47,21 @@ export default function CommunityMemberView() {
       if (communityError) throw communityError;
       setCommunity(communityData);
 
-      // Fetch owner profile
+      // Fetch owner profile (use public view for other users)
       const { data: ownerData } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("display_name, name, profile_picture_url")
         .eq("user_id", communityData.owner_id)
         .single();
 
       setOwnerProfile(ownerData);
 
-      // Fetch members
+      // Fetch members (use public view for member profiles)
       const { data: membersData } = await supabase
         .from("community_members")
         .select(`
           *,
-          profile:profiles!community_members_user_id_fkey(
+          profile:profiles_public!community_members_user_id_fkey(
             display_name,
             name,
             profile_picture_url
