@@ -128,10 +128,12 @@ export default function Communities() {
                     <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
                       {community.name}
                     </h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {community.category}
-                      </Badge>
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {community.categories?.map((cat: string) => (
+                        <Badge key={cat} variant="secondary" className="text-xs">
+                          {cat}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
 

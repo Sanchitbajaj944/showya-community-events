@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -19,7 +18,7 @@ export const CreateCommunityDialog = ({ children, onSuccess }: CreateCommunityDi
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    category: "",
+    categories: [] as string[],
     description: "",
   });
   const { toast } = useToast();
@@ -40,10 +39,10 @@ export const CreateCommunityDialog = ({ children, onSuccess }: CreateCommunityDi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.category) {
+    if (!formData.name || formData.categories.length === 0) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields and select at least one category",
         variant: "destructive",
       });
       return;
@@ -61,7 +60,7 @@ export const CreateCommunityDialog = ({ children, onSuccess }: CreateCommunityDi
       const { data, error } = await supabase.functions.invoke('create-community', {
         body: {
           name: formData.name,
-          category: formData.category,
+          categories: formData.categories,
           description: formData.description,
         },
       });
@@ -73,7 +72,7 @@ export const CreateCommunityDialog = ({ children, onSuccess }: CreateCommunityDi
         description: data.message || "Your community has been created successfully. KYC process initiated.",
       });
 
-      setFormData({ name: "", category: "", description: "" });
+      setFormData({ name: "", categories: [], description: "" });
       setOpen(false);
       onSuccess?.();
     } catch (error: any) {
@@ -114,23 +113,40 @@ export const CreateCommunityDialog = ({ children, onSuccess }: CreateCommunityDi
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="category">Category *</Label>
-            <Select
-              value={formData.category}
-              onValueChange={(value) => setFormData({ ...formData, category: value })}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Categories * (Select at least one)</Label>
+            <div className="grid grid-cols-2 gap-2 p-4 border rounded-lg bg-muted/20">
+              {categories.map((cat) => (
+                <label
+                  key={cat}
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-accent/10 p-2 rounded"
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.categories.includes(cat)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFormData({
+                          ...formData,
+                          categories: [...formData.categories, cat],
+                        });
+                      } else {
+                        setFormData({
+                          ...formData,
+                          categories: formData.categories.filter((c) => c !== cat),
+                        });
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-border"
+                  />
+                  <span className="text-sm">{cat}</span>
+                </label>
+              ))}
+            </div>
+            {formData.categories.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Selected: {formData.categories.join(", ")}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

@@ -25,7 +25,7 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { name, category, description } = await req.json();
+    const { name, categories, description } = await req.json();
 
     // Check if user already has a community
     const { data: existingCommunity } = await supabaseClient
@@ -44,7 +44,7 @@ serve(async (req) => {
       .insert({
         owner_id: user.id,
         name,
-        category,
+        categories,
         description,
         kyc_status: 'NOT_STARTED'
       })
