@@ -6,6 +6,7 @@ import { CheckCircle, Clock, XCircle, AlertCircle, RefreshCw, DollarSign } from 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { KycPhoneDialog } from "./KycPhoneDialog";
 
 interface CommunityPayoutsProps {
   community: any;
@@ -15,9 +16,10 @@ interface CommunityPayoutsProps {
 export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps) => {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [phoneDialogOpen, setPhoneDialogOpen] = useState(false);
+  const [userPhone, setUserPhone] = useState<string>("");
 
   const handleStartKyc = async () => {
-    setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -25,6 +27,24 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         return;
       }
 
+      // Check if user has a phone number
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.phone || user.phone.trim() === '') {
+        setPhoneDialogOpen(true);
+        return;
+      }
+
+      setUserPhone(user.phone);
+      await initiateKyc();
+    } catch (error: any) {
+      console.error("Error starting KYC:", error);
+      toast.error(error.message || "Failed to start KYC process");
+    }
+  };
+
+  const initiateKyc = async () => {
+    setLoading(true);
+    try {
       const { data, error } = await supabase.functions.invoke('start-kyc', {
         body: { communityId: community.id }
       });
@@ -49,6 +69,11 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePhoneSubmit = async (phone: string) => {
+    setUserPhone(phone);
+    await initiateKyc();
   };
 
   const handleCheckStatus = async () => {
@@ -150,6 +175,13 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
   return (
     <div className="space-y-6">
+      <KycPhoneDialog
+        open={phoneDialogOpen}
+        onOpenChange={setPhoneDialogOpen}
+        onPhoneSubmit={handlePhoneSubmit}
+        loading={loading}
+      />
+      
       {/* KYC Status */}
       <Card>
         <CardHeader>
