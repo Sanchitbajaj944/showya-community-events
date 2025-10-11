@@ -123,8 +123,8 @@ serve(async (req) => {
       business_type: 'individual',
       contact_name: profile?.name || user.user_metadata?.name || 'Community Owner',
       profile: {
-        category: 'entertainment',
-        subcategory: 'live_events',
+        category: 'others',
+        subcategory: 'others',
         description: community.description || `${community.name} - Community Events`,
         addresses: {
           registered: {
