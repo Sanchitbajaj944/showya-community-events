@@ -23,19 +23,31 @@ export const CommunityMembers = ({ community, userRole }: CommunityMembersProps)
   }, [community.id]);
 
   const fetchMembers = async () => {
-    const { data } = await supabase
+    // Fetch community members
+    const { data: membersData } = await supabase
       .from("community_members")
-      .select(`
-        *,
-        profile:profiles_public!community_members_user_id_fkey(
-          display_name,
-          name,
-          profile_picture_url
-        )
-      `)
+      .select("*")
       .eq("community_id", community.id);
 
-    setMembers(data || []);
+    if (!membersData) {
+      setMembers([]);
+      return;
+    }
+
+    // Fetch profiles for all member user_ids
+    const userIds = membersData.map(m => m.user_id);
+    const { data: profilesData } = await supabase
+      .from("profiles_public")
+      .select("user_id, display_name, name, profile_picture_url")
+      .in("user_id", userIds);
+
+    // Merge members with their profiles
+    const membersWithProfiles = membersData.map(member => ({
+      ...member,
+      profile: profilesData?.find(p => p.user_id === member.user_id) || null
+    }));
+
+    setMembers(membersWithProfiles);
   };
 
   const handleRemoveMember = async (memberId: string, userId: string) => {
