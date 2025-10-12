@@ -35,7 +35,7 @@ export const CommunityOverview = ({ community, userRole }: CommunityOverviewProp
 
   const getKycBadge = (status: string) => {
     switch (status) {
-      case 'APPROVED':
+      case 'ACTIVATED':
         return (
           <Badge variant="outline" className="border-green-500 text-green-500">
             <CheckCircle className="h-4 w-4 mr-1" />
@@ -66,7 +66,7 @@ export const CommunityOverview = ({ community, userRole }: CommunityOverviewProp
     }
   };
 
-  const canCreatePaidEvents = community.kyc_status === 'APPROVED';
+  const canCreatePaidEvents = community.kyc_status === 'ACTIVATED';
 
   return (
     <div className="space-y-6">
@@ -122,8 +122,7 @@ export const CommunityOverview = ({ community, userRole }: CommunityOverviewProp
           <Button 
             className="w-full" 
             size="lg"
-            disabled={!canCreatePaidEvents}
-            title={!canCreatePaidEvents ? "Complete KYC verification to enable paid events" : ""}
+            onClick={() => navigate(`/community/${community.id}/create-event`)}
           >
             <Calendar className="h-4 w-4 mr-2" />
             Create Event

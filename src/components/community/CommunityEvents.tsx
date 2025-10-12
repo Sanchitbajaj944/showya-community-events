@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,7 +11,8 @@ interface CommunityEventsProps {
 }
 
 export const CommunityEvents = ({ community, userRole }: CommunityEventsProps) => {
-  const canCreatePaidEvents = community.kyc_status === 'APPROVED';
+  const navigate = useNavigate();
+  const canCreatePaidEvents = community.kyc_status === 'ACTIVATED';
 
   return (
     <div className="space-y-6">
@@ -19,7 +21,7 @@ export const CommunityEvents = ({ community, userRole }: CommunityEventsProps) =
           <div className="flex items-center justify-between">
             <CardTitle>Events</CardTitle>
             {userRole === 'owner' && (
-              <Button disabled={!canCreatePaidEvents}>
+              <Button onClick={() => navigate(`/community/${community.id}/create-event`)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Event
               </Button>
