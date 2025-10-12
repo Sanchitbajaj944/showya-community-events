@@ -27,7 +27,7 @@ export const CommunityMembers = ({ community, userRole }: CommunityMembersProps)
       .from("community_members")
       .select(`
         *,
-        profile:profiles!community_members_user_id_fkey(
+        profile:profiles_public!community_members_user_id_fkey(
           display_name,
           name,
           profile_picture_url
