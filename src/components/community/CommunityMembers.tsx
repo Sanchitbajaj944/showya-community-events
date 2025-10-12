@@ -31,30 +31,18 @@ export const CommunityMembers = ({ community, userRole }: CommunityMembersProps)
       .select("*")
       .eq("community_id", community.id);
 
-    console.log("Members data:", membersData, "Error:", membersError);
-
     if (!membersData || membersData.length === 0) {
       setMembers([]);
       return;
     }
 
-    // Try fetching ALL profiles first to debug
-    const { data: allProfiles, error: allProfilesError } = await supabase
-      .from("profiles_public")
-      .select("*");
-    
-    console.log("ALL profiles:", allProfiles, "Error:", allProfilesError);
-
-    // Fetch profiles for member user_ids
+    // Fetch profiles for member user_ids using profiles table (now has RLS)
     const userIds = membersData.map(m => m.user_id);
-    console.log("User IDs to fetch:", userIds);
     
     const { data: profilesData, error: profilesError } = await supabase
-      .from("profiles_public")
+      .from("profiles")
       .select("user_id, display_name, name, profile_picture_url")
       .in("user_id", userIds);
-
-    console.log("Filtered profiles data:", profilesData, "Error:", profilesError);
 
     // Merge members with their profiles
     const membersWithProfiles = membersData.map(member => ({
@@ -62,7 +50,6 @@ export const CommunityMembers = ({ community, userRole }: CommunityMembersProps)
       profile: profilesData?.find(p => p.user_id === member.user_id) || null
     }));
 
-    console.log("Members with profiles:", membersWithProfiles);
     setMembers(membersWithProfiles);
   };
 
