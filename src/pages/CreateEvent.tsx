@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Calendar, MapPin, IndianRupee } from "lucide-react";
@@ -23,7 +24,7 @@ export default function CreateEvent() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: "",
+    categories: [] as string[],
     location: "",
     city: "",
     event_date: "",
@@ -65,7 +66,7 @@ export default function CreateEvent() {
       const { error } = await supabase.from("events").insert({
         title: formData.title,
         description: formData.description,
-        category: formData.category,
+        category: formData.categories.join(", "),
         location: formData.location,
         city: formData.city,
         event_date: formData.event_date,
@@ -142,23 +143,27 @@ export default function CreateEvent() {
                 />
               </div>
 
-              {/* Category */}
+              {/* Categories */}
               <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
-                <Select value={formData.category} onValueChange={(val) => handleChange("category", val)} required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Music">Music</SelectItem>
-                    <SelectItem value="Comedy">Comedy</SelectItem>
-                    <SelectItem value="Poetry">Poetry</SelectItem>
-                    <SelectItem value="Art">Art</SelectItem>
-                    <SelectItem value="Dance">Dance</SelectItem>
-                    <SelectItem value="Theater">Theater</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Categories *</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {["Music", "Comedy", "Poetry", "Art", "Dance", "Theater", "Other"].map((cat) => (
+                    <div key={cat} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={cat}
+                        checked={formData.categories.includes(cat)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData(prev => ({ ...prev, categories: [...prev.categories, cat] }));
+                          } else {
+                            setFormData(prev => ({ ...prev, categories: prev.categories.filter(c => c !== cat) }));
+                          }
+                        }}
+                      />
+                      <Label htmlFor={cat} className="font-normal cursor-pointer">{cat}</Label>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Date & Time */}
