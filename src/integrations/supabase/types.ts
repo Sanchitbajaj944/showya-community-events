@@ -212,6 +212,9 @@ export type Database = {
       }
       events: {
         Row: {
+          audience_enabled: boolean | null
+          audience_slots: number | null
+          audience_ticket_price: number | null
           category: string | null
           city: string | null
           community_id: string | null
@@ -219,15 +222,23 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           description: string | null
+          duration: number | null
           event_date: string
           id: string
           location: string | null
+          meeting_url: string | null
+          performer_slots: number
+          performer_ticket_price: number
+          poster_url: string | null
           price: number | null
           ticket_type: string | null
           title: string
           updated_at: string | null
         }
         Insert: {
+          audience_enabled?: boolean | null
+          audience_slots?: number | null
+          audience_ticket_price?: number | null
           category?: string | null
           city?: string | null
           community_id?: string | null
@@ -235,15 +246,23 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          duration?: number | null
           event_date: string
           id?: string
           location?: string | null
+          meeting_url?: string | null
+          performer_slots?: number
+          performer_ticket_price?: number
+          poster_url?: string | null
           price?: number | null
           ticket_type?: string | null
           title: string
           updated_at?: string | null
         }
         Update: {
+          audience_enabled?: boolean | null
+          audience_slots?: number | null
+          audience_ticket_price?: number | null
           category?: string | null
           city?: string | null
           community_id?: string | null
@@ -251,9 +270,14 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          duration?: number | null
           event_date?: string
           id?: string
           location?: string | null
+          meeting_url?: string | null
+          performer_slots?: number
+          performer_ticket_price?: number
+          poster_url?: string | null
           price?: number | null
           ticket_type?: string | null
           title?: string
@@ -314,6 +338,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      promocodes: {
+        Row: {
+          applies_to: string
+          code: string
+          created_at: string | null
+          discount_type: string
+          discount_value: number
+          event_id: string
+          id: string
+          usage_count: number | null
+          usage_limit: number | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          applies_to: string
+          code: string
+          created_at?: string | null
+          discount_type: string
+          discount_value: number
+          event_id: string
+          id?: string
+          usage_count?: number | null
+          usage_limit?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          applies_to?: string
+          code?: string
+          created_at?: string | null
+          discount_type?: string
+          discount_value?: number
+          event_id?: string
+          id?: string
+          usage_count?: number | null
+          usage_limit?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promocodes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       razorpay_accounts: {
         Row: {
