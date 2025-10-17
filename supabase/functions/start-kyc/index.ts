@@ -164,6 +164,18 @@ serve(async (req) => {
     // Truncate community ID to meet Razorpay's 20 character limit for reference_id
     const shortReferenceId = communityId.substring(0, 20);
 
+    // Sanitize description for Razorpay (only alphanumeric, spaces, hyphens allowed)
+    const sanitizeDescription = (desc: string) => {
+      return desc
+        .replace(/[^a-zA-Z0-9\s\-]/g, '') // Remove special chars except space and hyphen
+        .replace(/\s+/g, ' ') // Normalize multiple spaces
+        .trim()
+        .substring(0, 200); // Limit length
+    };
+
+    const rawDescription = community.description || `${community.name} Community Events`;
+    const sanitizedDescription = sanitizeDescription(rawDescription) || 'Community events and activities';
+
     const accountPayload = {
       email: user.email,
       phone: userPhone,
@@ -175,7 +187,7 @@ serve(async (req) => {
       profile: {
         category: 'others',
         subcategory: 'others',
-        description: community.description || `${community.name} - Community Events`,
+        description: sanitizedDescription,
         addresses: {
           registered: {
             street1: profile.street1,
