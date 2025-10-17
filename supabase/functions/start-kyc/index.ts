@@ -73,8 +73,8 @@ serve(async (req) => {
           let onboardingUrl = accountData.onboarding_url;
           if (!onboardingUrl) {
             // Razorpay doesn't always return onboarding_url in API response
-            // Construct it manually: https://dashboard.razorpay.com/app/onboarding/{account_id}
-            onboardingUrl = `https://dashboard.razorpay.com/app/onboarding/${existingAccount.razorpay_account_id}`;
+            // Construct it manually for Route accounts
+            onboardingUrl = `https://dashboard.razorpay.com/app/route-accounts/${existingAccount.razorpay_account_id}/onboarding`;
             console.log('Constructed onboarding URL:', onboardingUrl);
           }
 
@@ -225,9 +225,16 @@ serve(async (req) => {
     const accountData = await response.json();
     console.log('Razorpay account created:', accountData);
 
-    // Get onboarding URL from Razorpay response
-    const onboardingUrl = accountData.onboarding_url || '';
-    console.log('Onboarding URL from Razorpay:', onboardingUrl);
+    // Get or construct onboarding URL
+    let onboardingUrl = accountData.onboarding_url;
+    if (!onboardingUrl) {
+      // Razorpay doesn't always return onboarding_url in the response
+      // Construct it manually for Route accounts
+      onboardingUrl = `https://dashboard.razorpay.com/app/route-accounts/${accountData.id}/onboarding`;
+      console.log('Constructed onboarding URL:', onboardingUrl);
+    } else {
+      console.log('Onboarding URL from Razorpay:', onboardingUrl);
+    }
 
     // Store Razorpay account in database
     const { error: insertError } = await supabaseClient
