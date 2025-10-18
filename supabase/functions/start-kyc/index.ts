@@ -289,6 +289,11 @@ serve(async (req) => {
         throw new Error('Razorpay authentication failed. Please verify your API credentials are correct and have the Route (Connected Accounts) feature enabled.');
       }
       
+      // Check for "Access Denied" error which typically indicates test account limits
+      if (errorData.includes('Access Denied')) {
+        throw new Error('Razorpay test account limit reached. You have likely hit the maximum number of test accounts (typically 5-10). Please either: 1) Delete old test accounts from your Razorpay dashboard, or 2) Switch to live mode with production API keys. Contact support@razorpay.com if you need to increase test limits.');
+      }
+      
       throw new Error(`Failed to create Razorpay account: ${errorData}`);
     }
 
