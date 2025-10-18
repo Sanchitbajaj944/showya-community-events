@@ -217,8 +217,7 @@ serve(async (req) => {
       },
       percentage_ownership: 100,
       kyc: {
-        pan: profile.pan,
-        dob: profile.dob
+        pan: profile.pan
       },
       addresses: {
         residential: {
