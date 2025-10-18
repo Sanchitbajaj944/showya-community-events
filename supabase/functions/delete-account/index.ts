@@ -27,8 +27,35 @@ serve(async (req) => {
 
     console.log('Deleting account for user:', user.id);
 
-    // Delete the user from auth.users
-    // This will cascade delete the profile and all related data
+    // Step 1: Get all communities owned by the user
+    const { data: communities, error: communitiesError } = await supabaseClient
+      .from('communities')
+      .select('id')
+      .eq('owner_id', user.id);
+
+    if (communitiesError) {
+      console.error('Error fetching communities:', communitiesError);
+      throw communitiesError;
+    }
+
+    // Step 2: Delete razorpay accounts for these communities
+    if (communities && communities.length > 0) {
+      const communityIds = communities.map(c => c.id);
+      
+      const { error: razorpayError } = await supabaseClient
+        .from('razorpay_accounts')
+        .delete()
+        .in('community_id', communityIds);
+
+      if (razorpayError) {
+        console.error('Error deleting razorpay accounts:', razorpayError);
+        throw razorpayError;
+      }
+      
+      console.log(`Deleted razorpay accounts for ${communityIds.length} communities`);
+    }
+
+    // Step 3: Delete the user from auth.users (will cascade delete profile and communities)
     const { error: deleteError } = await supabaseClient.auth.admin.deleteUser(
       user.id
     );
