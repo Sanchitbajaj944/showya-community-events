@@ -283,33 +283,69 @@ serve(async (req) => {
           throw new Error('Razorpay authentication failed. Please verify your API credentials are correct and have the Route (Connected Accounts) feature enabled.');
         }
         
-        if (errorData.includes('email already exists')) {
-          throw new Error('This email is already associated with a Razorpay account. Please contact support for assistance.');
+        // Handle email already exists - extract account ID and use it
+        if (errorData.includes('email already exists') || errorData.includes('Merchant email already exists')) {
+          console.log('Email already has a Razorpay account. Extracting account ID...');
+          
+          // Try to extract account ID from error message like "account - PHynOiaNmveGmy"
+          const accountIdMatch = errorData.match(/account\s*-\s*([A-Za-z0-9]+)/);
+          
+          if (accountIdMatch && accountIdMatch[1]) {
+            const existingAccountId = accountIdMatch[1];
+            console.log('Found existing Razorpay account ID:', existingAccountId);
+            
+            // Save this account to our database so we can use it
+            const { error: saveError } = await supabaseClient
+              .from('razorpay_accounts')
+              .insert({
+                community_id: communityId,
+                razorpay_account_id: existingAccountId,
+                kyc_status: 'IN_PROGRESS',
+                business_type: 'individual',
+                legal_business_name: sanitizedLegalBusinessName,
+                last_updated: new Date().toISOString()
+              })
+              .select()
+              .single();
+            
+            if (saveError) {
+              console.error('Failed to save existing account to database:', saveError);
+              throw new Error('Found existing account but could not save it. Please contact support.');
+            }
+            
+            // Use this account ID to continue the flow
+            razorpayAccountId = existingAccountId;
+            console.log('Successfully saved existing account. Continuing with KYC flow...');
+          } else {
+            console.error('Could not extract account ID from error:', errorData);
+            throw new Error('This email is already associated with a Razorpay account but we could not identify it. Please contact support.');
+          }
+        } else {
+          throw new Error(`Failed to create Razorpay linked account: ${errorData}`);
         }
+      } else {
+        const accountData = await accountResponse.json();
+        console.log('Razorpay account created:', accountData.id);
+        razorpayAccountId = accountData.id;
         
-        throw new Error(`Failed to create Razorpay linked account: ${errorData}`);
+        // Save account to database immediately
+        console.log('Saving account to database...');
+        const { error: initialInsertError } = await supabaseClient
+          .from('razorpay_accounts')
+          .insert({
+            community_id: communityId,
+            razorpay_account_id: accountData.id,
+            kyc_status: 'IN_PROGRESS',
+            business_type: 'individual',
+            legal_business_name: sanitizedLegalBusinessName,
+            last_updated: new Date().toISOString()
+          });
+        
+        if (initialInsertError) {
+          console.error('Warning: Failed to save account to database:', initialInsertError);
+        }
       }
 
-      const accountData = await accountResponse.json();
-      console.log('Razorpay account created:', accountData.id);
-      razorpayAccountId = accountData.id;
-      
-      // Save account to database immediately
-      console.log('Saving account to database...');
-      const { error: initialInsertError } = await supabaseClient
-        .from('razorpay_accounts')
-        .insert({
-          community_id: communityId,
-          razorpay_account_id: accountData.id,
-          kyc_status: 'IN_PROGRESS',
-          business_type: 'individual',
-          legal_business_name: sanitizedLegalBusinessName,
-          last_updated: new Date().toISOString()
-        });
-      
-      if (initialInsertError) {
-        console.error('Warning: Failed to save account to database:', initialInsertError);
-      }
     }
 
     await new Promise(r => setTimeout(r, 200));
