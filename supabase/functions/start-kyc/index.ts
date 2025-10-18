@@ -235,6 +235,7 @@ serve(async (req) => {
     const cappedStreet1 = street1ForRazorpay.substring(0, 255);
 
     // Linked account payload for v2 API with type: route
+    // For individual business type, PAN is provided at stakeholder level, not here
     const accountPayload = {
       email: sanitizedEmail,
       phone: sanitizedPhone,
@@ -257,10 +258,6 @@ serve(async (req) => {
             country: 'IN'
           }
         }
-      },
-      legal_info: {
-        pan: profile.pan.trim(),
-        gst: null
       }
     };
 
@@ -268,8 +265,7 @@ serve(async (req) => {
     console.log('Masked summary:', JSON.stringify({
       ...accountPayload,
       phone: '***' + accountPayload.phone.slice(-4),
-      email: accountPayload.email ? accountPayload.email.replace(/(.{2}).*(@.*)/, '$1***$2') : 'N/A',
-      legal_info: { pan: '****' + profile.pan.slice(-4), gst: null }
+      email: accountPayload.email ? accountPayload.email.replace(/(.{2}).*(@.*)/, '$1***$2') : 'N/A'
     }, null, 2));
     
     const accountResponse = await fetch('https://api.razorpay.com/v2/accounts', {
