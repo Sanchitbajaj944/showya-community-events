@@ -122,12 +122,21 @@ serve(async (req) => {
     const timestamp = Date.now().toString().slice(-8);
     const cleanCommunityId = communityId.replace(/-/g, '').substring(0, 12);
     const shortReferenceId = `${cleanCommunityId}${timestamp}`;
+    
     const sanitizeDescription = (desc: string) => {
       return desc
         .replace(/[^a-zA-Z0-9\s\-]/g, '')
         .replace(/\s+/g, ' ')
         .trim()
         .substring(0, 200);
+    };
+
+    const sanitizeName = (name: string) => {
+      return name
+        .replace(/[^a-zA-Z\s]/g, '') // Keep only letters and spaces
+        .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
+        .trim()
+        .substring(0, 50); // Max 50 characters
     };
 
     const rawDescription = community.description || `${community.name} Community Events`;
@@ -138,9 +147,9 @@ serve(async (req) => {
       phone: profile.phone,
       type: 'route',
       reference_id: shortReferenceId,
-      legal_business_name: community.name,
+      legal_business_name: sanitizeName(community.name),
       business_type: 'individual',
-      contact_name: profile.name || user.user_metadata?.name || 'Community Owner',
+      contact_name: sanitizeName(profile.name || user.user_metadata?.name || 'Community Owner'),
       profile: {
         category: 'others',
         subcategory: 'others',
@@ -200,7 +209,7 @@ serve(async (req) => {
     const sanitizedPhone = sanitizePhone(profile.phone);
     
     const stakeholderPayload = {
-      name: profile.name || user.user_metadata?.name || 'Community Owner',
+      name: sanitizeName(profile.name || user.user_metadata?.name || 'Community Owner'),
       email: user.email,
       phone: {
         primary: sanitizedPhone,
