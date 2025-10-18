@@ -118,9 +118,10 @@ serve(async (req) => {
     const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
     // Step 1: Create Razorpay account (v2 API)
-    // Make reference_id unique by appending timestamp
+    // Make reference_id unique, alphanumeric only, max 20 chars
     const timestamp = Date.now().toString().slice(-8);
-    const shortReferenceId = `${communityId.substring(0, 12)}-${timestamp}`;
+    const cleanCommunityId = communityId.replace(/-/g, '').substring(0, 12);
+    const shortReferenceId = `${cleanCommunityId}${timestamp}`;
     const sanitizeDescription = (desc: string) => {
       return desc
         .replace(/[^a-zA-Z0-9\s\-]/g, '')
