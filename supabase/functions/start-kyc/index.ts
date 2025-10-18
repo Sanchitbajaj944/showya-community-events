@@ -234,7 +234,7 @@ serve(async (req) => {
     // Use the validated and potentially auto-fixed street1
     const cappedStreet1 = street1ForRazorpay.substring(0, 255);
 
-    // Linked account payload for v1 API
+    // Linked account payload for v2 API with type: route
     const accountPayload = {
       email: sanitizedEmail,
       phone: sanitizedPhone,
@@ -264,7 +264,7 @@ serve(async (req) => {
       }
     };
 
-    console.log('Creating Razorpay LINKED account with v1 API');
+    console.log('Creating Razorpay LINKED account (type: route) with v2 API');
     console.log('Masked summary:', JSON.stringify({
       ...accountPayload,
       phone: '***' + accountPayload.phone.slice(-4),
@@ -272,7 +272,7 @@ serve(async (req) => {
       legal_info: { pan: '****' + profile.pan.slice(-4), gst: null }
     }, null, 2));
     
-    const accountResponse = await fetch('https://api.razorpay.com/v1/accounts', {
+    const accountResponse = await fetch('https://api.razorpay.com/v2/accounts', {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${auth}`,
