@@ -182,7 +182,10 @@ serve(async (req) => {
     const stakeholderPayload = {
       name: profile.name || user.user_metadata?.name || 'Community Owner',
       email: user.email,
-      phone: profile.phone,
+      phone: {
+        primary: profile.phone,
+        secondary: ''
+      },
       percentage_ownership: 100,
       kyc: {
         pan: profile.pan,
