@@ -108,8 +108,25 @@ serve(async (req) => {
       throw new Error('PAN number is required for KYC.');
     }
 
-    if (!profile.dob) {
-      throw new Error('Date of birth is required for KYC.');
+    // Validate postal code (6 digits for India)
+    const postalCodeDigits = profile.postal_code.replace(/\D/g, '');
+    if (postalCodeDigits.length !== 6) {
+      throw new Error('Postal code must be 6 digits.');
+    }
+
+    // Validate city and state (min 3 chars, alphabetical)
+    if (profile.city.trim().length < 3 || !/^[a-zA-Z\s]+$/.test(profile.city.trim())) {
+      throw new Error('City must be at least 3 characters and contain only letters.');
+    }
+
+    if (profile.state.trim().length < 3 || !/^[a-zA-Z\s]+$/.test(profile.state.trim())) {
+      throw new Error('State must be at least 3 characters and contain only letters.');
+    }
+
+    // Validate street1 length (must be at least 10 chars when combined)
+    const fullAddress = `${profile.street1.trim()} ${profile.street2?.trim() || ''}`.trim();
+    if (fullAddress.length < 10) {
+      throw new Error('Address must be at least 10 characters long.');
     }
 
     // Razorpay credentials
@@ -132,42 +149,61 @@ serve(async (req) => {
     };
 
     const sanitizeName = (name: string) => {
-      return name
+      const cleaned = name
         .replace(/[^a-zA-Z\s]/g, '') // Keep only letters and spaces
         .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
         .trim()
         .substring(0, 50); // Max 50 characters
+      
+      if (cleaned.length < 3) {
+        throw new Error('Name must be at least 3 characters long.');
+      }
+      
+      return cleaned;
+    };
+
+    const sanitizePhone = (phone: string): string => {
+      const digitsOnly = phone.replace(/\D/g, '');
+      // Remove country code if present (91 for India)
+      const cleanPhone = digitsOnly.startsWith('91') && digitsOnly.length > 11 
+        ? digitsOnly.substring(2) 
+        : digitsOnly;
+      
+      if (cleanPhone.length < 8 || cleanPhone.length > 11) {
+        throw new Error(`Phone number must be between 8 and 11 digits. Got: ${cleanPhone.length} digits`);
+      }
+      
+      return cleanPhone;
     };
 
     const rawDescription = community.description || `${community.name} Community Events`;
     const sanitizedDescription = sanitizeDescription(rawDescription) || 'Community events and activities';
 
+    const sanitizedPhone = sanitizePhone(profile.phone);
+    const sanitizedContactName = sanitizeName(profile.name || user.user_metadata?.name || 'Community Owner');
+    const sanitizedLegalBusinessName = sanitizeName(profile.name || user.user_metadata?.name || 'Community Owner');
+
     const accountPayload = {
-      email: user.email,
-      phone: profile.phone,
-      type: 'route',
+      email: user.email?.trim(),
+      phone: sanitizedPhone,
       reference_id: shortReferenceId,
-      legal_business_name: sanitizeName(community.name),
+      legal_business_name: sanitizedLegalBusinessName,
       business_type: 'individual',
-      contact_name: sanitizeName(profile.name || user.user_metadata?.name || 'Community Owner'),
+      contact_name: sanitizedContactName,
       profile: {
         category: 'others',
         subcategory: 'others',
         description: sanitizedDescription,
         addresses: {
           registered: {
-            street1: profile.street1,
-            street2: profile.street2 || '',
-            city: profile.city,
-            state: profile.state,
-            postal_code: profile.postal_code,
+            street1: fullAddress,
+            street2: '',
+            city: profile.city.trim(),
+            state: profile.state.trim(),
+            postal_code: postalCodeDigits,
             country: 'IN'
           }
         }
-      },
-      legal_info: {
-        pan: '',
-        gst: ''
       }
     };
 
@@ -191,40 +227,23 @@ serve(async (req) => {
     console.log('Razorpay account created:', accountData.id);
 
     // Step 2: Add stakeholder
-    // Sanitize phone number - remove all non-digits and validate length
-    const sanitizePhone = (phone: string): string => {
-      const digitsOnly = phone.replace(/\D/g, '');
-      // Remove country code if present (91 for India)
-      const cleanPhone = digitsOnly.startsWith('91') && digitsOnly.length > 11 
-        ? digitsOnly.substring(2) 
-        : digitsOnly;
-      
-      if (cleanPhone.length < 8 || cleanPhone.length > 11) {
-        throw new Error(`Phone number must be between 8 and 11 digits. Got: ${cleanPhone.length} digits`);
-      }
-      
-      return cleanPhone;
-    };
-
-    const sanitizedPhone = sanitizePhone(profile.phone);
-    
     const stakeholderPayload = {
-      name: sanitizeName(profile.name || user.user_metadata?.name || 'Community Owner'),
-      email: user.email,
+      name: sanitizedContactName,
+      email: user.email?.trim(),
       phone: {
         primary: sanitizedPhone,
         secondary: ''
       },
       percentage_ownership: 100,
       kyc: {
-        pan: profile.pan
+        pan: profile.pan.trim()
       },
       addresses: {
         residential: {
-          street: profile.street1,
-          city: profile.city,
-          state: profile.state,
-          postal_code: profile.postal_code,
+          street1: fullAddress,
+          city: profile.city.trim(),
+          state: profile.state.trim(),
+          postal_code: postalCodeDigits,
           country: 'IN'
         }
       }
@@ -279,7 +298,12 @@ serve(async (req) => {
     }
 
     // Step 4: Request products
-    await requestProducts(accountData.id);
+    try {
+      await requestProducts(accountData.id);
+    } catch (error) {
+      console.error('Failed to request products:', error);
+      throw new Error('Failed to activate payment products. Please contact support.');
+    }
 
     // Store Razorpay account in database
     const onboardingUrl = `https://dashboard.razorpay.com/app/route-accounts/${accountData.id}/onboarding`;
@@ -322,9 +346,30 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in start-kyc:', error);
+    
+    // Extract Razorpay error details if available
+    let errorMessage = 'An error occurred during KYC setup';
+    let errorField = null;
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      
+      // Try to parse Razorpay error format
+      try {
+        const razorpayError = JSON.parse(error.message);
+        if (razorpayError.error) {
+          errorMessage = razorpayError.error.description || errorMessage;
+          errorField = razorpayError.error.field;
+        }
+      } catch {
+        // Not a JSON error, use as is
+      }
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'An error occurred',
+        error: errorMessage,
+        field: errorField,
         details: error instanceof Error ? error.stack : undefined
       }),
       { 
@@ -381,6 +426,9 @@ async function requestProducts(accountId: string) {
   const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
   const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
+  let pgSuccess = false;
+  let routeSuccess = false;
+
   // Request payment gateway product
   console.log('Requesting payment_gateway product...');
   const pgResponse = await fetch(`https://api.razorpay.com/v2/accounts/${accountId}/products`, {
@@ -395,7 +443,10 @@ async function requestProducts(accountId: string) {
     })
   });
 
-  if (!pgResponse.ok) {
+  if (pgResponse.ok) {
+    pgSuccess = true;
+    console.log('Payment gateway product requested successfully');
+  } else {
     const errorData = await pgResponse.text();
     console.error('Payment gateway product request failed:', errorData);
   }
@@ -414,9 +465,17 @@ async function requestProducts(accountId: string) {
     })
   });
 
-  if (!routeResponse.ok) {
+  if (routeResponse.ok) {
+    routeSuccess = true;
+    console.log('Route product requested successfully');
+  } else {
     const errorData = await routeResponse.text();
     console.error('Route product request failed:', errorData);
+  }
+
+  // Throw error if both products failed
+  if (!pgSuccess && !routeSuccess) {
+    throw new Error('Failed to request payment products from Razorpay');
   }
 
   console.log('Products requested successfully');
