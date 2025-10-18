@@ -25,7 +25,7 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { communityId, documents, bankDetails } = await req.json();
+    const { communityId, documents, bankDetails, checkOnly } = await req.json();
 
     // Verify community ownership
     const { data: community, error: communityError } = await supabaseClient
@@ -84,11 +84,25 @@ serve(async (req) => {
         );
       }
       
-      // For IN_PROGRESS accounts, we'll check if we need to complete missing steps
+      // For IN_PROGRESS accounts
       if (status === 'IN_PROGRESS') {
         console.log('Account exists in IN_PROGRESS state.');
-        // If stakeholder already exists, we might be retrying after a partial failure
-        // Continue with the flow using existing account
+        
+        // If this is just a check, tell frontend to proceed with forms
+        if (checkOnly) {
+          return new Response(
+            JSON.stringify({
+              action: 'proceed',
+              message: 'Please complete your KYC details',
+              existingAccount: true
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200
+            }
+          );
+        }
+        // Otherwise continue with the flow using existing account
       }
       
       // If KYC failed or rejected, delete and start fresh
@@ -99,6 +113,21 @@ serve(async (req) => {
           .delete()
           .eq('id', existingAccount.id);
       }
+    }
+
+    // If this is just a status check, return that no account exists
+    if (checkOnly) {
+      return new Response(
+        JSON.stringify({
+          action: 'proceed',
+          message: 'No existing account found. Please provide KYC details.',
+          existingAccount: false
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      );
     }
 
     // Get user profile for KYC details
@@ -371,6 +400,7 @@ serve(async (req) => {
         },
         addresses: {
           residential: {
+            street: cappedStreet1,
             city: profile.city.trim(),
             state: profile.state.trim(),
             postal_code: postalCodeDigits,

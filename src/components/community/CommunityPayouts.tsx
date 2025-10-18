@@ -68,28 +68,65 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
       }
 
       setUserId(session.user.id);
+      setChecking(true);
 
-      // Check if user has complete profile information
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("phone, street1, street2, city, state, postal_code, pan, dob")
-        .eq("user_id", session.user.id)
-        .single();
+      // First, check if an account already exists in backend
+      const { data: checkResult, error: checkError } = await supabase.functions.invoke(
+        "start-kyc",
+        {
+          body: { 
+            communityId: community.id,
+            checkOnly: true 
+          }
+        }
+      );
 
-      // Store profile for pre-filling
-      setExistingProfile(profile);
+      setChecking(false);
 
-      // If documents or bank details are missing, always start from beginning
-      // This ensures users go through the complete flow even if profile has old data
-      if (!documents || !bankDetails) {
+      if (checkError) {
+        console.error("Error checking KYC status:", checkError);
+        toast.error("Failed to check KYC status");
+        return;
+      }
+
+      // Handle different responses from backend check
+      if (checkResult.success) {
+        // Already activated
+        toast.success(checkResult.message);
+        onRefresh();
+        return;
+      }
+
+      if (checkResult.action === 'wait') {
+        // Already under review
+        toast.info(checkResult.message);
+        if (checkResult.onboarding_url) {
+          window.open(checkResult.onboarding_url, '_blank');
+        }
+        return;
+      }
+
+      if (checkResult.action === 'proceed') {
+        // No existing account or IN_PROGRESS - proceed with forms
+        // Check if user has complete profile information
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("phone, street1, street2, city, state, postal_code, pan, dob")
+          .eq("user_id", session.user.id)
+          .single();
+
+        // Store profile for pre-filling
+        setExistingProfile(profile);
+
+        // Start from phone dialog
         setPhoneDialogOpen(true);
         return;
       }
 
-      // If we have both documents and bank details, proceed to initiate KYC
-      setUserPhone(profile.phone);
-      await initiateKyc();
+      // Default: start the flow
+      setPhoneDialogOpen(true);
     } catch (error: any) {
+      setChecking(false);
       console.error("Error starting KYC:", error);
       toast.error(error.message || "Failed to start KYC process");
     }
