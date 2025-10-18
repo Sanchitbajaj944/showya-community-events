@@ -12,12 +12,24 @@ interface KycPanDobDialogProps {
   userId: string;
   onComplete: (pan: string, dob: string) => void;
   loading?: boolean;
+  initialValues?: {
+    pan?: string;
+    dob?: string;
+  };
 }
 
-export const KycPanDobDialog = ({ open, onOpenChange, userId, onComplete, loading }: KycPanDobDialogProps) => {
+export const KycPanDobDialog = ({ open, onOpenChange, userId, onComplete, loading, initialValues }: KycPanDobDialogProps) => {
   const [pan, setPan] = useState("");
   const [dob, setDob] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Pre-fill with initial values when dialog opens
+  React.useEffect(() => {
+    if (open && initialValues) {
+      setPan(initialValues.pan || "");
+      setDob(initialValues.dob || "");
+    }
+  }, [open, initialValues]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +78,10 @@ export const KycPanDobDialog = ({ open, onOpenChange, userId, onComplete, loadin
         <DialogHeader>
           <DialogTitle>KYC Verification Required</DialogTitle>
           <DialogDescription>
-            Please provide your PAN and Date of Birth for identity verification. This is required by Razorpay for payment processing.
+            {initialValues?.pan 
+              ? "Your previous PAN and DOB are shown below. Please verify or update them if needed."
+              : "Please provide your PAN and Date of Birth for identity verification. This is required by Razorpay for payment processing."
+            }
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">

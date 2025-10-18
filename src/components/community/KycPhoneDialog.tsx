@@ -12,11 +12,21 @@ interface KycPhoneDialogProps {
   onOpenChange: (open: boolean) => void;
   onPhoneSubmit: (phone: string) => void;
   loading?: boolean;
+  initialValue?: string;
 }
 
-export const KycPhoneDialog = ({ open, onOpenChange, onPhoneSubmit, loading }: KycPhoneDialogProps) => {
+export const KycPhoneDialog = ({ open, onOpenChange, onPhoneSubmit, loading, initialValue }: KycPhoneDialogProps) => {
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Pre-fill with initial value when dialog opens
+  React.useEffect(() => {
+    if (open && initialValue) {
+      // Remove country code for display
+      const displayPhone = initialValue.replace(/^\+91/, '');
+      setPhone(displayPhone);
+    }
+  }, [open, initialValue]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +74,10 @@ export const KycPhoneDialog = ({ open, onOpenChange, onPhoneSubmit, loading }: K
         <DialogHeader>
           <DialogTitle>Phone Number Required</DialogTitle>
           <DialogDescription>
-            Razorpay requires a phone number for KYC verification. Please provide your phone number to continue.
+            {initialValue 
+              ? "Your previous phone number is shown below. Please verify or update it if needed."
+              : "Razorpay requires a phone number for KYC verification. Please provide your phone number to continue."
+            }
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">

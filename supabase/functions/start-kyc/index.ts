@@ -44,10 +44,63 @@ serve(async (req) => {
       .from('razorpay_accounts')
       .select('*')
       .eq('community_id', communityId)
-      .single();
+      .maybeSingle();
 
     if (existingAccount) {
-      // If products not yet requested, request them
+      const status = existingAccount.kyc_status;
+      
+      // If KYC failed or rejected, require user to re-enter details
+      if (status === 'FAILED' || status === 'REJECTED') {
+        console.log('Previous KYC attempt failed/rejected. User must re-enter details.');
+        return new Response(
+          JSON.stringify({
+            action: 'reenter_details',
+            message: 'Your previous KYC attempt couldn\'t be verified. Please review your details and try again.',
+            error_reason: existingAccount.error_reason || 'Verification failed',
+            requires_user_input: true
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
+        );
+      }
+      
+      // If KYC is pending, in progress, or verified, don't allow resubmission
+      if (status === 'IN_PROGRESS' || status === 'PENDING' || status === 'VERIFIED') {
+        console.log('KYC already in progress or pending approval.');
+        const onboardingUrl = `https://dashboard.razorpay.com/app/route-accounts/${existingAccount.razorpay_account_id}/onboarding`;
+        
+        return new Response(
+          JSON.stringify({
+            action: 'wait',
+            message: 'Your KYC is currently under review. You\'ll be notified once verified.',
+            kyc_status: status,
+            onboarding_url: onboardingUrl
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          }
+        );
+      }
+
+      // If already activated, return success
+      if (status === 'ACTIVATED' || status === 'APPROVED') {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: 'KYC already verified',
+            kyc_status: status
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          }
+        );
+      }
+
+      // For other statuses, allow retry but request products if needed
       if (!existingAccount.products_requested && existingAccount.stakeholder_id) {
         await requestProducts(existingAccount.razorpay_account_id);
         
@@ -57,31 +110,12 @@ serve(async (req) => {
           .eq('id', existingAccount.id);
       }
 
-      // Return existing account status
-      if (existingAccount.kyc_status === 'ACTIVATED' || existingAccount.kyc_status === 'APPROVED') {
-        return new Response(
-          JSON.stringify({ 
-            success: true,
-            message: 'KYC already activated',
-            kyc_status: existingAccount.kyc_status
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Construct onboarding URL
-      const onboardingUrl = `https://dashboard.razorpay.com/app/route-accounts/${existingAccount.razorpay_account_id}/onboarding`;
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          razorpay_account_id: existingAccount.razorpay_account_id,
-          kyc_status: existingAccount.kyc_status,
-          onboarding_url: onboardingUrl,
-          message: 'Redirecting to Razorpay KYC onboarding...'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Delete failed account to start fresh
+      console.log('Deleting previous failed account to start fresh KYC process...');
+      await supabaseClient
+        .from('razorpay_accounts')
+        .delete()
+        .eq('id', existingAccount.id);
     }
 
     // Get user profile for KYC details

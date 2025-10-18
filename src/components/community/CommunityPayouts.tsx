@@ -26,6 +26,8 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   const [userPhone, setUserPhone] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [documents, setDocuments] = useState<{ panCard: File; addressProof: File } | null>(null);
+  const [existingProfile, setExistingProfile] = useState<any>(null);
+  const [kycRetryMode, setKycRetryMode] = useState(false);
 
   const handleStartKyc = async () => {
     try {
@@ -40,9 +42,12 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
       // Check if user has complete profile information
       const { data: profile } = await supabase
         .from("profiles")
-        .select("phone, street1, city, state, postal_code, pan, dob")
+        .select("phone, street1, street2, city, state, postal_code, pan, dob")
         .eq("user_id", session.user.id)
         .single();
+
+      // Store profile for pre-filling
+      setExistingProfile(profile);
 
       // Check for phone number first
       if (!profile?.phone || profile.phone.trim() === '') {
@@ -106,6 +111,24 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         }
       });
 
+      // Handle special actions from backend
+      if (data?.action === 'reenter_details') {
+        setKycRetryMode(true);
+        toast.error(data.message, { duration: 6000 });
+        // Show phone dialog to start re-entry flow
+        setPhoneDialogOpen(true);
+        return;
+      }
+
+      if (data?.action === 'wait') {
+        toast.info(data.message, { duration: 5000 });
+        // If there's an onboarding URL, allow user to continue
+        if (data.onboarding_url) {
+          window.location.href = data.onboarding_url;
+        }
+        return;
+      }
+
       // Handle error response from edge function
       if (error || (data && data.error)) {
         const errorMessage = data?.error || error?.message || "Failed to start KYC process";
@@ -138,7 +161,6 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           setPanDobDialogOpen(true);
         } else if (errorMessage.toLowerCase().includes('name')) {
           toast.error("Name validation failed. Please verify your profile.");
-          // Name is in profile, so start from beginning
           setPhoneDialogOpen(true);
         } else {
           // Generic validation error - prompt to re-enter all details
@@ -288,7 +310,7 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
             <CheckCircle className="h-4 w-4 text-green-500" />
             <AlertDescription className="text-green-700 dark:text-green-300">
-              <strong>Payouts Active ✅</strong>
+              <strong>🟢 KYC Verified</strong>
               <p className="mt-1">Your KYC is approved. Ticket sales will auto-settle to your bank account.</p>
             </AlertDescription>
           </Alert>
@@ -314,13 +336,14 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           </Alert>
         );
       
+      case 'PENDING':
       case 'IN_PROGRESS':
         return (
           <Alert className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
             <Clock className="h-4 w-4 text-yellow-500" />
             <AlertDescription className="text-yellow-700 dark:text-yellow-300">
-              <strong>KYC In Progress</strong>
-              <p className="mt-1">Complete your KYC verification on Razorpay's secure platform.</p>
+              <strong>🟡 Pending Review</strong>
+              <p className="mt-1">Your KYC is currently under review. You'll be notified once verified.</p>
               <div className="flex gap-2 mt-2">
                 <Button 
                   size="sm" 
@@ -361,20 +384,22 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           </Alert>
         );
       
+      case 'FAILED':
       case 'REJECTED':
         return (
           <Alert className="border-red-500 bg-red-50 dark:bg-red-950">
             <XCircle className="h-4 w-4 text-red-500" />
             <AlertDescription className="text-red-700 dark:text-red-300">
-              <strong>KYC Rejected</strong>
-              <p className="mt-1">Your KYC verification was rejected. You can retry with corrected information.</p>
+              <strong>🔴 Verification Failed</strong>
+              <p className="mt-1">Your previous KYC attempt couldn't be verified. Please review your details and try again.</p>
+              <p className="mt-2 text-sm">Make sure your PAN and address match your government records.</p>
               <Button 
                 size="sm" 
-                className="mt-2"
+                className="mt-3"
                 onClick={handleStartKyc}
                 disabled={loading}
               >
-                {loading ? "Loading..." : "Retry KYC"}
+                {loading ? "Loading..." : "Re-enter Details"}
               </Button>
             </AlertDescription>
           </Alert>
@@ -418,6 +443,7 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         onOpenChange={setPhoneDialogOpen}
         onPhoneSubmit={handlePhoneSubmit}
         loading={loading}
+        initialValue={existingProfile?.phone}
       />
       
       <KycAddressDialog
@@ -425,6 +451,13 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         onOpenChange={setAddressDialogOpen}
         userId={userId}
         onComplete={handleAddressComplete}
+        initialValues={existingProfile ? {
+          street1: existingProfile.street1,
+          street2: existingProfile.street2,
+          city: existingProfile.city,
+          state: existingProfile.state,
+          postal_code: existingProfile.postal_code
+        } : undefined}
       />
 
       <KycPanDobDialog
@@ -433,6 +466,10 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         userId={userId}
         onComplete={handlePanDobComplete}
         loading={loading}
+        initialValues={existingProfile ? {
+          pan: existingProfile.pan,
+          dob: existingProfile.dob
+        } : undefined}
       />
 
       <KycDocumentsDialog

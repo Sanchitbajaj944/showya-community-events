@@ -12,6 +12,13 @@ interface KycAddressDialogProps {
   onOpenChange: (open: boolean) => void;
   userId: string;
   onComplete: () => void;
+  initialValues?: {
+    street1?: string;
+    street2?: string;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+  };
 }
 
 const INDIAN_STATES = [
@@ -53,7 +60,7 @@ const INDIAN_STATES = [
   "Puducherry"
 ];
 
-export const KycAddressDialog = ({ open, onOpenChange, userId, onComplete }: KycAddressDialogProps) => {
+export const KycAddressDialog = ({ open, onOpenChange, userId, onComplete, initialValues }: KycAddressDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     street1: "",
@@ -62,6 +69,19 @@ export const KycAddressDialog = ({ open, onOpenChange, userId, onComplete }: Kyc
     state: "",
     postal_code: ""
   });
+
+  // Pre-fill with initial values when dialog opens
+  React.useEffect(() => {
+    if (open && initialValues) {
+      setFormData({
+        street1: initialValues.street1 || "",
+        street2: initialValues.street2 || "",
+        city: initialValues.city || "",
+        state: initialValues.state || "",
+        postal_code: initialValues.postal_code || ""
+      });
+    }
+  }, [open, initialValues]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,7 +129,10 @@ export const KycAddressDialog = ({ open, onOpenChange, userId, onComplete }: Kyc
         <DialogHeader>
           <DialogTitle>Complete Your Address</DialogTitle>
           <DialogDescription>
-            We need your address information to start the KYC verification process.
+            {initialValues?.street1 
+              ? "Your previous address is shown below. Please verify or update it if needed."
+              : "We need your address information to start the KYC verification process."
+            }
           </DialogDescription>
         </DialogHeader>
         
