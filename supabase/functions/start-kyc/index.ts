@@ -157,10 +157,21 @@ serve(async (req) => {
       throw new Error('State must be at least 3 characters and contain only letters, spaces, or hyphens.');
     }
 
-    // Validate street1 length (must be at least 10 chars when combined)
-    const fullAddress = `${profile.street1.trim()} ${profile.street2?.trim() || ''}`.trim();
-    if (fullAddress.length < 10) {
-      throw new Error('Address must be at least 10 characters long.');
+    // Validate and prepare street1 (must be 10-255 chars for Razorpay)
+    let street1ForRazorpay = profile.street1.trim();
+    
+    // If street1 is too short and street2 is empty, append city to meet minimum length
+    if (street1ForRazorpay.length < 10 && !profile.street2?.trim()) {
+      street1ForRazorpay = `${street1ForRazorpay}, ${profile.city.trim()}`;
+    }
+    
+    // Final validation
+    if (street1ForRazorpay.length < 10) {
+      throw new Error('Address must be at least 10 characters long. Please include area or landmark.');
+    }
+    
+    if (street1ForRazorpay.length > 255) {
+      throw new Error('Address must be less than 255 characters.');
     }
 
     // Razorpay credentials
@@ -223,8 +234,8 @@ serve(async (req) => {
     const sanitizedLegalBusinessName = sanitizeName(profile.name || user.user_metadata?.name || 'Community Owner');
     const sanitizedEmail = user.email?.toLowerCase().trim();
 
-    // Cap street address to 255 characters
-    const cappedStreet1 = fullAddress.substring(0, 255);
+    // Use the validated and potentially auto-fixed street1
+    const cappedStreet1 = street1ForRazorpay.substring(0, 255);
 
     const accountPayload = {
       email: sanitizedEmail,

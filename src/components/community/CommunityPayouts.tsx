@@ -136,6 +136,10 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         
         console.error("KYC Error:", errorMessage, "Field:", errorField);
         
+        // Check if it's a street length validation error from Razorpay
+        const isStreetLengthError = errorMessage.toLowerCase().includes('street must be between 10 and 255') ||
+                                    errorMessage.toLowerCase().includes('address must be at least 10 characters');
+        
         // Parse error to determine which field failed and reopen relevant dialog
         const phoneFields = ['phone'];
         const addressFields = ['street', 'street1', 'street2', 'city', 'state', 'postal_code', 'address'];
@@ -144,8 +148,12 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         if (errorField && phoneFields.includes(errorField)) {
           toast.error(`Phone number issue: ${errorMessage}. Please re-enter.`);
           setPhoneDialogOpen(true);
-        } else if (errorField && addressFields.includes(errorField)) {
-          toast.error(`Address issue: ${errorMessage}. Please re-enter.`);
+        } else if (isStreetLengthError || (errorField && addressFields.includes(errorField))) {
+          if (isStreetLengthError) {
+            toast.error("Please enter a more complete address including area or landmark.", { duration: 5000 });
+          } else {
+            toast.error(`Address issue: ${errorMessage}. Please re-enter.`);
+          }
           setAddressDialogOpen(true);
         } else if (errorField && panDobFields.includes(errorField)) {
           toast.error(`PAN/DOB issue: ${errorMessage}. Please re-enter.`);

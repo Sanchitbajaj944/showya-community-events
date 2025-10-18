@@ -62,6 +62,7 @@ const INDIAN_STATES = [
 
 export const KycAddressDialog = ({ open, onOpenChange, userId, onComplete, initialValues }: KycAddressDialogProps) => {
   const [loading, setLoading] = useState(false);
+  const [addressError, setAddressError] = useState(false);
   const [formData, setFormData] = useState({
     street1: "",
     street2: "",
@@ -80,6 +81,7 @@ export const KycAddressDialog = ({ open, onOpenChange, userId, onComplete, initi
         state: initialValues.state || "",
         postal_code: initialValues.postal_code || ""
       });
+      setAddressError(false);
     }
   }, [open, initialValues]);
 
@@ -91,11 +93,27 @@ export const KycAddressDialog = ({ open, onOpenChange, userId, onComplete, initi
       return;
     }
 
+    // Validate street1 length (10-255 characters required by Razorpay)
+    const street1Length = formData.street1.trim().length;
+    if (street1Length < 10) {
+      setAddressError(true);
+      toast.error("Address must be at least 10 characters long. Please include area or landmark.");
+      return;
+    }
+
+    if (street1Length > 255) {
+      setAddressError(true);
+      toast.error("Address must be less than 255 characters.");
+      return;
+    }
+
     // Validate postal code (6 digits)
     if (!/^\d{6}$/.test(formData.postal_code)) {
       toast.error("Please enter a valid 6-digit postal code");
       return;
     }
+
+    setAddressError(false);
 
     setLoading(true);
     try {
@@ -141,11 +159,28 @@ export const KycAddressDialog = ({ open, onOpenChange, userId, onComplete, initi
             <Label htmlFor="street1">Street Address Line 1 *</Label>
             <Input
               id="street1"
-              placeholder="Building number, street name"
+              placeholder="Building number, street name, area/landmark"
               value={formData.street1}
-              onChange={(e) => setFormData({ ...formData, street1: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, street1: e.target.value });
+                if (addressError && e.target.value.trim().length >= 10) {
+                  setAddressError(false);
+                }
+              }}
+              className={addressError ? "border-destructive" : ""}
               required
+              maxLength={255}
             />
+            {addressError && (
+              <p className="text-sm text-destructive">
+                Address must be at least 10 characters long. Please include area or landmark (e.g., MG Road, Indiranagar).
+              </p>
+            )}
+            {formData.street1.trim().length > 0 && formData.street1.trim().length < 10 && !addressError && (
+              <p className="text-xs text-muted-foreground">
+                {10 - formData.street1.trim().length} more characters needed
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
