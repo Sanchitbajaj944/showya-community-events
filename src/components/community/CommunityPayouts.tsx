@@ -79,36 +79,14 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
       // Store profile for pre-filling
       setExistingProfile(profile);
 
-      // Check for phone number first
-      if (!profile?.phone || profile.phone.trim() === '') {
+      // If documents or bank details are missing, always start from beginning
+      // This ensures users go through the complete flow even if profile has old data
+      if (!documents || !bankDetails) {
         setPhoneDialogOpen(true);
         return;
       }
 
-      // Check for address information
-      if (!profile?.street1 || !profile?.city || !profile?.state || !profile?.postal_code) {
-        setAddressDialogOpen(true);
-        return;
-      }
-
-      // Check for PAN and DOB
-      if (!profile?.pan || !profile?.dob) {
-        setPanDobDialogOpen(true);
-        return;
-      }
-
-      // If all profile info is complete but no documents yet, show document upload
-      if (!documents) {
-        setDocumentsDialogOpen(true);
-        return;
-      }
-
-      // If documents are collected but no bank details, show bank dialog
-      if (!bankDetails) {
-        setBankDetailsDialogOpen(true);
-        return;
-      }
-
+      // If we have both documents and bank details, proceed to initiate KYC
       setUserPhone(profile.phone);
       await initiateKyc();
     } catch (error: any) {
