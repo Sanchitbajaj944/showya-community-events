@@ -148,20 +148,20 @@ serve(async (req) => {
       throw new Error('Postal code must be 6 digits.');
     }
 
-    // Validate city and state (min 3 chars, allow letters, spaces, and hyphens)
-    if (profile.city.trim().length < 3 || !/^[a-zA-Z\s\-]+$/.test(profile.city.trim())) {
-      throw new Error('City must be at least 3 characters and contain only letters, spaces, or hyphens.');
+    // Validate city and state (min 3 chars, allow letters, spaces, numbers, hyphens, and common special chars)
+    if (profile.city.trim().length < 3) {
+      throw new Error('City must be at least 3 characters long.');
     }
 
-    if (profile.state.trim().length < 3 || !/^[a-zA-Z\s\-]+$/.test(profile.state.trim())) {
-      throw new Error('State must be at least 3 characters and contain only letters, spaces, or hyphens.');
+    if (profile.state.trim().length < 3) {
+      throw new Error('State must be at least 3 characters long.');
     }
 
     // Validate and prepare street1 (must be 10-255 chars for Razorpay)
     let street1ForRazorpay = profile.street1.trim();
     
     // If street1 is too short and street2 is empty, append city to meet minimum length
-    if (street1ForRazorpay.length < 10 && !profile.street2?.trim()) {
+    if (street1ForRazorpay.length < 10 && !profile.street2?.trim() && profile.city) {
       street1ForRazorpay = `${street1ForRazorpay}, ${profile.city.trim()}`;
     }
     
@@ -261,7 +261,11 @@ serve(async (req) => {
       }
     };
 
-    console.log('Creating Razorpay account...');
+    console.log('Creating Razorpay account with payload:', JSON.stringify({
+      ...accountPayload,
+      phone: '***' + accountPayload.phone.slice(-4),
+      email: accountPayload.email ? accountPayload.email.replace(/(.{2}).*(@.*)/, '$1***$2') : 'N/A'
+    }));
     const accountResponse = await fetch('https://api.razorpay.com/v2/accounts', {
       method: 'POST',
       headers: {
