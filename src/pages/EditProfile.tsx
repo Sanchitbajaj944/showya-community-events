@@ -14,6 +14,17 @@ import { SkillsSelect } from "@/components/SkillsSelect";
 import Header from "@/components/Header";
 import { ArrowLeft, Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const editProfileSchema = z.object({
   display_name: z.string().min(2, "Name must be at least 2 characters").max(50),
@@ -31,6 +42,7 @@ export default function EditProfile() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -179,6 +191,32 @@ export default function EditProfile() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+
+    try {
+      setDeleting(true);
+      
+      const { error } = await supabase.functions.invoke('delete-account', {
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("Account deleted successfully");
+      
+      // Sign out and redirect
+      await supabase.auth.signOut();
+      navigate("/");
+    } catch (error: any) {
+      console.error("Error deleting account:", error);
+      toast.error("Failed to delete account");
+      setDeleting(false);
+    }
+  };
+
   if (initialLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -323,6 +361,46 @@ export default function EditProfile() {
             </Button>
           </div>
         </form>
+
+        {/* Danger Zone */}
+        <div className="mt-12 border border-destructive/50 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-destructive mb-2">Danger Zone</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Once you delete your account, there is no going back. This will permanently delete your profile, communities, and all associated data.
+          </p>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" disabled={deleting}>
+                {deleting ? "Deleting..." : "Delete Account"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete your
+                  account and remove all your data from our servers, including:
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>Your profile information</li>
+                    <li>Communities you own</li>
+                    <li>Event participations</li>
+                    <li>All associated data</li>
+                  </ul>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete Account
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
     </div>
   );
