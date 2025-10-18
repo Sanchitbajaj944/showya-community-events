@@ -118,7 +118,9 @@ serve(async (req) => {
     const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
     // Step 1: Create Razorpay account (v2 API)
-    const shortReferenceId = communityId.substring(0, 20);
+    // Make reference_id unique by appending timestamp
+    const timestamp = Date.now().toString().slice(-8);
+    const shortReferenceId = `${communityId.substring(0, 12)}-${timestamp}`;
     const sanitizeDescription = (desc: string) => {
       return desc
         .replace(/[^a-zA-Z0-9\s\-]/g, '')
