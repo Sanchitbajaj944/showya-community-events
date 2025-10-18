@@ -381,52 +381,101 @@ serve(async (req) => {
 
     // Add stakeholder (if not already exists)
     if (!razorpayStakeholderId) {
-      console.log('Adding stakeholder with masked PAN:', `****${profile.pan.slice(-4)}`);
-      
-      const stakeholderPayload = {
-        name: sanitizedContactName,
-        email: sanitizedEmail,
-        phone: {
-          primary: sanitizedPhone,
-          secondary: ''
-        },
-        percentage_ownership: 100,
-        relationship: {
-          director: false,
-          executive: true
-        },
-        kyc: {
-          pan: profile.pan.trim()
-        },
-        addresses: {
-          residential: {
-            street: cappedStreet1,
-            city: profile.city.trim(),
-            state: profile.state.trim(),
-            postal_code: postalCodeDigits,
-            country: 'IN'
-          }
-        }
-      };
-
-      const stakeholderResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/stakeholders`, {
-        method: 'POST',
+      // First, try to fetch existing stakeholders
+      console.log('Checking for existing stakeholders...');
+      const fetchStakeholdersResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/stakeholders`, {
+        method: 'GET',
         headers: {
           'Authorization': `Basic ${auth}`,
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(stakeholderPayload)
+        }
       });
 
-      if (!stakeholderResponse.ok) {
-        const errorData = await stakeholderResponse.text();
-        console.error('Stakeholder creation failed:', errorData);
-        throw new Error(`Failed to add stakeholder: ${errorData}`);
+      if (fetchStakeholdersResponse.ok) {
+        const existingStakeholders = await fetchStakeholdersResponse.json();
+        console.log('Found existing stakeholders:', existingStakeholders.items?.length || 0);
+        
+        // If stakeholders exist, use the first one
+        if (existingStakeholders.items && existingStakeholders.items.length > 0) {
+          razorpayStakeholderId = existingStakeholders.items[0].id;
+          console.log('Using existing stakeholder:', razorpayStakeholderId);
+        }
       }
 
-      const stakeholderData = await stakeholderResponse.json();
-      console.log('Stakeholder added:', stakeholderData.id);
-      razorpayStakeholderId = stakeholderData.id;
+      // Only create stakeholder if none exists
+      if (!razorpayStakeholderId) {
+        console.log('Adding stakeholder with masked PAN:', `****${profile.pan.slice(-4)}`);
+        
+        const stakeholderPayload = {
+          name: sanitizedContactName,
+          email: sanitizedEmail,
+          phone: {
+            primary: sanitizedPhone,
+            secondary: ''
+          },
+          percentage_ownership: 100,
+          relationship: {
+            director: false,
+            executive: true
+          },
+          kyc: {
+            pan: profile.pan.trim()
+          },
+          addresses: {
+            residential: {
+              street: cappedStreet1,
+              city: profile.city.trim(),
+              state: profile.state.trim(),
+              postal_code: postalCodeDigits,
+              country: 'IN'
+            }
+          }
+        };
+
+        const stakeholderResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/stakeholders`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(stakeholderPayload)
+        });
+
+        if (!stakeholderResponse.ok) {
+          const errorData = await stakeholderResponse.text();
+          console.error('Stakeholder creation failed:', errorData);
+          
+          // If access denied, try to fetch stakeholders one more time
+          if (errorData.includes('Access Denied')) {
+            console.log('Access denied when creating stakeholder. Retrying fetch...');
+            const retryFetch = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/stakeholders`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Basic ${auth}`,
+                'Content-Type': 'application/json',
+              }
+            });
+            
+            if (retryFetch.ok) {
+              const retryData = await retryFetch.json();
+              if (retryData.items && retryData.items.length > 0) {
+                razorpayStakeholderId = retryData.items[0].id;
+                console.log('Found stakeholder on retry:', razorpayStakeholderId);
+              } else {
+                throw new Error('This Razorpay account exists but stakeholder information cannot be accessed. Please contact support to complete KYC setup.');
+              }
+            } else {
+              throw new Error('Unable to access stakeholder information. Please contact support.');
+            }
+          } else {
+            throw new Error(`Failed to add stakeholder: ${errorData}`);
+          }
+        } else {
+          const stakeholderData = await stakeholderResponse.json();
+          console.log('Stakeholder added:', stakeholderData.id);
+          razorpayStakeholderId = stakeholderData.id;
+        }
+      }
 
       await new Promise(r => setTimeout(r, 200));
     } else {
