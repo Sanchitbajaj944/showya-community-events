@@ -720,7 +720,11 @@ async function uploadDocument(
   
   formData.append('file', blob, document.name);
   formData.append('document_type', documentType);
-  formData.append(documentSubType, 'true');
+  
+  // Only append subtype for address proof documents, not for PAN card
+  if (documentType === 'individual_proof_of_address') {
+    formData.append(documentSubType, 'true');
+  }
 
   const response = await fetch(
     `https://api.razorpay.com/v2/accounts/${accountId}/stakeholders/${stakeholderId}/documents`,
