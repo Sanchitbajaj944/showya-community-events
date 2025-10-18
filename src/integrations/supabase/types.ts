@@ -285,14 +285,60 @@ export type Database = {
         }
         Relationships: []
       }
+      kyc_documents: {
+        Row: {
+          community_id: string
+          document_name: string
+          document_type: string
+          error_message: string | null
+          id: string
+          razorpay_account_id: string
+          stakeholder_id: string
+          upload_status: string
+          uploaded_at: string | null
+        }
+        Insert: {
+          community_id: string
+          document_name: string
+          document_type: string
+          error_message?: string | null
+          id?: string
+          razorpay_account_id: string
+          stakeholder_id: string
+          upload_status?: string
+          uploaded_at?: string | null
+        }
+        Update: {
+          community_id?: string
+          document_name?: string
+          document_type?: string
+          error_message?: string | null
+          id?: string
+          razorpay_account_id?: string
+          stakeholder_id?: string
+          upload_status?: string
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kyc_documents_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           bio: string | null
           city: string | null
           created_at: string
           display_name: string | null
+          dob: string | null
           id: string
           name: string
+          pan: string | null
           phone: string | null
           postal_code: string | null
           profile_picture_url: string | null
@@ -308,8 +354,10 @@ export type Database = {
           city?: string | null
           created_at?: string
           display_name?: string | null
+          dob?: string | null
           id?: string
           name: string
+          pan?: string | null
           phone?: string | null
           postal_code?: string | null
           profile_picture_url?: string | null
@@ -325,8 +373,10 @@ export type Database = {
           city?: string | null
           created_at?: string
           display_name?: string | null
+          dob?: string | null
           id?: string
           name?: string
+          pan?: string | null
           phone?: string | null
           postal_code?: string | null
           profile_picture_url?: string | null
@@ -399,7 +449,10 @@ export type Database = {
           kyc_status: Database["public"]["Enums"]["kyc_status"]
           last_updated: string
           onboarding_url: string | null
+          products_activated: boolean | null
+          products_requested: boolean | null
           razorpay_account_id: string
+          stakeholder_id: string | null
         }
         Insert: {
           bank_masked?: string | null
@@ -410,7 +463,10 @@ export type Database = {
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           last_updated?: string
           onboarding_url?: string | null
+          products_activated?: boolean | null
+          products_requested?: boolean | null
           razorpay_account_id: string
+          stakeholder_id?: string | null
         }
         Update: {
           bank_masked?: string | null
@@ -421,7 +477,10 @@ export type Database = {
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           last_updated?: string
           onboarding_url?: string | null
+          products_activated?: boolean | null
+          products_requested?: boolean | null
           razorpay_account_id?: string
+          stakeholder_id?: string | null
         }
         Relationships: [
           {

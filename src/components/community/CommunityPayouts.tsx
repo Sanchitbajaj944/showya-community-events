@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { KycPhoneDialog } from "./KycPhoneDialog";
 import { KycAddressDialog } from "./KycAddressDialog";
+import { KycPanDobDialog } from "./KycPanDobDialog";
+import { KycDocumentsDialog } from "./KycDocumentsDialog";
 
 interface CommunityPayoutsProps {
   community: any;
@@ -19,8 +21,11 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   const [checking, setChecking] = useState(false);
   const [phoneDialogOpen, setPhoneDialogOpen] = useState(false);
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
+  const [panDobDialogOpen, setPanDobDialogOpen] = useState(false);
+  const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
   const [userPhone, setUserPhone] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
+  const [documents, setDocuments] = useState<{ panCard: File; addressProof: File } | null>(null);
 
   const handleStartKyc = async () => {
     try {
@@ -35,7 +40,7 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
       // Check if user has complete profile information
       const { data: profile } = await supabase
         .from("profiles")
-        .select("phone, street1, city, state, postal_code")
+        .select("phone, street1, city, state, postal_code, pan, dob")
         .eq("user_id", session.user.id)
         .single();
 
@@ -51,6 +56,18 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         return;
       }
 
+      // Check for PAN and DOB
+      if (!profile?.pan || !profile?.dob) {
+        setPanDobDialogOpen(true);
+        return;
+      }
+
+      // If all profile info is complete but no documents yet, show document upload
+      if (!documents) {
+        setDocumentsDialogOpen(true);
+        return;
+      }
+
       setUserPhone(profile.phone);
       await initiateKyc();
     } catch (error: any) {
@@ -60,10 +77,33 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   };
 
   const initiateKyc = async () => {
+    if (!documents) {
+      setDocumentsDialogOpen(true);
+      return;
+    }
+
     setLoading(true);
     try {
+      // Convert files to base64 for edge function
+      const panCardBase64 = await fileToBase64(documents.panCard);
+      const addressProofBase64 = await fileToBase64(documents.addressProof);
+
       const { data, error } = await supabase.functions.invoke('start-kyc', {
-        body: { communityId: community.id }
+        body: { 
+          communityId: community.id,
+          documents: {
+            panCard: {
+              name: documents.panCard.name,
+              type: documents.panCard.type,
+              data: panCardBase64
+            },
+            addressProof: {
+              name: documents.addressProof.name,
+              type: documents.addressProof.type,
+              data: addressProofBase64
+            }
+          }
+        }
       });
 
       if (error) throw error;
@@ -92,6 +132,18 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
     }
   };
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
   const handlePhoneSubmit = async (phone: string) => {
     setUserPhone(phone);
     setPhoneDialogOpen(false);
@@ -102,12 +154,16 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("street1, city, state, postal_code")
+      .select("street1, city, state, postal_code, pan, dob")
       .eq("user_id", session.user.id)
       .single();
 
     if (!profile?.street1 || !profile?.city || !profile?.state || !profile?.postal_code) {
       setAddressDialogOpen(true);
+    } else if (!profile?.pan || !profile?.dob) {
+      setPanDobDialogOpen(true);
+    } else if (!documents) {
+      setDocumentsDialogOpen(true);
     } else {
       await initiateKyc();
     }
@@ -115,7 +171,49 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
   const handleAddressComplete = async () => {
     setAddressDialogOpen(false);
-    await initiateKyc();
+    
+    // Check for PAN and DOB next
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("pan, dob")
+      .eq("user_id", session.user.id)
+      .single();
+
+    if (!profile?.pan || !profile?.dob) {
+      setPanDobDialogOpen(true);
+    } else if (!documents) {
+      setDocumentsDialogOpen(true);
+    } else {
+      await initiateKyc();
+    }
+  };
+
+  const handlePanDobComplete = async (pan: string, dob: string) => {
+    setPanDobDialogOpen(false);
+    
+    // After PAN/DOB, check for documents
+    if (!documents) {
+      setDocumentsDialogOpen(true);
+    } else {
+      await initiateKyc();
+    }
+  };
+
+  const handleDocumentsComplete = async (docs: { panCard: File; addressProof: File }) => {
+    setDocuments(docs);
+    setDocumentsDialogOpen(false);
+    
+    // Now we have everything, initiate KYC
+    // The documents will be used in the next call
+    toast.success("Documents uploaded! Starting KYC process...");
+    
+    // Delay slightly to allow state to update
+    setTimeout(() => {
+      handleStartKyc();
+    }, 500);
   };
 
   const handleCheckStatus = async () => {
@@ -286,6 +384,21 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         onOpenChange={setAddressDialogOpen}
         userId={userId}
         onComplete={handleAddressComplete}
+      />
+
+      <KycPanDobDialog
+        open={panDobDialogOpen}
+        onOpenChange={setPanDobDialogOpen}
+        userId={userId}
+        onComplete={handlePanDobComplete}
+        loading={loading}
+      />
+
+      <KycDocumentsDialog
+        open={documentsDialogOpen}
+        onOpenChange={setDocumentsDialogOpen}
+        onComplete={handleDocumentsComplete}
+        loading={loading}
       />
       
       {/* KYC Status */}

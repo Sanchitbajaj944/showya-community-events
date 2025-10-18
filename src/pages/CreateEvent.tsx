@@ -138,9 +138,11 @@ export default function CreateEvent() {
   const handlePublish = async () => {
     if (!user || !communityId) return;
 
-    // Validate KYC for paid events
-    if (community?.kyc_status !== "ACTIVATED") {
-      toast.error("Complete KYC verification to create events");
+    // Only validate KYC for paid events (not free events)
+    const isPaidEvent = formData.performer_ticket_price > 0 || (formData.audience_enabled && formData.audience_ticket_price && formData.audience_ticket_price > 0);
+    
+    if (isPaidEvent && community?.kyc_status !== "ACTIVATED") {
+      toast.error("Complete KYC verification in Payouts section to create paid events. Free events don't require KYC.");
       return;
     }
 
