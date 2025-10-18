@@ -263,7 +263,8 @@ serve(async (req) => {
       }
     };
 
-    console.log('Creating Razorpay account with payload:', JSON.stringify({
+    console.log('Creating Razorpay account with FULL payload:', JSON.stringify(accountPayload, null, 2));
+    console.log('Masked summary:', JSON.stringify({
       ...accountPayload,
       phone: '***' + accountPayload.phone.slice(-4),
       email: accountPayload.email ? accountPayload.email.replace(/(.{2}).*(@.*)/, '$1***$2') : 'N/A'
