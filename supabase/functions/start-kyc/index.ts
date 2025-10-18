@@ -182,11 +182,28 @@ serve(async (req) => {
     console.log('Razorpay account created:', accountData.id);
 
     // Step 2: Add stakeholder
+    // Sanitize phone number - remove all non-digits and validate length
+    const sanitizePhone = (phone: string): string => {
+      const digitsOnly = phone.replace(/\D/g, '');
+      // Remove country code if present (91 for India)
+      const cleanPhone = digitsOnly.startsWith('91') && digitsOnly.length > 11 
+        ? digitsOnly.substring(2) 
+        : digitsOnly;
+      
+      if (cleanPhone.length < 8 || cleanPhone.length > 11) {
+        throw new Error(`Phone number must be between 8 and 11 digits. Got: ${cleanPhone.length} digits`);
+      }
+      
+      return cleanPhone;
+    };
+
+    const sanitizedPhone = sanitizePhone(profile.phone);
+    
     const stakeholderPayload = {
       name: profile.name || user.user_metadata?.name || 'Community Owner',
       email: user.email,
       phone: {
-        primary: profile.phone,
+        primary: sanitizedPhone,
         secondary: ''
       },
       percentage_ownership: 100,
