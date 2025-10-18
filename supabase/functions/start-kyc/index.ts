@@ -181,7 +181,7 @@ serve(async (req) => {
     
     const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
-    // Step 1: Create Razorpay account (v2 API)
+    // Step 1: Create Razorpay linked account (v1 API - no limits on linked accounts)
     // Make reference_id unique, alphanumeric only, max 20 chars
     const timestamp = Date.now().toString().slice(-8);
     const cleanCommunityId = communityId.replace(/-/g, '').substring(0, 12);
@@ -234,9 +234,11 @@ serve(async (req) => {
     // Use the validated and potentially auto-fixed street1
     const cappedStreet1 = street1ForRazorpay.substring(0, 255);
 
+    // Linked account payload for v1 API
     const accountPayload = {
       email: sanitizedEmail,
       phone: sanitizedPhone,
+      type: 'route',
       reference_id: shortReferenceId,
       legal_business_name: sanitizedLegalBusinessName,
       business_type: 'individual',
@@ -255,16 +257,22 @@ serve(async (req) => {
             country: 'IN'
           }
         }
+      },
+      legal_info: {
+        pan: profile.pan.trim(),
+        gst: null
       }
     };
 
-    console.log('Creating Razorpay account with FULL payload:', JSON.stringify(accountPayload, null, 2));
+    console.log('Creating Razorpay LINKED account with v1 API');
     console.log('Masked summary:', JSON.stringify({
       ...accountPayload,
       phone: '***' + accountPayload.phone.slice(-4),
-      email: accountPayload.email ? accountPayload.email.replace(/(.{2}).*(@.*)/, '$1***$2') : 'N/A'
-    }));
-    const accountResponse = await fetch('https://api.razorpay.com/v2/accounts', {
+      email: accountPayload.email ? accountPayload.email.replace(/(.{2}).*(@.*)/, '$1***$2') : 'N/A',
+      legal_info: { pan: '****' + profile.pan.slice(-4), gst: null }
+    }, null, 2));
+    
+    const accountResponse = await fetch('https://api.razorpay.com/v1/accounts', {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${auth}`,
@@ -284,12 +292,7 @@ serve(async (req) => {
         throw new Error('Razorpay authentication failed. Please verify your API credentials are correct and have the Route (Connected Accounts) feature enabled.');
       }
       
-      // Check for "Access Denied" error which typically indicates test account limits
-      if (errorData.includes('Access Denied')) {
-        throw new Error('Razorpay test account limit reached. You have likely hit the maximum number of test accounts (typically 5-10). Please either: 1) Delete old test accounts from your Razorpay dashboard, or 2) Switch to live mode with production API keys. Contact support@razorpay.com if you need to increase test limits.');
-      }
-      
-      throw new Error(`Failed to create Razorpay account: ${errorData}`);
+      throw new Error(`Failed to create Razorpay linked account: ${errorData}`);
     }
 
     const accountData = await accountResponse.json();
