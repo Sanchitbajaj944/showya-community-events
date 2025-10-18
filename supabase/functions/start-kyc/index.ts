@@ -317,7 +317,6 @@ serve(async (req) => {
       },
       addresses: {
         residential: {
-          street1: cappedStreet1,
           city: profile.city.trim(),
           state: profile.state.trim(),
           postal_code: postalCodeDigits,
