@@ -106,7 +106,47 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         }
       });
 
-      if (error) throw error;
+      // Handle error response from edge function
+      if (error || (data && data.error)) {
+        const errorMessage = data?.error || error?.message || "Failed to start KYC process";
+        const errorField = data?.field;
+        
+        console.error("KYC Error:", errorMessage, "Field:", errorField);
+        
+        // Parse error to determine which field failed and reopen relevant dialog
+        const phoneFields = ['phone'];
+        const addressFields = ['street', 'street1', 'street2', 'city', 'state', 'postal_code', 'address'];
+        const panDobFields = ['pan', 'dob'];
+        
+        if (errorField && phoneFields.includes(errorField)) {
+          toast.error(`Phone number issue: ${errorMessage}. Please re-enter.`);
+          setPhoneDialogOpen(true);
+        } else if (errorField && addressFields.includes(errorField)) {
+          toast.error(`Address issue: ${errorMessage}. Please re-enter.`);
+          setAddressDialogOpen(true);
+        } else if (errorField && panDobFields.includes(errorField)) {
+          toast.error(`PAN/DOB issue: ${errorMessage}. Please re-enter.`);
+          setPanDobDialogOpen(true);
+        } else if (errorMessage.toLowerCase().includes('phone')) {
+          toast.error("Phone validation failed. Please re-enter your phone number.");
+          setPhoneDialogOpen(true);
+        } else if (errorMessage.toLowerCase().includes('address') || errorMessage.toLowerCase().includes('street') || errorMessage.toLowerCase().includes('city') || errorMessage.toLowerCase().includes('state') || errorMessage.toLowerCase().includes('postal')) {
+          toast.error("Address validation failed. Please re-enter your address.");
+          setAddressDialogOpen(true);
+        } else if (errorMessage.toLowerCase().includes('pan') || errorMessage.toLowerCase().includes('dob')) {
+          toast.error("PAN/DOB validation failed. Please re-enter your details.");
+          setPanDobDialogOpen(true);
+        } else if (errorMessage.toLowerCase().includes('name')) {
+          toast.error("Name validation failed. Please verify your profile.");
+          // Name is in profile, so start from beginning
+          setPhoneDialogOpen(true);
+        } else {
+          // Generic validation error - prompt to re-enter all details
+          toast.error(`Validation failed: ${errorMessage}. Please re-enter your details.`);
+          setPhoneDialogOpen(true);
+        }
+        return;
+      }
 
       // If we have an onboarding URL, redirect to it (works in both test and live mode)
       if (data.onboarding_url) {
@@ -125,8 +165,9 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         onRefresh();
       }
     } catch (error: any) {
-      console.error("Error starting KYC:", error);
-      toast.error(error.message || "Failed to start KYC process");
+      console.error("Unexpected error starting KYC:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+      setPhoneDialogOpen(true);
     } finally {
       setLoading(false);
     }
