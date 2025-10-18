@@ -32,6 +32,33 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   const [existingProfile, setExistingProfile] = useState<any>(null);
   const [kycRetryMode, setKycRetryMode] = useState(false);
 
+  // Reset all KYC collected data and profile
+  const resetKycData = async () => {
+    // Clear all collected state
+    setDocuments(null);
+    setBankDetails(null);
+    setExistingProfile(null);
+    setKycRetryMode(true);
+    
+    // Clear user profile data from database (phone, address, pan, dob)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await supabase
+        .from("profiles")
+        .update({
+          phone: null,
+          street1: null,
+          street2: null,
+          city: null,
+          state: null,
+          postal_code: null,
+          pan: null,
+          dob: null
+        })
+        .eq("user_id", session.user.id);
+    }
+  };
+
   const handleStartKyc = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -132,9 +159,10 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
       // Handle special actions from backend
       if (data?.action === 'reenter_details') {
-        setKycRetryMode(true);
         toast.error(data.message, { duration: 6000 });
-        // Show phone dialog to start re-entry flow
+        // Reset all collected data and start fresh
+        await resetKycData();
+        // Show phone dialog to start re-entry flow from scratch
         setPhoneDialogOpen(true);
         return;
       }
@@ -436,15 +464,19 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
             <XCircle className="h-4 w-4 text-red-500" />
             <AlertDescription className="text-red-700 dark:text-red-300">
               <strong>🔴 Verification Failed</strong>
-              <p className="mt-1">Your previous KYC attempt couldn't be verified. Please review your details and try again.</p>
+              <p className="mt-1">Your previous KYC attempt couldn't be verified. Please review all your details and try again.</p>
               <p className="mt-2 text-sm">Make sure your PAN and address match your government records.</p>
               <Button 
                 size="sm" 
                 className="mt-3"
-                onClick={handleStartKyc}
+                onClick={async () => {
+                  await resetKycData();
+                  toast.info("Please re-enter all your details from the beginning", { duration: 4000 });
+                  setPhoneDialogOpen(true);
+                }}
                 disabled={loading}
               >
-                {loading ? "Loading..." : "Re-enter Details"}
+                {loading ? "Loading..." : "Start KYC Again"}
               </Button>
             </AlertDescription>
           </Alert>
