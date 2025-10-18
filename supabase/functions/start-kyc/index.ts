@@ -288,11 +288,35 @@ serve(async (req) => {
         throw new Error('Razorpay authentication failed. Please verify your API credentials are correct and have the Route (Connected Accounts) feature enabled.');
       }
       
+      // Handle "email already exists" error
+      if (errorData.includes('email already exists')) {
+        console.log('Email already exists in Razorpay. This may be from a previous failed attempt.');
+        throw new Error('This email is already associated with a Razorpay account. Please delete the old Razorpay account from your dashboard and try again, or contact support@razorpay.com for assistance.');
+      }
+      
       throw new Error(`Failed to create Razorpay linked account: ${errorData}`);
     }
 
     const accountData = await accountResponse.json();
     console.log('Razorpay account created:', accountData.id);
+    
+    // CRITICAL: Save account to database immediately after creation
+    // This ensures we have a record even if subsequent steps fail
+    console.log('Saving account to database immediately...');
+    const { error: initialInsertError } = await supabaseClient
+      .from('razorpay_accounts')
+      .insert({
+        community_id: communityId,
+        razorpay_account_id: accountData.id,
+        kyc_status: 'IN_PROGRESS',
+        business_type: 'individual',
+        legal_business_name: sanitizedLegalBusinessName,
+        last_updated: new Date().toISOString()
+      });
+    
+    if (initialInsertError) {
+      console.error('Warning: Failed to save account to database (continuing anyway):', initialInsertError);
+    }
 
     // Rate limit safety - small delay before next API call
     await new Promise(r => setTimeout(r, 200));
@@ -451,23 +475,19 @@ serve(async (req) => {
       throw new Error('Failed to activate payment products. Please contact support.');
     }
 
-    // Store Razorpay account in database
+    // Update Razorpay account record with all details
     const onboardingUrl = `https://dashboard.razorpay.com/app/route-accounts/${accountData.id}/onboarding`;
     
     // Mask sensitive bank details for storage
     const maskedAccountNumber = `****${bankDetails.accountNumber.slice(-4)}`;
     
-    const { error: insertError } = await supabaseClient
+    const { error: updateError } = await supabaseClient
       .from('razorpay_accounts')
-      .insert({
-        community_id: communityId,
-        razorpay_account_id: accountData.id,
+      .update({
         stakeholder_id: stakeholderData.id,
         product_id: productId,
         onboarding_url: onboardingUrl,
         kyc_status: 'IN_PROGRESS',
-        business_type: 'individual',
-        legal_business_name: sanitizedLegalBusinessName,
         bank_account_number: maskedAccountNumber,
         bank_ifsc: bankDetails.ifsc,
         bank_beneficiary_name: bankDetails.beneficiaryName,
@@ -476,11 +496,13 @@ serve(async (req) => {
         products_requested: true,
         products_activated: false,
         last_updated: new Date().toISOString()
-      });
+      })
+      .eq('razorpay_account_id', accountData.id)
+      .eq('community_id', communityId);
 
-    if (insertError) {
-      console.error('Error storing Razorpay account:', insertError);
-      throw insertError;
+    if (updateError) {
+      console.error('Error updating Razorpay account:', updateError);
+      throw updateError;
     }
 
     // Update community KYC status
