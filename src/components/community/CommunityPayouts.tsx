@@ -244,91 +244,40 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
     setUserPhone(phone);
     setPhoneDialogOpen(false);
     
-    // After phone is saved, check for address
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("street1, city, state, postal_code, pan, dob")
-      .eq("user_id", session.user.id)
-      .single();
-
-    if (!profile?.street1 || !profile?.city || !profile?.state || !profile?.postal_code) {
-      setAddressDialogOpen(true);
-    } else if (!profile?.pan || !profile?.dob) {
-      setPanDobDialogOpen(true);
-    } else if (!documents) {
-      setDocumentsDialogOpen(true);
-    } else {
-      await initiateKyc();
-    }
+    // Always go to address dialog next in the flow
+    setAddressDialogOpen(true);
   };
 
   const handleAddressComplete = async () => {
     setAddressDialogOpen(false);
     
-    // Check for PAN and DOB next
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("pan, dob")
-      .eq("user_id", session.user.id)
-      .single();
-
-    if (!profile?.pan || !profile?.dob) {
-      setPanDobDialogOpen(true);
-    } else if (!documents) {
-      setDocumentsDialogOpen(true);
-    } else if (!bankDetails) {
-      setBankDetailsDialogOpen(true);
-    } else {
-      await initiateKyc();
-    }
+    // Always go to PAN/DOB dialog next in the flow
+    setPanDobDialogOpen(true);
   };
 
-  const handlePanDobComplete = async (pan: string, dob: string) => {
+  const handlePanDobComplete = async () => {
     setPanDobDialogOpen(false);
     
-    // After PAN/DOB, check for documents
-    if (!documents) {
-      setDocumentsDialogOpen(true);
-    } else if (!bankDetails) {
-      setBankDetailsDialogOpen(true);
-    } else {
-      await initiateKyc();
-    }
+    // Always go to documents dialog next in the flow
+    setDocumentsDialogOpen(true);
   };
 
   const handleDocumentsComplete = async (docs: { panCard: File; addressProof: File }) => {
     setDocuments(docs);
     setDocumentsDialogOpen(false);
     
-    // After documents, check for bank details
-    if (!bankDetails) {
-      toast.success("Documents uploaded! Now let's add your bank details.");
-      setBankDetailsDialogOpen(true);
-    } else {
-      toast.success("Documents uploaded! Starting KYC process...");
-      setTimeout(() => {
-        handleStartKyc();
-      }, 500);
-    }
+    // Always go to bank details dialog next in the flow
+    setBankDetailsDialogOpen(true);
   };
 
-  const handleBankDetailsComplete = async (data: { accountNumber: string; ifsc: string; beneficiaryName: string }) => {
-    setBankDetails(data);
+  const handleBankDetailsComplete = async (details: { accountNumber: string; ifsc: string; beneficiaryName: string }) => {
+    setBankDetails(details);
     setBankDetailsDialogOpen(false);
     
-    toast.success("Bank details saved! Starting KYC verification...");
-    
-    // Delay slightly to allow state to update
-    setTimeout(() => {
-      handleStartKyc();
-    }, 500);
+    // Now that all details are collected, initiate KYC
+    await initiateKyc();
   };
+
 
   const handleCheckStatus = async () => {
     setChecking(true);
