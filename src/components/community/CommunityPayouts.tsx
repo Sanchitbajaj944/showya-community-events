@@ -191,6 +191,17 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         return;
       }
 
+      if (data?.action === 'manual_setup') {
+        toast.warning(data.message, { duration: 8000 });
+        // Open Razorpay dashboard in new tab for manual setup
+        if (data.onboarding_url) {
+          window.open(data.onboarding_url, '_blank');
+          toast.info('Razorpay dashboard opened. Complete KYC there and check back later.', { duration: 6000 });
+        }
+        onRefresh();
+        return;
+      }
+
       // Handle error response from edge function
       if (error || (data && data.error)) {
         const errorMessage = data?.error || error?.message || "Failed to start KYC process";

@@ -379,7 +379,8 @@ serve(async (req) => {
 
     await new Promise(r => setTimeout(r, 200));
 
-    // Add stakeholder (if not already exists)
+     // Add stakeholder (if not already exists)
+    let canAccessAccount = true;
     if (!razorpayStakeholderId) {
       // First, try to fetch existing stakeholders
       console.log('Checking for existing stakeholders...');
@@ -400,10 +401,13 @@ serve(async (req) => {
           razorpayStakeholderId = existingStakeholders.items[0].id;
           console.log('Using existing stakeholder:', razorpayStakeholderId);
         }
+      } else if (fetchStakeholdersResponse.status === 403 || fetchStakeholdersResponse.status === 401) {
+        console.log('Cannot access account via API. Account may need manual setup.');
+        canAccessAccount = false;
       }
 
-      // Only create stakeholder if none exists
-      if (!razorpayStakeholderId) {
+      // Only create stakeholder if none exists and we have access
+      if (!razorpayStakeholderId && canAccessAccount) {
         console.log('Adding stakeholder with masked PAN:', `****${profile.pan.slice(-4)}`);
         
         const stakeholderPayload = {
@@ -445,28 +449,10 @@ serve(async (req) => {
           const errorData = await stakeholderResponse.text();
           console.error('Stakeholder creation failed:', errorData);
           
-          // If access denied, try to fetch stakeholders one more time
-          if (errorData.includes('Access Denied')) {
-            console.log('Access denied when creating stakeholder. Retrying fetch...');
-            const retryFetch = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/stakeholders`, {
-              method: 'GET',
-              headers: {
-                'Authorization': `Basic ${auth}`,
-                'Content-Type': 'application/json',
-              }
-            });
-            
-            if (retryFetch.ok) {
-              const retryData = await retryFetch.json();
-              if (retryData.items && retryData.items.length > 0) {
-                razorpayStakeholderId = retryData.items[0].id;
-                console.log('Found stakeholder on retry:', razorpayStakeholderId);
-              } else {
-                throw new Error('This Razorpay account exists but stakeholder information cannot be accessed. Please contact support to complete KYC setup.');
-              }
-            } else {
-              throw new Error('Unable to access stakeholder information. Please contact support.');
-            }
+          // If access denied, mark account as needing manual setup
+          if (errorData.includes('Access Denied') || stakeholderResponse.status === 403) {
+            console.log('Access denied. Account requires manual setup in Razorpay dashboard.');
+            canAccessAccount = false;
           } else {
             throw new Error(`Failed to add stakeholder: ${errorData}`);
           }
@@ -480,6 +466,45 @@ serve(async (req) => {
       await new Promise(r => setTimeout(r, 200));
     } else {
       console.log('Using existing stakeholder:', razorpayStakeholderId);
+    }
+
+    // If we can't access the account, skip remaining steps and inform user
+    if (!canAccessAccount) {
+      console.log('Skipping remaining KYC steps due to access restrictions.');
+      
+      // Update database with what we know
+      const { error: updateError } = await supabaseClient
+        .from('razorpay_accounts')
+        .upsert({
+          community_id: communityId,
+          razorpay_account_id: razorpayAccountId,
+          kyc_status: 'PENDING',
+          business_type: 'individual',
+          legal_business_name: sanitizedLegalBusinessName,
+          error_reason: 'Account requires manual KYC completion in Razorpay dashboard',
+          last_updated: new Date().toISOString()
+        }, {
+          onConflict: 'community_id'
+        });
+
+      if (updateError) {
+        console.error('Failed to update database:', updateError);
+      }
+
+      const manualOnboardingUrl = `https://dashboard.razorpay.com/app/route-accounts/${razorpayAccountId}/onboarding`;
+      
+      return new Response(
+        JSON.stringify({
+          action: 'manual_setup',
+          message: 'Your Razorpay account exists but requires manual completion. Please complete KYC in your Razorpay dashboard.',
+          onboarding_url: manualOnboardingUrl,
+          razorpay_account_id: razorpayAccountId
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      );
     }
 
     // Upload documents if provided
