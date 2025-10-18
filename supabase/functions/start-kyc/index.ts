@@ -182,6 +182,8 @@ serve(async (req) => {
       throw new Error('Razorpay credentials missing. Please contact support.');
     }
     
+    console.log('Using Razorpay Key ID:', razorpayKeyId.substring(0, 8) + '...');
+    
     const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
     // Step 1: Create Razorpay account (v2 API)
@@ -278,6 +280,14 @@ serve(async (req) => {
     if (!accountResponse.ok) {
       const errorData = await accountResponse.text();
       console.error('Razorpay account creation failed:', errorData);
+      console.error('Response status:', accountResponse.status);
+      console.error('Response headers:', Object.fromEntries(accountResponse.headers.entries()));
+      
+      // Check if it's an authentication issue
+      if (accountResponse.status === 401 || accountResponse.status === 403) {
+        throw new Error('Razorpay authentication failed. Please verify your API credentials are correct and have the Route (Connected Accounts) feature enabled.');
+      }
+      
       throw new Error(`Failed to create Razorpay account: ${errorData}`);
     }
 
