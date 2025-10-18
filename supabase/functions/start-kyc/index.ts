@@ -699,50 +699,118 @@ serve(async (req) => {
   }
 });
 
-// Helper function to upload documents to Razorpay
+// Helper function to upload documents to Razorpay with comprehensive error handling
 async function uploadDocument(
   accountId: string,
   stakeholderId: string,
-  documentType: string,
-  documentSubType: string,
+  documentType: 'individual_proof_of_identification' | 'individual_proof_of_address',
+  documentSubType: 'personal_pan' | 'aadhaar_front' | 'aadhaar_back' | 'voter_id_front' | 'voter_id_back',
   document: { name: string; type: string; data: string },
   auth: string
 ) {
-  const formData = new FormData();
-  
-  const binaryData = Uint8Array.from(atob(document.data), c => c.charCodeAt(0));
-  const blob = new Blob([binaryData], { type: document.type });
-  
-  const maxSize = document.type.includes('pdf') ? 2 * 1024 * 1024 : 4 * 1024 * 1024;
-  if (blob.size > maxSize) {
-    throw new Error(`Document too large. Maximum size is ${maxSize / (1024 * 1024)} MB.`);
-  }
-  
-  formData.append('file', blob, document.name);
-  formData.append('document_type', documentType);
-  
-  // Only append subtype for address proof documents, not for PAN card
-  if (documentType === 'individual_proof_of_address') {
-    formData.append(documentSubType, 'true');
+  // 1) Validate MIME type
+  const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+  const mimeType = (document.type || '').toLowerCase();
+  if (!allowedTypes.includes(mimeType)) {
+    throw new Error(JSON.stringify({ 
+      error: { 
+        description: `Unsupported file type: ${mimeType}. Use JPG/PNG/PDF`, 
+        field: 'document' 
+      } 
+    }));
   }
 
-  const response = await fetch(
+  // 2) Decode base64 robustly
+  let binaryData;
+  try {
+    const base64Clean = (document.data || '').replace(/\s/g, '');
+    binaryData = Uint8Array.from(atob(base64Clean), c => c.charCodeAt(0));
+  } catch (err) {
+    console.error('Base64 decode error:', err);
+    throw new Error(JSON.stringify({ 
+      error: { 
+        description: 'Corrupt file data. Please re-upload the document.', 
+        field: 'document' 
+      } 
+    }));
+  }
+
+  // 3) Size validation - keep it ≤ 2MB for safety
+  const blob = new Blob([binaryData], { type: mimeType });
+  if (blob.size > 2 * 1024 * 1024) {
+    throw new Error(JSON.stringify({ 
+      error: { 
+        description: 'Document too large. Max size is 2 MB.', 
+        field: 'document' 
+      } 
+    }));
+  }
+
+  // 4) Ensure filename has proper extension
+  const ensureExtension = (name: string): string => {
+    const hasExtension = /\.[a-z0-9]+$/i.test(name || '');
+    if (hasExtension) return name;
+    
+    const extension = mimeType === 'application/pdf' 
+      ? 'pdf' 
+      : (mimeType === 'image/png' ? 'png' : 'jpg');
+    return (name || 'document') + '.' + extension;
+  };
+  const filename = ensureExtension(document.name);
+
+  // 5) Build FormData with correct structure
+  const formData = new FormData();
+  formData.append('file', new Blob([blob], { type: mimeType }), filename);
+  formData.append('document_type', documentType);
+  formData.append(documentSubType, 'true'); // exactly one subtype flag
+
+  // 6) Execute request with retry logic for 5xx errors
+  const executeRequest = () => fetch(
     `https://api.razorpay.com/v2/accounts/${accountId}/stakeholders/${stakeholderId}/documents`,
     {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${auth}`,
+        'Authorization': `Basic ${auth}`
       },
       body: formData
     }
   );
 
-  if (!response.ok) {
-    const errorData = await response.text();
-    console.error(`Document upload failed for ${documentType}:`, errorData);
-    throw new Error(`Failed to upload ${documentType}`);
+  let response = await executeRequest();
+  
+  // Retry once on 5xx errors
+  if (!response.ok && response.status >= 500) {
+    console.log(`Retrying upload after ${response.status} error...`);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    response = await executeRequest();
   }
 
-  console.log(`Document uploaded: ${documentType}`);
-  return await response.json();
+  const responseText = await response.text();
+  
+  if (!response.ok) {
+    console.error(`Document upload failed for ${documentType}:`, responseText);
+    
+    try {
+      const errorJson = JSON.parse(responseText);
+      const description = errorJson?.error?.description || responseText;
+      const field = errorJson?.error?.field || null;
+      
+      throw new Error(JSON.stringify({ 
+        error: { 
+          description, 
+          field 
+        } 
+      }));
+    } catch (parseError) {
+      throw new Error(responseText || `Document upload failed (${response.status})`);
+    }
+  }
+
+  console.log(`Document uploaded successfully: ${documentType}`);
+  
+  try {
+    return JSON.parse(responseText);
+  } catch {
+    return { ok: true };
+  }
 }
