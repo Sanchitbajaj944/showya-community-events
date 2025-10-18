@@ -39,7 +39,7 @@ serve(async (req) => {
       throw new Error('Community not found or unauthorized');
     }
 
-    // Check if Razorpay account already exists
+    // Check if Razorpay account already exists in our database
     const { data: existingAccount } = await supabaseClient
       .from('razorpay_accounts')
       .select('*')
@@ -48,27 +48,26 @@ serve(async (req) => {
 
     if (existingAccount) {
       const status = existingAccount.kyc_status;
+      console.log('Found existing Razorpay account:', existingAccount.razorpay_account_id, 'Status:', status);
       
-      // If KYC failed or rejected, require user to re-enter details
-      if (status === 'FAILED' || status === 'REJECTED') {
-        console.log('Previous KYC attempt failed/rejected. User must re-enter details.');
+      // If already activated, return success
+      if (status === 'ACTIVATED' || status === 'APPROVED') {
         return new Response(
           JSON.stringify({
-            action: 'reenter_details',
-            message: 'Your previous KYC attempt couldn\'t be verified. Please review your details and try again.',
-            error_reason: existingAccount.error_reason || 'Verification failed',
-            requires_user_input: true
+            success: true,
+            message: 'KYC already verified',
+            kyc_status: status
           }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 400
+            status: 200
           }
         );
       }
       
-      // If KYC is pending, in progress, or verified, don't allow resubmission
-      if (status === 'IN_PROGRESS' || status === 'PENDING' || status === 'VERIFIED') {
-        console.log('KYC already in progress or pending approval.');
+      // If KYC is pending or verified, show status
+      if (status === 'PENDING' || status === 'VERIFIED') {
+        console.log('KYC already submitted and under review.');
         const onboardingUrl = `https://dashboard.razorpay.com/app/route-accounts/${existingAccount.razorpay_account_id}/onboarding`;
         
         return new Response(
@@ -84,28 +83,22 @@ serve(async (req) => {
           }
         );
       }
-
-      // If already activated, return success
-      if (status === 'ACTIVATED' || status === 'APPROVED') {
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: 'KYC already verified',
-            kyc_status: status
-          }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200
-          }
-        );
+      
+      // For IN_PROGRESS accounts, we'll check if we need to complete missing steps
+      if (status === 'IN_PROGRESS') {
+        console.log('Account exists in IN_PROGRESS state.');
+        // If stakeholder already exists, we might be retrying after a partial failure
+        // Continue with the flow using existing account
       }
-
-      // Delete failed account to start fresh KYC process
-      console.log('Deleting previous failed account to start fresh KYC process...');
-      await supabaseClient
-        .from('razorpay_accounts')
-        .delete()
-        .eq('id', existingAccount.id);
+      
+      // If KYC failed or rejected, delete and start fresh
+      if (status === 'FAILED' || status === 'REJECTED') {
+        console.log('Previous KYC attempt failed. Will delete and start fresh.');
+        await supabaseClient
+          .from('razorpay_accounts')
+          .delete()
+          .eq('id', existingAccount.id);
+      }
     }
 
     // Get user profile for KYC details
@@ -143,7 +136,7 @@ serve(async (req) => {
       throw new Error('Postal code must be 6 digits.');
     }
 
-    // Validate city and state (min 3 chars, allow letters, spaces, numbers, hyphens, and common special chars)
+    // Validate city and state (min 3 chars)
     if (profile.city.trim().length < 3) {
       throw new Error('City must be at least 3 characters long.');
     }
@@ -181,12 +174,7 @@ serve(async (req) => {
     
     const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
-    // Step 1: Create Razorpay linked account (v1 API - no limits on linked accounts)
-    // Make reference_id unique, alphanumeric only, max 20 chars
-    const timestamp = Date.now().toString().slice(-8);
-    const cleanCommunityId = communityId.replace(/-/g, '').substring(0, 12);
-    const shortReferenceId = `${cleanCommunityId}${timestamp}`;
-    
+    // Helper functions for sanitization
     const sanitizeDescription = (desc: string) => {
       return desc
         .replace(/[^a-zA-Z0-9\s\-]/g, '')
@@ -197,10 +185,10 @@ serve(async (req) => {
 
     const sanitizeName = (name: string) => {
       const cleaned = name
-        .replace(/[^a-zA-Z\s]/g, '') // Keep only letters and spaces
-        .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
+        .replace(/[^a-zA-Z\s]/g, '')
+        .replace(/\s+/g, ' ')
         .trim()
-        .substring(0, 50); // Max 50 characters
+        .substring(0, 50);
       
       if (cleaned.length < 3) {
         throw new Error('Name must be at least 3 characters long.');
@@ -211,7 +199,6 @@ serve(async (req) => {
 
     const sanitizePhone = (phone: string): string => {
       const digitsOnly = phone.replace(/\D/g, '');
-      // Remove country code if present (91 for India)
       const cleanPhone = digitsOnly.startsWith('91') && digitsOnly.length > 11 
         ? digitsOnly.substring(2) 
         : digitsOnly;
@@ -223,162 +210,171 @@ serve(async (req) => {
       return cleanPhone;
     };
 
+    // Prepare sanitized data
     const rawDescription = community.description || `${community.name} Community Events`;
     const sanitizedDescription = sanitizeDescription(rawDescription) || 'Community events and activities';
-
     const sanitizedPhone = sanitizePhone(profile.phone);
     const sanitizedContactName = sanitizeName(profile.name || user.user_metadata?.name || 'Community Owner');
     const sanitizedLegalBusinessName = sanitizeName(profile.name || user.user_metadata?.name || 'Community Owner');
     const sanitizedEmail = user.email?.toLowerCase().trim();
-
-    // Use the validated and potentially auto-fixed street1
     const cappedStreet1 = street1ForRazorpay.substring(0, 255);
 
-    // Linked account payload for v2 API with type: route
-    // For individual business type, PAN is provided at stakeholder level, not here
-    const accountPayload = {
-      email: sanitizedEmail,
-      phone: sanitizedPhone,
-      type: 'route',
-      reference_id: shortReferenceId,
-      legal_business_name: sanitizedLegalBusinessName,
-      business_type: 'individual',
-      contact_name: sanitizedContactName,
-      profile: {
-        category: 'others',
-        subcategory: 'others',
-        description: sanitizedDescription,
+    // Check if we should use existing account or create new
+    const shouldCreateNewAccount = !existingAccount || 
+                                   existingAccount.kyc_status === 'FAILED' || 
+                                   existingAccount.kyc_status === 'REJECTED' ||
+                                   !existingAccount.razorpay_account_id;
+    
+    let razorpayAccountId: string;
+    let razorpayStakeholderId: string | undefined;
+
+    if (!shouldCreateNewAccount && existingAccount) {
+      // Use existing account
+      console.log('Using existing Razorpay account:', existingAccount.razorpay_account_id);
+      razorpayAccountId = existingAccount.razorpay_account_id;
+      razorpayStakeholderId = existingAccount.stakeholder_id || undefined;
+    } else {
+      // Create new Razorpay linked account
+      const timestamp = Date.now().toString().slice(-8);
+      const cleanCommunityId = communityId.replace(/-/g, '').substring(0, 12);
+      const shortReferenceId = `${cleanCommunityId}${timestamp}`;
+
+      const accountPayload = {
+        email: sanitizedEmail,
+        phone: sanitizedPhone,
+        type: 'route',
+        reference_id: shortReferenceId,
+        legal_business_name: sanitizedLegalBusinessName,
+        business_type: 'individual',
+        contact_name: sanitizedContactName,
+        profile: {
+          category: 'others',
+          subcategory: 'others',
+          description: sanitizedDescription,
+          addresses: {
+            registered: {
+              street1: cappedStreet1,
+              street2: profile.street2?.trim() || '',
+              city: profile.city.trim(),
+              state: profile.state.trim(),
+              postal_code: postalCodeDigits,
+              country: 'IN'
+            }
+          }
+        }
+      };
+
+      console.log('Creating Razorpay LINKED account (type: route) with v2 API');
+      
+      const accountResponse = await fetch('https://api.razorpay.com/v2/accounts', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(accountPayload)
+      });
+
+      if (!accountResponse.ok) {
+        const errorData = await accountResponse.text();
+        console.error('Razorpay account creation failed:', errorData);
+        
+        if (accountResponse.status === 401 || accountResponse.status === 403) {
+          throw new Error('Razorpay authentication failed. Please verify your API credentials are correct and have the Route (Connected Accounts) feature enabled.');
+        }
+        
+        if (errorData.includes('email already exists')) {
+          throw new Error('This email is already associated with a Razorpay account. Please contact support for assistance.');
+        }
+        
+        throw new Error(`Failed to create Razorpay linked account: ${errorData}`);
+      }
+
+      const accountData = await accountResponse.json();
+      console.log('Razorpay account created:', accountData.id);
+      razorpayAccountId = accountData.id;
+      
+      // Save account to database immediately
+      console.log('Saving account to database...');
+      const { error: initialInsertError } = await supabaseClient
+        .from('razorpay_accounts')
+        .insert({
+          community_id: communityId,
+          razorpay_account_id: accountData.id,
+          kyc_status: 'IN_PROGRESS',
+          business_type: 'individual',
+          legal_business_name: sanitizedLegalBusinessName,
+          last_updated: new Date().toISOString()
+        });
+      
+      if (initialInsertError) {
+        console.error('Warning: Failed to save account to database:', initialInsertError);
+      }
+    }
+
+    await new Promise(r => setTimeout(r, 200));
+
+    // Add stakeholder (if not already exists)
+    if (!razorpayStakeholderId) {
+      console.log('Adding stakeholder with masked PAN:', `****${profile.pan.slice(-4)}`);
+      
+      const stakeholderPayload = {
+        name: sanitizedContactName,
+        email: sanitizedEmail,
+        phone: {
+          primary: sanitizedPhone,
+          secondary: ''
+        },
+        percentage_ownership: 100,
+        relationship: {
+          director: false,
+          executive: true
+        },
+        kyc: {
+          pan: profile.pan.trim()
+        },
         addresses: {
-          registered: {
-            street1: cappedStreet1,
-            street2: profile.street2?.trim() || '',
+          residential: {
             city: profile.city.trim(),
             state: profile.state.trim(),
             postal_code: postalCodeDigits,
             country: 'IN'
           }
         }
-      }
-    };
+      };
 
-    console.log('Creating Razorpay LINKED account (type: route) with v2 API');
-    console.log('Masked summary:', JSON.stringify({
-      ...accountPayload,
-      phone: '***' + accountPayload.phone.slice(-4),
-      email: accountPayload.email ? accountPayload.email.replace(/(.{2}).*(@.*)/, '$1***$2') : 'N/A'
-    }, null, 2));
-    
-    const accountResponse = await fetch('https://api.razorpay.com/v2/accounts', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${auth}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(accountPayload)
-    });
-
-    if (!accountResponse.ok) {
-      const errorData = await accountResponse.text();
-      console.error('Razorpay account creation failed:', errorData);
-      console.error('Response status:', accountResponse.status);
-      console.error('Response headers:', Object.fromEntries(accountResponse.headers.entries()));
-      
-      // Check if it's an authentication issue
-      if (accountResponse.status === 401 || accountResponse.status === 403) {
-        throw new Error('Razorpay authentication failed. Please verify your API credentials are correct and have the Route (Connected Accounts) feature enabled.');
-      }
-      
-      // Handle "email already exists" error
-      if (errorData.includes('email already exists')) {
-        console.log('Email already exists in Razorpay. This may be from a previous failed attempt.');
-        throw new Error('This email is already associated with a Razorpay account. Please delete the old Razorpay account from your dashboard and try again, or contact support@razorpay.com for assistance.');
-      }
-      
-      throw new Error(`Failed to create Razorpay linked account: ${errorData}`);
-    }
-
-    const accountData = await accountResponse.json();
-    console.log('Razorpay account created:', accountData.id);
-    
-    // CRITICAL: Save account to database immediately after creation
-    // This ensures we have a record even if subsequent steps fail
-    console.log('Saving account to database immediately...');
-    const { error: initialInsertError } = await supabaseClient
-      .from('razorpay_accounts')
-      .insert({
-        community_id: communityId,
-        razorpay_account_id: accountData.id,
-        kyc_status: 'IN_PROGRESS',
-        business_type: 'individual',
-        legal_business_name: sanitizedLegalBusinessName,
-        last_updated: new Date().toISOString()
+      const stakeholderResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/stakeholders`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(stakeholderPayload)
       });
-    
-    if (initialInsertError) {
-      console.error('Warning: Failed to save account to database (continuing anyway):', initialInsertError);
-    }
 
-    // Rate limit safety - small delay before next API call
-    await new Promise(r => setTimeout(r, 200));
-
-    // Step 2: Add stakeholder
-    console.log('Adding stakeholder with masked PAN:', `****${profile.pan.slice(-4)}`);
-    
-    const stakeholderPayload = {
-      name: sanitizedContactName,
-      email: sanitizedEmail,
-      phone: {
-        primary: sanitizedPhone,
-        secondary: ''
-      },
-      percentage_ownership: 100,
-      relationship: {
-        director: false,
-        executive: true
-      },
-      kyc: {
-        pan: profile.pan.trim()
-      },
-      addresses: {
-        residential: {
-          city: profile.city.trim(),
-          state: profile.state.trim(),
-          postal_code: postalCodeDigits,
-          country: 'IN'
-        }
+      if (!stakeholderResponse.ok) {
+        const errorData = await stakeholderResponse.text();
+        console.error('Stakeholder creation failed:', errorData);
+        throw new Error(`Failed to add stakeholder: ${errorData}`);
       }
-    };
 
-    const stakeholderResponse = await fetch(`https://api.razorpay.com/v2/accounts/${accountData.id}/stakeholders`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${auth}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(stakeholderPayload)
-    });
+      const stakeholderData = await stakeholderResponse.json();
+      console.log('Stakeholder added:', stakeholderData.id);
+      razorpayStakeholderId = stakeholderData.id;
 
-    if (!stakeholderResponse.ok) {
-      const errorData = await stakeholderResponse.text();
-      console.error('Stakeholder creation failed:', errorData);
-      throw new Error(`Failed to add stakeholder: ${errorData}`);
+      await new Promise(r => setTimeout(r, 200));
+    } else {
+      console.log('Using existing stakeholder:', razorpayStakeholderId);
     }
 
-    const stakeholderData = await stakeholderResponse.json();
-    console.log('Stakeholder added:', stakeholderData.id);
-
-    // Rate limit safety - small delay before next API call
-    await new Promise(r => setTimeout(r, 200));
-
-    // Step 3: Upload documents if provided
-    if (documents) {
+    // Upload documents if provided
+    if (documents && razorpayStakeholderId) {
       console.log('Uploading KYC documents...');
       
-      // Upload PAN card
       if (documents.panCard) {
         await uploadDocument(
-          accountData.id,
-          stakeholderData.id,
+          razorpayAccountId,
+          razorpayStakeholderId,
           'individual_proof_of_identification',
           'personal_pan',
           documents.panCard,
@@ -386,15 +382,13 @@ serve(async (req) => {
         );
       }
 
-      // Upload address proof
       if (documents.addressProof) {
-        // Detect document type dynamically
         const docType = documents.addressProof.type || 'voter_id';
         const docSubType = docType === 'aadhaar' ? 'aadhaar_front' : 'voter_id_front';
         
         await uploadDocument(
-          accountData.id,
-          stakeholderData.id,
+          razorpayAccountId,
+          razorpayStakeholderId,
           'individual_proof_of_address',
           docSubType,
           documents.addressProof,
@@ -402,14 +396,13 @@ serve(async (req) => {
         );
       }
       
-      // Rate limit safety
       await new Promise(r => setTimeout(r, 200));
     }
 
-    // Step 4: Request Route product configuration
+    // Request Route product configuration
     let productId: string;
     try {
-      const productResponse = await fetch(`https://api.razorpay.com/v2/accounts/${accountData.id}/products`, {
+      const productResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products`, {
         method: 'POST',
         headers: {
           'Authorization': `Basic ${auth}`,
@@ -432,10 +425,9 @@ serve(async (req) => {
       productId = productData.id;
       console.log('Route product requested:', productId);
 
-      // Rate limit safety
       await new Promise(r => setTimeout(r, 200));
 
-      // Step 5: Update product configuration with settlement bank account
+      // Update product configuration with settlement bank account
       const settlementPayload = {
         settlements: {
           account_number: bankDetails.accountNumber,
@@ -447,7 +439,7 @@ serve(async (req) => {
       };
 
       console.log('Updating product configuration with settlement details...');
-      const updateResponse = await fetch(`https://api.razorpay.com/v2/accounts/${accountData.id}/products/${productId}`, {
+      const updateResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Basic ${auth}`,
@@ -460,7 +452,6 @@ serve(async (req) => {
         const errorData = await updateResponse.text();
         console.error('Product update failed:', errorData);
         
-        // Check if it's a locked form error (under review)
         if (errorData.includes('activation form locked') || errorData.includes('under_review')) {
           console.log('Form is locked - account is under review. This is expected.');
         } else {
@@ -476,15 +467,13 @@ serve(async (req) => {
     }
 
     // Update Razorpay account record with all details
-    const onboardingUrl = `https://dashboard.razorpay.com/app/route-accounts/${accountData.id}/onboarding`;
-    
-    // Mask sensitive bank details for storage
+    const onboardingUrl = `https://dashboard.razorpay.com/app/route-accounts/${razorpayAccountId}/onboarding`;
     const maskedAccountNumber = `****${bankDetails.accountNumber.slice(-4)}`;
     
     const { error: updateError } = await supabaseClient
       .from('razorpay_accounts')
       .update({
-        stakeholder_id: stakeholderData.id,
+        stakeholder_id: razorpayStakeholderId,
         product_id: productId,
         onboarding_url: onboardingUrl,
         kyc_status: 'IN_PROGRESS',
@@ -497,7 +486,7 @@ serve(async (req) => {
         products_activated: false,
         last_updated: new Date().toISOString()
       })
-      .eq('razorpay_account_id', accountData.id)
+      .eq('razorpay_account_id', razorpayAccountId)
       .eq('community_id', communityId);
 
     if (updateError) {
@@ -515,10 +504,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        razorpay_account_id: accountData.id,
+        razorpay_account_id: razorpayAccountId,
         kyc_status: 'IN_PROGRESS',
         onboarding_url: onboardingUrl,
-        message: 'Redirecting to Razorpay for KYC completion...'
+        message: 'KYC process initiated successfully.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -526,14 +515,12 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in start-kyc:', error);
     
-    // Extract Razorpay error details if available
     let errorMessage = 'An error occurred during KYC setup';
     let errorField = null;
     
     if (error instanceof Error) {
       errorMessage = error.message;
       
-      // Try to parse Razorpay error format
       try {
         const razorpayError = JSON.parse(error.message);
         if (razorpayError.error) {
@@ -545,7 +532,6 @@ serve(async (req) => {
       }
     }
     
-    // Map technical errors to user-friendly messages
     const friendlyErrors: Record<string, string> = {
       'pan': 'Invalid PAN number. Please check and try again.',
       'phone': 'Invalid phone number. Please enter a valid 10-digit number.',
@@ -584,11 +570,9 @@ async function uploadDocument(
 ) {
   const formData = new FormData();
   
-  // Convert base64 to blob
   const binaryData = Uint8Array.from(atob(document.data), c => c.charCodeAt(0));
   const blob = new Blob([binaryData], { type: document.type });
   
-  // Validate file size (4 MB limit for images, 2 MB for PDFs)
   const maxSize = document.type.includes('pdf') ? 2 * 1024 * 1024 : 4 * 1024 * 1024;
   if (blob.size > maxSize) {
     throw new Error(`Document too large. Maximum size is ${maxSize / (1024 * 1024)} MB.`);
