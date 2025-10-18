@@ -10,6 +10,7 @@ import { KycPhoneDialog } from "./KycPhoneDialog";
 import { KycAddressDialog } from "./KycAddressDialog";
 import { KycPanDobDialog } from "./KycPanDobDialog";
 import { KycDocumentsDialog } from "./KycDocumentsDialog";
+import { KycBankDetailsDialog } from "./KycBankDetailsDialog";
 
 interface CommunityPayoutsProps {
   community: any;
@@ -23,9 +24,11 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
   const [panDobDialogOpen, setPanDobDialogOpen] = useState(false);
   const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
+  const [bankDetailsDialogOpen, setBankDetailsDialogOpen] = useState(false);
   const [userPhone, setUserPhone] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [documents, setDocuments] = useState<{ panCard: File; addressProof: File } | null>(null);
+  const [bankDetails, setBankDetails] = useState<{ accountNumber: string; ifsc: string; beneficiaryName: string } | null>(null);
   const [existingProfile, setExistingProfile] = useState<any>(null);
   const [kycRetryMode, setKycRetryMode] = useState(false);
 
@@ -73,6 +76,12 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         return;
       }
 
+      // If documents are collected but no bank details, show bank dialog
+      if (!bankDetails) {
+        setBankDetailsDialogOpen(true);
+        return;
+      }
+
       setUserPhone(profile.phone);
       await initiateKyc();
     } catch (error: any) {
@@ -84,6 +93,11 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   const initiateKyc = async () => {
     if (!documents) {
       setDocumentsDialogOpen(true);
+      return;
+    }
+
+    if (!bankDetails) {
+      setBankDetailsDialogOpen(true);
       return;
     }
 
@@ -107,6 +121,11 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
               type: documents.addressProof.type,
               data: addressProofBase64
             }
+          },
+          bankDetails: {
+            accountNumber: bankDetails.accountNumber,
+            ifsc: bankDetails.ifsc,
+            beneficiaryName: bankDetails.beneficiaryName
           }
         }
       });
@@ -257,6 +276,8 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
       setPanDobDialogOpen(true);
     } else if (!documents) {
       setDocumentsDialogOpen(true);
+    } else if (!bankDetails) {
+      setBankDetailsDialogOpen(true);
     } else {
       await initiateKyc();
     }
@@ -268,6 +289,8 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
     // After PAN/DOB, check for documents
     if (!documents) {
       setDocumentsDialogOpen(true);
+    } else if (!bankDetails) {
+      setBankDetailsDialogOpen(true);
     } else {
       await initiateKyc();
     }
@@ -277,9 +300,23 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
     setDocuments(docs);
     setDocumentsDialogOpen(false);
     
-    // Now we have everything, initiate KYC
-    // The documents will be used in the next call
-    toast.success("Documents uploaded! Starting KYC process...");
+    // After documents, check for bank details
+    if (!bankDetails) {
+      toast.success("Documents uploaded! Now let's add your bank details.");
+      setBankDetailsDialogOpen(true);
+    } else {
+      toast.success("Documents uploaded! Starting KYC process...");
+      setTimeout(() => {
+        handleStartKyc();
+      }, 500);
+    }
+  };
+
+  const handleBankDetailsComplete = async (data: { accountNumber: string; ifsc: string; beneficiaryName: string }) => {
+    setBankDetails(data);
+    setBankDetailsDialogOpen(false);
+    
+    toast.success("Bank details saved! Starting KYC verification...");
     
     // Delay slightly to allow state to update
     setTimeout(() => {
@@ -484,6 +521,14 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         open={documentsDialogOpen}
         onOpenChange={setDocumentsDialogOpen}
         onComplete={handleDocumentsComplete}
+        loading={loading}
+      />
+
+      <KycBankDetailsDialog
+        open={bankDetailsDialogOpen}
+        onOpenChange={setBankDetailsDialogOpen}
+        userId={userId}
+        onComplete={handleBankDetailsComplete}
         loading={loading}
       />
       

@@ -51,7 +51,57 @@ serve(async (req) => {
     const event = JSON.parse(body);
     console.log('Webhook event received:', event.event);
 
-    // Handle account KYC status updates
+    // Handle Route product lifecycle events (CRITICAL for payouts)
+    if (event.event === 'product.route.activated') {
+      const accountId = event.payload.account.entity.id;
+      const productId = event.payload.product?.entity?.id;
+
+      console.log(`Route product activated for account ${accountId}`);
+
+      await supabaseClient
+        .from('razorpay_accounts')
+        .update({
+          kyc_status: 'ACTIVATED',
+          products_activated: true,
+          product_id: productId || undefined,
+          last_updated: new Date().toISOString()
+        })
+        .eq('razorpay_account_id', accountId);
+
+      console.log('✅ Route activated - payouts enabled');
+    }
+
+    if (event.event === 'product.route.needs_clarification') {
+      const accountId = event.payload.account.entity.id;
+      const requirements = event.payload.product?.entity?.requirements;
+
+      console.log(`Route needs clarification for account ${accountId}`);
+
+      await supabaseClient
+        .from('razorpay_accounts')
+        .update({
+          kyc_status: 'NEEDS_INFO',
+          error_reason: JSON.stringify(requirements) || 'Additional information required',
+          last_updated: new Date().toISOString()
+        })
+        .eq('razorpay_account_id', accountId);
+    }
+
+    if (event.event === 'product.route.under_review') {
+      const accountId = event.payload.account.entity.id;
+
+      console.log(`Route under review for account ${accountId}`);
+
+      await supabaseClient
+        .from('razorpay_accounts')
+        .update({
+          kyc_status: 'IN_PROGRESS',
+          last_updated: new Date().toISOString()
+        })
+        .eq('razorpay_account_id', accountId);
+    }
+
+    // Handle account KYC status updates (legacy events)
     if (event.event === 'account.activated' || 
         event.event === 'account.suspended' ||
         event.event === 'account.rejected' ||

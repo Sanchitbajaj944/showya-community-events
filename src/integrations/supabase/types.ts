@@ -441,46 +441,70 @@ export type Database = {
       }
       razorpay_accounts: {
         Row: {
+          bank_account_number: string | null
+          bank_beneficiary_name: string | null
+          bank_ifsc: string | null
           bank_masked: string | null
+          business_type: string | null
           community_id: string
           created_at: string
           error_reason: string | null
           id: string
           kyc_status: Database["public"]["Enums"]["kyc_status"]
           last_updated: string
+          legal_business_name: string | null
           onboarding_url: string | null
+          product_id: string | null
           products_activated: boolean | null
           products_requested: boolean | null
           razorpay_account_id: string
           stakeholder_id: string | null
+          tnc_accepted: boolean | null
+          tnc_accepted_at: string | null
         }
         Insert: {
+          bank_account_number?: string | null
+          bank_beneficiary_name?: string | null
+          bank_ifsc?: string | null
           bank_masked?: string | null
+          business_type?: string | null
           community_id: string
           created_at?: string
           error_reason?: string | null
           id?: string
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           last_updated?: string
+          legal_business_name?: string | null
           onboarding_url?: string | null
+          product_id?: string | null
           products_activated?: boolean | null
           products_requested?: boolean | null
           razorpay_account_id: string
           stakeholder_id?: string | null
+          tnc_accepted?: boolean | null
+          tnc_accepted_at?: string | null
         }
         Update: {
+          bank_account_number?: string | null
+          bank_beneficiary_name?: string | null
+          bank_ifsc?: string | null
           bank_masked?: string | null
+          business_type?: string | null
           community_id?: string
           created_at?: string
           error_reason?: string | null
           id?: string
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           last_updated?: string
+          legal_business_name?: string | null
           onboarding_url?: string | null
+          product_id?: string | null
           products_activated?: boolean | null
           products_requested?: boolean | null
           razorpay_account_id?: string
           stakeholder_id?: string | null
+          tnc_accepted?: boolean | null
+          tnc_accepted_at?: string | null
         }
         Relationships: [
           {

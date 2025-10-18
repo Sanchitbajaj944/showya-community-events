@@ -25,7 +25,7 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { communityId, documents } = await req.json();
+    const { communityId, documents, bankDetails } = await req.json();
 
     // Verify community ownership
     const { data: community, error: communityError } = await supabaseClient
@@ -100,17 +100,7 @@ serve(async (req) => {
         );
       }
 
-      // For other statuses, allow retry but request products if needed
-      if (!existingAccount.products_requested && existingAccount.stakeholder_id) {
-        await requestProducts(existingAccount.razorpay_account_id);
-        
-        await supabaseClient
-          .from('razorpay_accounts')
-          .update({ products_requested: true })
-          .eq('id', existingAccount.id);
-      }
-
-      // Delete failed account to start fresh
+      // Delete failed account to start fresh KYC process
       console.log('Deleting previous failed account to start fresh KYC process...');
       await supabaseClient
         .from('razorpay_accounts')
@@ -140,6 +130,11 @@ serve(async (req) => {
 
     if (!profile.pan) {
       throw new Error('PAN number is required for KYC.');
+    }
+
+    // Validate bank details
+    if (!bankDetails || !bankDetails.accountNumber || !bankDetails.ifsc || !bankDetails.beneficiaryName) {
+      throw new Error('Bank account details are required for KYC.');
     }
 
     // Validate postal code (6 digits for India)
@@ -314,6 +309,10 @@ serve(async (req) => {
         secondary: ''
       },
       percentage_ownership: 100,
+      relationship: {
+        director: false,
+        executive: true
+      },
       kyc: {
         pan: profile.pan.trim()
       },
@@ -385,16 +384,80 @@ serve(async (req) => {
       await new Promise(r => setTimeout(r, 200));
     }
 
-    // Step 4: Request products
+    // Step 4: Request Route product configuration
+    let productId: string;
     try {
-      await requestProducts(accountData.id);
+      const productResponse = await fetch(`https://api.razorpay.com/v2/accounts/${accountData.id}/products`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product_name: 'route',
+          tnc_accepted: true,
+          ip: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || '0.0.0.0'
+        })
+      });
+
+      if (!productResponse.ok) {
+        const errorData = await productResponse.text();
+        console.error('Product request failed:', errorData);
+        throw new Error(`Failed to request Route product: ${errorData}`);
+      }
+
+      const productData = await productResponse.json();
+      productId = productData.id;
+      console.log('Route product requested:', productId);
+
+      // Rate limit safety
+      await new Promise(r => setTimeout(r, 200));
+
+      // Step 5: Update product configuration with settlement bank account
+      const settlementPayload = {
+        settlements: {
+          account_number: bankDetails.accountNumber,
+          ifsc_code: bankDetails.ifsc,
+          beneficiary_name: bankDetails.beneficiaryName
+        },
+        tnc_accepted: true,
+        ip: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || '0.0.0.0'
+      };
+
+      console.log('Updating product configuration with settlement details...');
+      const updateResponse = await fetch(`https://api.razorpay.com/v2/accounts/${accountData.id}/products/${productId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settlementPayload)
+      });
+
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.text();
+        console.error('Product update failed:', errorData);
+        
+        // Check if it's a locked form error (under review)
+        if (errorData.includes('activation form locked') || errorData.includes('under_review')) {
+          console.log('Form is locked - account is under review. This is expected.');
+        } else {
+          throw new Error(`Failed to update settlement details: ${errorData}`);
+        }
+      } else {
+        const updateData = await updateResponse.json();
+        console.log('Settlement details updated successfully:', updateData.activation_status);
+      }
     } catch (error) {
-      console.error('Failed to request products:', error);
+      console.error('Failed to configure Route product:', error);
       throw new Error('Failed to activate payment products. Please contact support.');
     }
 
     // Store Razorpay account in database
     const onboardingUrl = `https://dashboard.razorpay.com/app/route-accounts/${accountData.id}/onboarding`;
+    
+    // Mask sensitive bank details for storage
+    const maskedAccountNumber = `****${bankDetails.accountNumber.slice(-4)}`;
     
     const { error: insertError } = await supabaseClient
       .from('razorpay_accounts')
@@ -402,8 +465,16 @@ serve(async (req) => {
         community_id: communityId,
         razorpay_account_id: accountData.id,
         stakeholder_id: stakeholderData.id,
+        product_id: productId,
         onboarding_url: onboardingUrl,
         kyc_status: 'IN_PROGRESS',
+        business_type: 'individual',
+        legal_business_name: sanitizedLegalBusinessName,
+        bank_account_number: maskedAccountNumber,
+        bank_ifsc: bankDetails.ifsc,
+        bank_beneficiary_name: bankDetails.beneficiaryName,
+        tnc_accepted: true,
+        tnc_accepted_at: new Date().toISOString(),
         products_requested: true,
         products_activated: false,
         last_updated: new Date().toISOString()
@@ -526,65 +597,4 @@ async function uploadDocument(
 
   console.log(`Document uploaded: ${documentType}`);
   return await response.json();
-}
-
-// Helper function to request products
-async function requestProducts(accountId: string) {
-  const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
-  const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
-  const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
-
-  let pgSuccess = false;
-  let routeSuccess = false;
-
-  // Request payment gateway product
-  console.log('Requesting payment_gateway product...');
-  const pgResponse = await fetch(`https://api.razorpay.com/v2/accounts/${accountId}/products`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${auth}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      product_name: 'payment_gateway',
-      tnc_accepted: true
-    })
-  });
-
-  if (pgResponse.ok) {
-    pgSuccess = true;
-    console.log('Payment gateway product requested successfully');
-  } else {
-    const errorData = await pgResponse.text();
-    console.error('Payment gateway product request failed:', errorData);
-  }
-
-  // Request route product
-  console.log('Requesting route product...');
-  const routeResponse = await fetch(`https://api.razorpay.com/v2/accounts/${accountId}/products`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${auth}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      product_name: 'route',
-      tnc_accepted: true
-    })
-  });
-
-  if (routeResponse.ok) {
-    routeSuccess = true;
-    console.log('Route product requested successfully');
-  } else {
-    const errorData = await routeResponse.text();
-    console.error('Route product request failed:', errorData);
-  }
-
-  // Throw error if both products failed
-  if (!pgSuccess && !routeSuccess) {
-    throw new Error('Failed to request payment products from Razorpay');
-  }
-
-  console.log('Products requested successfully');
 }
