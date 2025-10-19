@@ -590,6 +590,7 @@ serve(async (req) => {
         headers: {
           'Authorization': `Basic ${auth}`,
           'Content-Type': 'application/json',
+          'X-Razorpay-Idempotency': `showya_${communityId}_prd_request_route`
         },
         body: JSON.stringify({
           product_name: 'route',
@@ -609,12 +610,14 @@ serve(async (req) => {
 
       await new Promise(r => setTimeout(r, 200));
 
-      // Update product configuration with settlement bank account
+      // Update product configuration with settlement bank account (correct Razorpay format)
       const settlementPayload = {
         settlements: {
-          account_number: bankDetails.accountNumber,
-          ifsc_code: bankDetails.ifsc,
-          beneficiary_name: bankDetails.beneficiaryName
+          bank_account: {
+            name: bankDetails.beneficiaryName,
+            ifsc: bankDetails.ifsc,
+            account_number: bankDetails.accountNumber
+          }
         },
         tnc_accepted: true
       };
@@ -625,6 +628,7 @@ serve(async (req) => {
         headers: {
           'Authorization': `Basic ${auth}`,
           'Content-Type': 'application/json',
+          'X-Razorpay-Idempotency': `showya_${communityId}_prd_${productId}_settlement`
         },
         body: JSON.stringify(settlementPayload)
       });
@@ -641,6 +645,22 @@ serve(async (req) => {
       } else {
         const updateData = await updateResponse.json();
         console.log('Settlement details updated successfully:', updateData.activation_status);
+      }
+
+      // Verify product configuration
+      console.log('Verifying product configuration...');
+      const verifyResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+        }
+      });
+
+      if (verifyResponse.ok) {
+        const productData = await verifyResponse.json();
+        console.log('Product status:', productData.activation_status);
+        console.log('Product requirements:', JSON.stringify(productData.requirements));
+        console.log('Bank account configured:', !!productData.config?.settlements?.bank_account);
       }
     } catch (error) {
       console.error('Failed to configure Route product:', error);
