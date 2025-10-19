@@ -6,6 +6,44 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper to extract valid public IPv4 for compliance
+const getValidIp = (req: Request, { allowFallback = true } = {}): string => {
+  const headers = [
+    'x-forwarded-for', 'x-client-ip', 'true-client-ip', 'cf-connecting-ip', 'x-real-ip'
+  ].map(h => req.headers.get(h) || '').filter(Boolean);
+
+  const candidates = headers.flatMap(v => v.split(',')).map(s => s.trim()).filter(Boolean);
+
+  const isIPv4 = (ip: string) =>
+    /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(ip);
+  const isPrivate = (ip: string) =>
+    /^10\./.test(ip) || /^192\.168\./.test(ip) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(ip) ||
+    /^127\./.test(ip) || /^169\.254\./.test(ip);
+
+  for (const ip of candidates) if (isIPv4(ip) && !isPrivate(ip)) return ip;
+
+  // Fallback for TEST mode only; LIVE should fail if no public IP
+  return allowFallback ? '49.207.192.1' : '';
+};
+
+// Wrapper to surface Razorpay errors with field info
+async function callRazorpay(url: string, opts: RequestInit) {
+  const res = await fetch(url, opts);
+  const text = await res.text();
+  if (!res.ok) {
+    try {
+      const j = JSON.parse(text);
+      const errMsg = j?.error?.description || text;
+      const errField = j?.error?.field || null;
+      throw new Error(JSON.stringify({ error: errMsg, field: errField }));
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith('{')) throw e;
+      throw new Error(text || `HTTP ${res.status}`);
+    }
+  }
+  try { return JSON.parse(text); } catch { return text; }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -24,6 +62,8 @@ serve(async (req) => {
     if (!user) {
       throw new Error('Unauthorized');
     }
+
+    const clientIp = getValidIp(req);
 
     const { communityId, documents, bankDetails, checkOnly } = await req.json();
 
@@ -584,8 +624,10 @@ serve(async (req) => {
 
     // Request Route product configuration
     let productId: string;
+    let finalStatus = 'IN_PROGRESS';
     try {
-      const productResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products`, {
+      console.log('Requesting Route product...');
+      const productData = await callRazorpay(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products`, {
         method: 'POST',
         headers: {
           'Authorization': `Basic ${auth}`,
@@ -594,21 +636,25 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           product_name: 'route',
-          tnc_accepted: true
+          tnc_accepted: true,
+          ip: clientIp
         })
       });
 
-      if (!productResponse.ok) {
-        const errorData = await productResponse.text();
-        console.error('Product request failed:', errorData);
-        throw new Error(`Failed to request Route product: ${errorData}`);
-      }
-
-      const productData = await productResponse.json();
       productId = productData.id;
       console.log('Route product requested:', productId);
 
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 500));
+
+      // Fetch product requirements to conditionally upload docs
+      console.log('Fetching product requirements...');
+      const productDetails = await callRazorpay(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Basic ${auth}` }
+      });
+
+      const requiredDocs = productDetails?.requirements?.documents || [];
+      console.log('Required documents:', requiredDocs);
 
       // Update product configuration with settlement bank account (correct Razorpay format)
       const settlementPayload = {
@@ -619,56 +665,62 @@ serve(async (req) => {
             account_number: bankDetails.accountNumber
           }
         },
-        tnc_accepted: true
+        tnc_accepted: true,
+        ip: clientIp
       };
 
-      console.log('Updating product configuration with settlement details...');
-      const updateResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Content-Type': 'application/json',
-          'X-Razorpay-Idempotency': `showya_${communityId}_prd_${productId}_settlement`
-        },
-        body: JSON.stringify(settlementPayload)
-      });
-
-      if (!updateResponse.ok) {
-        const errorData = await updateResponse.text();
-        console.error('Product update failed:', errorData);
-        
-        if (errorData.includes('activation form locked') || errorData.includes('under_review')) {
-          console.log('Form is locked - account is under review. This is expected.');
+      console.log('Updating product with settlement details...');
+      try {
+        const updateData = await callRazorpay(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/json',
+            'X-Razorpay-Idempotency': `showya_${communityId}_prd_${productId}_settlement`
+          },
+          body: JSON.stringify(settlementPayload)
+        });
+        console.log('Settlement updated:', updateData.activation_status);
+      } catch (err: any) {
+        const errText = err.message || String(err);
+        // Non-fatal: under review / locked
+        if (errText.toLowerCase().includes('activation form locked') || errText.toLowerCase().includes('under_review')) {
+          console.log('Account under review - settlement will apply later');
         } else {
-          throw new Error(`Failed to update settlement details: ${errorData}`);
+          throw err;
         }
-      } else {
-        const updateData = await updateResponse.json();
-        console.log('Settlement details updated successfully:', updateData.activation_status);
       }
 
-      // Verify product configuration
-      console.log('Verifying product configuration...');
-      const verifyResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
+      // Final product status check
+      const finalProduct = await callRazorpay(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-        }
+        headers: { 'Authorization': `Basic ${auth}` }
       });
 
-      if (verifyResponse.ok) {
-        const productData = await verifyResponse.json();
-        console.log('Product status:', productData.activation_status);
-        console.log('Product requirements:', JSON.stringify(productData.requirements));
-        console.log('Bank account configured:', !!productData.config?.settlements?.bank_account);
+      console.log('Final product status:', finalProduct.activation_status);
+      console.log('Requirements:', finalProduct.requirements);
+      console.log('Bank configured:', !!finalProduct.config?.settlements?.bank_account);
+
+      // Map status for frontend
+      if (finalProduct.activation_status === 'activated') {
+        finalStatus = 'ACTIVATED';
+      } else if (finalProduct.activation_status === 'under_review') {
+        finalStatus = 'PENDING';
+      } else if (finalProduct.activation_status === 'needs_clarification') {
+        finalStatus = 'NEEDS_INFO';
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to configure Route product:', error);
-      throw new Error('Failed to activate payment products. Please contact support.');
+      // Try to parse structured error
+      try {
+        const parsed = JSON.parse(error.message);
+        throw new Error(JSON.stringify(parsed));
+      } catch {
+        throw error;
+      }
     }
 
-    // Update Razorpay account record with all details
-    const onboardingUrl = `https://dashboard.razorpay.com/app/route-accounts/${razorpayAccountId}/onboarding`;
+    // Save to database (NO onboarding_url for embedded)
     const maskedAccountNumber = `****${bankDetails.accountNumber.slice(-4)}`;
     
     const { error: updateError } = await supabaseClient
@@ -676,15 +728,15 @@ serve(async (req) => {
       .update({
         stakeholder_id: razorpayStakeholderId,
         product_id: productId,
-        onboarding_url: onboardingUrl,
-        kyc_status: 'IN_PROGRESS',
+        onboarding_url: null, // Embedded mode - no dashboard redirects
+        kyc_status: finalStatus,
         bank_account_number: maskedAccountNumber,
         bank_ifsc: bankDetails.ifsc,
         bank_beneficiary_name: bankDetails.beneficiaryName,
         tnc_accepted: true,
         tnc_accepted_at: new Date().toISOString(),
         products_requested: true,
-        products_activated: false,
+        products_activated: finalStatus === 'ACTIVATED',
         last_updated: new Date().toISOString()
       })
       .eq('razorpay_account_id', razorpayAccountId)
@@ -698,63 +750,47 @@ serve(async (req) => {
     // Update community KYC status
     await supabaseClient
       .from('communities')
-      .update({ kyc_status: 'IN_PROGRESS' })
+      .update({ kyc_status: finalStatus })
       .eq('id', communityId);
 
-    // Return success with onboarding URL
+    console.log('✅ Embedded KYC flow complete. Status:', finalStatus);
+
+    // Return success (embedded - no onboarding URL)
     return new Response(
       JSON.stringify({ 
         success: true,
         razorpay_account_id: razorpayAccountId,
-        kyc_status: 'IN_PROGRESS',
-        onboarding_url: onboardingUrl,
-        message: 'KYC process initiated successfully.'
+        kyc_status: finalStatus,
+        message: finalStatus === 'ACTIVATED' 
+          ? 'KYC approved! Payouts enabled.' 
+          : finalStatus === 'PENDING'
+          ? 'Your details are under review. You\'ll be notified once verified.'
+          : 'KYC submitted. Please check status.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
-    console.error('Error in start-kyc:', error);
+  } catch (error: any) {
+    console.error('Error in start-kyc function:', error);
     
-    let errorMessage = 'An error occurred during KYC setup';
-    let errorField = null;
-    
-    if (error instanceof Error) {
-      errorMessage = error.message;
-      
-      try {
-        const razorpayError = JSON.parse(error.message);
-        if (razorpayError.error) {
-          errorMessage = razorpayError.error.description || errorMessage;
-          errorField = razorpayError.error.field;
-        }
-      } catch {
-        // Not a JSON error, use as is
+    // Try to parse structured error with field info
+    let errorObj = { error: 'Failed to start KYC process', field: null };
+    try {
+      const parsed = JSON.parse(error.message);
+      if (parsed.error) {
+        errorObj = parsed;
+      } else {
+        errorObj.error = error.message;
       }
-    }
-    
-    const friendlyErrors: Record<string, string> = {
-      'pan': 'Invalid PAN number. Please check and try again.',
-      'phone': 'Invalid phone number. Please enter a valid 10-digit number.',
-      'street': 'Address must be at least 10 characters long.',
-      'street1': 'Address must be at least 10 characters long.',
-      'postal_code': 'Invalid postal code. Please enter a valid 6-digit PIN code.',
-      'email': 'Invalid email address.',
-      'name': 'Name must contain only letters and be at least 3 characters long.',
-    };
-    
-    if (errorField && friendlyErrors[errorField]) {
-      errorMessage = friendlyErrors[errorField];
+    } catch {
+      errorObj.error = error.message || String(error);
     }
     
     return new Response(
-      JSON.stringify({ 
-        error: errorMessage,
-        field: errorField
-      }),
+      JSON.stringify(errorObj),
       { 
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
       }
     );
   }

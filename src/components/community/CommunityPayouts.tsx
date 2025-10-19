@@ -98,11 +98,9 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
       }
 
       if (checkResult.action === 'wait') {
-        // Already under review
+        // Already under review - show in UI, no dashboard redirect
         toast.info(checkResult.message);
-        if (checkResult.onboarding_url) {
-          window.open(checkResult.onboarding_url, '_blank');
-        }
+        onRefresh();
         return;
       }
 
@@ -184,20 +182,12 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
       if (data?.action === 'wait') {
         toast.info(data.message, { duration: 5000 });
-        // If there's an onboarding URL, allow user to continue
-        if (data.onboarding_url) {
-          window.location.href = data.onboarding_url;
-        }
+        onRefresh();
         return;
       }
 
       if (data?.action === 'manual_setup') {
         toast.warning(data.message, { duration: 8000 });
-        // Open Razorpay dashboard in new tab for manual setup
-        if (data.onboarding_url) {
-          window.open(data.onboarding_url, '_blank');
-          toast.info('Razorpay dashboard opened. Complete KYC there and check back later.', { duration: 6000 });
-        }
         onRefresh();
         return;
       }
@@ -251,21 +241,19 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         return;
       }
 
-      // If we have an onboarding URL, redirect to it (works in both test and live mode)
-      if (data.onboarding_url) {
-        // Use window.location.href for reliable redirect (popup blockers won't interfere)
-        window.location.href = data.onboarding_url;
-      } 
-      // KYC already complete
-      else if (data.kyc_status === 'ACTIVATED' || data.kyc_status === 'APPROVED') {
-        toast.success("KYC already activated!");
+      // Embedded onboarding - no dashboard redirects
+      if (data.success) {
+        if (data.kyc_status === 'ACTIVATED') {
+          toast.success("KYC approved! Payouts enabled.");
+        } else if (data.kyc_status === 'PENDING') {
+          toast.info("Your details are under review. You'll be notified once verified.", { duration: 5000 });
+        } else {
+          toast.success(data.message || "KYC submitted successfully");
+        }
         onRefresh();
-      } 
-      // No onboarding URL available (rare case)
-      else {
-        toast.error("Onboarding link unavailable. Check server logs.");
+      } else {
+        toast.error("KYC submission failed. Please try again.");
         console.error('Start KYC response:', data);
-        onRefresh();
       }
     } catch (error: any) {
       console.error("Unexpected error starting KYC:", error);
@@ -390,25 +378,18 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           <Alert className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
             <Clock className="h-4 w-4 text-yellow-500" />
             <AlertDescription className="text-yellow-700 dark:text-yellow-300">
-              <strong>🟡 Pending Review</strong>
-              <p className="mt-1">Your KYC is currently under review. You'll be notified once verified.</p>
-              <div className="flex gap-2 mt-2">
-                <Button 
-                  size="sm" 
-                  onClick={handleStartKyc}
-                  disabled={loading}
-                >
-                  {loading ? "Loading..." : "Complete KYC on Razorpay"}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleCheckStatus}
-                  disabled={checking}
-                >
-                  {checking ? "Checking..." : "Refresh"}
-                </Button>
-              </div>
+              <strong>🟡 Verification in Progress</strong>
+              <p className="mt-1">Your KYC details are being reviewed. This typically takes 1-2 business days.</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={handleCheckStatus}
+                disabled={checking}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
+                {checking ? "Checking..." : "Refresh Status"}
+              </Button>
             </AlertDescription>
           </Alert>
         );
@@ -418,16 +399,29 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
             <AlertCircle className="h-4 w-4 text-orange-500" />
             <AlertDescription className="text-orange-700 dark:text-orange-300">
-              <strong>Action Needed — More Details Required</strong>
-              <p className="mt-1">Razorpay needs additional information to complete your KYC.</p>
-              <Button 
-                size="sm" 
-                className="mt-2"
-                onClick={handleStartKyc}
-                disabled={loading}
-              >
-                {loading ? "Loading..." : "Complete on Razorpay"}
-              </Button>
+              <strong>⚠️ Additional Information Required</strong>
+              <p className="mt-1">Some details need to be updated. Please re-submit your KYC.</p>
+              <div className="flex gap-2 mt-2">
+                <Button 
+                  size="sm"
+                  onClick={async () => {
+                    await resetKycData();
+                    setPhoneDialogOpen(true);
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? "Loading..." : "Update Details"}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleCheckStatus}
+                  disabled={checking}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
+                  {checking ? "Checking..." : "Refresh"}
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         );
