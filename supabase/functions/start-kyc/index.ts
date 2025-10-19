@@ -582,6 +582,24 @@ serve(async (req) => {
       await new Promise(r => setTimeout(r, 200));
     }
 
+    // Helper to extract valid IP address
+    const getValidIp = (): string => {
+      const forwardedFor = req.headers.get('x-forwarded-for');
+      const cfIp = req.headers.get('cf-connecting-ip');
+      
+      // x-forwarded-for can be comma-separated, take the first one
+      let ip = forwardedFor?.split(',')[0]?.trim() || cfIp || '';
+      
+      // Validate IPv4 format (basic check)
+      const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+      
+      // Return valid IP or use a public DNS IP as fallback (Google DNS)
+      return ipv4Regex.test(ip) ? ip : '8.8.8.8';
+    };
+
+    const clientIp = getValidIp();
+    console.log('Using IP for Razorpay:', clientIp);
+
     // Request Route product configuration
     let productId: string;
     try {
@@ -594,7 +612,7 @@ serve(async (req) => {
         body: JSON.stringify({
           product_name: 'route',
           tnc_accepted: true,
-          ip: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || '0.0.0.0'
+          ip: clientIp
         })
       });
 
@@ -618,7 +636,7 @@ serve(async (req) => {
           beneficiary_name: bankDetails.beneficiaryName
         },
         tnc_accepted: true,
-        ip: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || '0.0.0.0'
+        ip: clientIp
       };
 
       console.log('Updating product configuration with settlement details...');
