@@ -637,8 +637,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           product_name: 'route',
-          tnc_accepted: true,
-          ip: clientIp
+          tnc_accepted: true
         })
       });
 
