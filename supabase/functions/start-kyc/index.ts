@@ -666,8 +666,7 @@ serve(async (req) => {
             account_number: bankDetails.accountNumber
           }
         },
-        tnc_accepted: true,
-        ip: clientIp
+        tnc_accepted: true
       };
 
       console.log('Updating product with settlement details...');
