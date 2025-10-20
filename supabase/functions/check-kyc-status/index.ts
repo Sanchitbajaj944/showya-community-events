@@ -72,12 +72,57 @@ serve(async (req) => {
     }
 
     const accountData = await response.json();
+    
+    // Fetch products to get detailed requirements if account exists
+    let productRequirements = null;
+    let missingFields: string[] = [];
+    let requirementErrors: any = {};
+    
+    if (razorpayAccount.razorpay_product_id) {
+      try {
+        const productResponse = await fetch(
+          `https://api.razorpay.com/v2/accounts/${razorpayAccount.razorpay_account_id}/products/${razorpayAccount.razorpay_product_id}`,
+          {
+            headers: {
+              'Authorization': `Basic ${auth}`,
+            }
+          }
+        );
+        
+        if (productResponse.ok) {
+          const productData = await productResponse.json();
+          console.log('Product data:', JSON.stringify(productData, null, 2));
+          
+          if (productData.requirements) {
+            productRequirements = productData.requirements;
+            missingFields = productData.requirements.currently_due || [];
+            requirementErrors = productData.requirements.errors || {};
+          }
+          
+          // Map product activation status to our status
+          if (productData.activation_status === 'activated') {
+            accountData.status = 'activated';
+          } else if (productData.activation_status === 'needs_clarification') {
+            accountData.status = 'needs_clarification';
+          } else if (productData.activation_status === 'under_review') {
+            accountData.status = 'under_review';
+          }
+        }
+      } catch (productError) {
+        console.error('Error fetching product details:', productError);
+      }
+    }
+    
     let newStatus = 'IN_PROGRESS';
 
     if (accountData.status === 'activated') {
       newStatus = 'APPROVED';
     } else if (accountData.status === 'rejected' || accountData.status === 'suspended') {
       newStatus = 'REJECTED';
+    } else if (accountData.status === 'needs_clarification' || missingFields.length > 0) {
+      newStatus = 'NEEDS_INFO';
+    } else if (accountData.status === 'under_review') {
+      newStatus = 'PENDING';
     }
 
     // Update status if changed
@@ -95,7 +140,10 @@ serve(async (req) => {
       JSON.stringify({ 
         kyc_status: newStatus,
         razorpay_account_id: razorpayAccount.razorpay_account_id,
-        account_status: accountData.status
+        account_status: accountData.status,
+        missing_fields: missingFields,
+        requirement_errors: requirementErrors,
+        requirements: productRequirements
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

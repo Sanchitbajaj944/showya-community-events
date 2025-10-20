@@ -31,6 +31,8 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   const [bankDetails, setBankDetails] = useState<{ accountNumber: string; ifsc: string; beneficiaryName: string } | null>(null);
   const [existingProfile, setExistingProfile] = useState<any>(null);
   const [kycRetryMode, setKycRetryMode] = useState(false);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [requirementErrors, setRequirementErrors] = useState<any>({});
 
   // Reset all KYC collected data and profile
   const resetKycData = async () => {
@@ -328,6 +330,14 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
       if (error) throw error;
 
+      // Store missing fields and errors for display
+      if (data.missing_fields) {
+        setMissingFields(data.missing_fields);
+      }
+      if (data.requirement_errors) {
+        setRequirementErrors(data.requirement_errors);
+      }
+
       toast.success("Status updated!");
       onRefresh();
     } catch (error: any) {
@@ -395,13 +405,50 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         );
       
       case 'NEEDS_INFO':
+        const getMissingFieldsMessage = () => {
+          if (!missingFields || missingFields.length === 0) {
+            return "Some details need to be updated. Please re-submit your KYC.";
+          }
+          
+          const fieldMessages: string[] = [];
+          const hasAddressProof = missingFields.includes('individual_proof_of_address');
+          const hasPanProof = missingFields.includes('individual_proof_of_identification');
+          const hasBankIssue = missingFields.includes('bank_account_verification') || 
+                               requirementErrors?.bank_account;
+          const hasAddressFields = missingFields.some(f => 
+            f.includes('address') || f.includes('street') || f.includes('city') || 
+            f.includes('state') || f.includes('postal')
+          );
+          
+          if (hasPanProof) fieldMessages.push("• PAN card document");
+          if (hasAddressProof) fieldMessages.push("• Address proof document");
+          if (hasBankIssue) {
+            const bankError = requirementErrors?.bank_account?.[0];
+            fieldMessages.push(`• Bank details${bankError ? ` (${bankError})` : ''}`);
+          }
+          if (hasAddressFields) fieldMessages.push("• Address information");
+          
+          if (fieldMessages.length === 0) {
+            return "Some details need verification. Please review and re-submit.";
+          }
+          
+          return (
+            <div>
+              <p className="mb-2">The following need to be updated:</p>
+              <ul className="text-sm space-y-1">
+                {fieldMessages.map((msg, i) => <li key={i}>{msg}</li>)}
+              </ul>
+            </div>
+          );
+        };
+        
         return (
           <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
             <AlertCircle className="h-4 w-4 text-orange-500" />
             <AlertDescription className="text-orange-700 dark:text-orange-300">
               <strong>⚠️ Additional Information Required</strong>
-              <p className="mt-1">Some details need to be updated. Please re-submit your KYC.</p>
-              <div className="flex gap-2 mt-2">
+              <div className="mt-2">{getMissingFieldsMessage()}</div>
+              <div className="flex gap-2 mt-3">
                 <Button 
                   size="sm"
                   onClick={async () => {
