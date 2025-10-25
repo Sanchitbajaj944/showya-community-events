@@ -363,16 +363,18 @@ serve(async (req) => {
             const existingAccountId = accountIdMatch[1];
             console.log('Found existing Razorpay account ID:', existingAccountId);
             
-            // Save this account to our database so we can use it
+            // Save or update this account in our database
             const { error: saveError } = await supabaseClient
               .from('razorpay_accounts')
-              .insert({
+              .upsert({
                 community_id: communityId,
                 razorpay_account_id: existingAccountId,
                 kyc_status: 'IN_PROGRESS',
                 business_type: 'individual',
                 legal_business_name: sanitizedLegalBusinessName,
                 last_updated: new Date().toISOString()
+              }, {
+                onConflict: 'razorpay_account_id'
               })
               .select()
               .single();
@@ -397,17 +399,19 @@ serve(async (req) => {
         console.log('Razorpay account created:', accountData.id);
         razorpayAccountId = accountData.id;
         
-        // Save account to database immediately
+        // Save or update account in database immediately
         console.log('Saving account to database...');
         const { error: initialInsertError } = await supabaseClient
           .from('razorpay_accounts')
-          .insert({
+          .upsert({
             community_id: communityId,
             razorpay_account_id: accountData.id,
             kyc_status: 'IN_PROGRESS',
             business_type: 'individual',
             legal_business_name: sanitizedLegalBusinessName,
             last_updated: new Date().toISOString()
+          }, {
+            onConflict: 'razorpay_account_id'
           });
         
         if (initialInsertError) {
