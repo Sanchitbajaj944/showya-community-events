@@ -312,8 +312,94 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
     setBankDetails(details);
     setBankDetailsDialogOpen(false);
     
-    // Now that all details are collected, initiate KYC
-    await initiateKyc();
+    // Determine if we're updating existing KYC or starting new
+    const isUpdating = community.kyc_status === 'NEEDS_INFO' || kycRetryMode;
+    
+    if (isUpdating) {
+      await updateKycData();
+    } else {
+      await initiateKyc();
+    }
+  };
+
+  const updateKycData = async () => {
+    if (!documents || !bankDetails) {
+      toast.error("Missing required information");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Convert files to base64
+      const panCardBase64 = await fileToBase64(documents.panCard);
+      const addressProofBase64 = await fileToBase64(documents.addressProof);
+
+      // Update documents if needed
+      if (missingFields.some(f => f.includes('proof_of_identification') || f.includes('proof_of_address'))) {
+        await supabase.functions.invoke('update-kyc', {
+          body: {
+            communityId: community.id,
+            updateType: 'documents',
+            data: {
+              panCard: {
+                name: documents.panCard.name,
+                base64: panCardBase64
+              },
+              addressProof: {
+                name: documents.addressProof.name,
+                base64: addressProofBase64
+              }
+            }
+          }
+        });
+      }
+
+      // Update bank details if needed
+      if (missingFields.includes('bank_account_verification') || requirementErrors?.bank_account) {
+        await supabase.functions.invoke('update-kyc', {
+          body: {
+            communityId: community.id,
+            updateType: 'bank',
+            data: {
+              account_number: bankDetails.accountNumber,
+              ifsc: bankDetails.ifsc,
+              beneficiary_name: bankDetails.beneficiaryName
+            }
+          }
+        });
+      }
+
+      // Update address if needed
+      const hasAddressIssue = missingFields.some(f => 
+        f.includes('address') || f.includes('street') || f.includes('city') || 
+        f.includes('state') || f.includes('postal')
+      );
+      
+      if (hasAddressIssue && existingProfile) {
+        await supabase.functions.invoke('update-kyc', {
+          body: {
+            communityId: community.id,
+            updateType: 'address',
+            data: {
+              street1: existingProfile.street1,
+              street2: existingProfile.street2,
+              city: existingProfile.city,
+              state: existingProfile.state,
+              postal_code: existingProfile.postal_code
+            }
+          }
+        });
+      }
+
+      toast.success("KYC details updated successfully! Verification will continue.");
+      setKycRetryMode(false);
+      onRefresh();
+    } catch (error: any) {
+      console.error("Error updating KYC:", error);
+      toast.error(error.message || "Failed to update KYC details");
+    } finally {
+      setLoading(false);
+    }
   };
 
 
