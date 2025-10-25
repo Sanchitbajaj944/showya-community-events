@@ -155,8 +155,82 @@ serve(async (req) => {
       }
     }
 
-    // If this is just a status check, return that no account exists
+    // If this is just a status check and no DB record exists, check Razorpay too
     if (checkOnly) {
+      // Get user email to check if account exists in Razorpay
+      const userEmail = user.email?.toLowerCase().trim();
+      
+      if (userEmail) {
+        // Try to find account in Razorpay by attempting to list accounts
+        const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
+        const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
+        const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
+        
+        try {
+          // Try to find if account exists by checking for this email
+          // We'll attempt to create a minimal account to see if it already exists
+          const testResponse = await fetch('https://api.razorpay.com/v2/accounts', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: userEmail,
+              phone: '1234567890', // Dummy phone for test
+              type: 'route',
+              reference_id: `test_${Date.now()}`,
+              legal_business_name: 'Test',
+              business_type: 'individual',
+              contact_name: 'Test'
+            })
+          });
+          
+          const responseText = await testResponse.text();
+          
+          // If we get "email already exists" error, account exists in Razorpay
+          if (responseText.includes('email already exists') || responseText.includes('Merchant email already exists')) {
+            console.log('Found existing Razorpay account for email during checkOnly');
+            
+            // Try to extract the account ID
+            const accountIdMatch = responseText.match(/account\s*-\s*([A-Za-z0-9]+)/);
+            
+            if (accountIdMatch && accountIdMatch[1]) {
+              const existingAccountId = accountIdMatch[1];
+              console.log('Existing Razorpay account ID:', existingAccountId);
+              
+              // Save this to our database for future use
+              await supabaseClient
+                .from('razorpay_accounts')
+                .upsert({
+                  community_id: communityId,
+                  razorpay_account_id: existingAccountId,
+                  kyc_status: 'IN_PROGRESS',
+                  business_type: 'individual',
+                  last_updated: new Date().toISOString()
+                }, {
+                  onConflict: 'razorpay_account_id'
+                });
+              
+              return new Response(
+                JSON.stringify({
+                  action: 'proceed',
+                  message: 'Found existing Razorpay account. Please complete your KYC details.',
+                  existingAccount: true
+                }),
+                { 
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                  status: 200
+                }
+              );
+            }
+          }
+        } catch (e) {
+          console.log('Error checking Razorpay for existing account:', e);
+          // Continue with normal flow
+        }
+      }
+      
       return new Response(
         JSON.stringify({
           action: 'proceed',
