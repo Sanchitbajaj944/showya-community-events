@@ -198,26 +198,13 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           const missing = statusData.missing_fields;
           console.log('Missing fields:', missing);
           
-          // Store the account ID if we have it
-          if (data.razorpay_account_id) {
-            await supabase
-              .from('communities')
-              .update({ 
-                kyc_razorpay_account_id: data.razorpay_account_id 
-              })
-              .eq('id', community.id);
-          }
-          
           // Store missing fields for later use
           setMissingFields(missing);
           if (statusData.requirement_errors) {
             setRequirementErrors(statusData.requirement_errors);
           }
           
-          toast({
-            title: "Additional Information Required",
-            description: "Please complete the remaining KYC details.",
-          });
+          toast.info("Additional Information Required: Please complete the remaining KYC details.");
           
           // Navigate to the appropriate dialog based on missing fields
           if (missing.some((f: string) => f.includes('phone') || f.includes('contact'))) {
@@ -237,10 +224,7 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           }
         } else {
           // Fallback: show onboarding URL if we can't determine what's missing
-          toast({
-            title: "Manual Setup Required",
-            description: "Please complete KYC on Razorpay dashboard.",
-          });
+          toast.warning("Manual Setup Required: Please complete KYC on Razorpay dashboard.");
           
           if (data.onboarding_url) {
             setTimeout(() => {
