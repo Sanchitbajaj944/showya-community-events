@@ -579,6 +579,12 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
                 <Button 
                   size="sm"
                   onClick={async () => {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) {
+                      toast.error("Please sign in to continue");
+                      return;
+                    }
+                    setUserId(session.user.id);
                     await resetKycData();
                     setPhoneDialogOpen(true);
                   }}
@@ -613,6 +619,12 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
                 size="sm" 
                 className="mt-3"
                 onClick={async () => {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) {
+                    toast.error("Please sign in to continue");
+                    return;
+                  }
+                  setUserId(session.user.id);
                   await resetKycData();
                   toast.info("Please re-enter all your details from the beginning", { duration: 4000 });
                   setPhoneDialogOpen(true);
