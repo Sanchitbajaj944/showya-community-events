@@ -189,8 +189,65 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
       }
 
       if (data?.action === 'manual_setup') {
-        toast.warning(data.message, { duration: 8000 });
-        onRefresh();
+        console.log('Manual setup required, checking what is missing...');
+        
+        // Check current status to see what's missing
+        const { data: statusData, error: statusError } = await supabase.functions.invoke('check-kyc-status');
+        
+        if (!statusError && statusData && statusData.missing_fields) {
+          const missing = statusData.missing_fields;
+          console.log('Missing fields:', missing);
+          
+          // Store the account ID if we have it
+          if (data.razorpay_account_id) {
+            await supabase
+              .from('communities')
+              .update({ 
+                kyc_razorpay_account_id: data.razorpay_account_id 
+              })
+              .eq('id', community.id);
+          }
+          
+          // Store missing fields for later use
+          setMissingFields(missing);
+          if (statusData.requirement_errors) {
+            setRequirementErrors(statusData.requirement_errors);
+          }
+          
+          toast({
+            title: "Additional Information Required",
+            description: "Please complete the remaining KYC details.",
+          });
+          
+          // Navigate to the appropriate dialog based on missing fields
+          if (missing.some((f: string) => f.includes('phone') || f.includes('contact'))) {
+            setPhoneDialogOpen(true);
+          } else if (missing.some((f: string) => f.includes('address') || f.includes('street') || f.includes('city') || f.includes('state') || f.includes('postal'))) {
+            setAddressDialogOpen(true);
+          } else if (missing.some((f: string) => f.includes('pan') || f.includes('legal_info') || f.includes('kyc.pan'))) {
+            setPanDobDialogOpen(true);
+          } else if (missing.some((f: string) => f.includes('document') || f.includes('proof'))) {
+            setDocumentsDialogOpen(true);
+          } else if (missing.some((f: string) => f.includes('bank') || f.includes('settlement'))) {
+            setBankDetailsDialogOpen(true);
+          } else {
+            // If no specific field is identified but manual setup is required,
+            // start from the first dialog to recollect all information
+            setPhoneDialogOpen(true);
+          }
+        } else {
+          // Fallback: show onboarding URL if we can't determine what's missing
+          toast({
+            title: "Manual Setup Required",
+            description: "Please complete KYC on Razorpay dashboard.",
+          });
+          
+          if (data.onboarding_url) {
+            setTimeout(() => {
+              window.open(data.onboarding_url, '_blank');
+            }, 2000);
+          }
+        }
         return;
       }
 

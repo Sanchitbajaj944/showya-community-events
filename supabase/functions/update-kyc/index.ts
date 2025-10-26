@@ -230,6 +230,36 @@ Deno.serve(async (req) => {
         throw new Error(`Unknown update type: ${updateType}`);
     }
 
+    // Request products with T&C acceptance to trigger review
+    try {
+      const productResponse = await fetch(
+        `https://api.razorpay.com/v2/accounts/${accountId}/products`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            product_name: 'route',
+            tnc_accepted: true
+          })
+        }
+      );
+
+      if (!productResponse.ok) {
+        const error = await productResponse.json();
+        console.log('Product request response:', error);
+        // Continue even if product already exists
+      } else {
+        const productData = await productResponse.json();
+        console.log('Product requested successfully:', productData);
+      }
+    } catch (productError) {
+      console.log('Product request error:', productError);
+      // Continue even if product request fails - the account update is what matters
+    }
+
     // Update KYC status to pending review
     await supabaseClient
       .from('razorpay_accounts')
