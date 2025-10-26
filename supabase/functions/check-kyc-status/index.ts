@@ -68,7 +68,9 @@ serve(async (req) => {
     );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch Razorpay account status');
+      const errorText = await response.text();
+      console.error('Razorpay API error:', response.status, errorText);
+      throw new Error(`Razorpay API error (${response.status}): ${errorText}`);
     }
 
     const accountData = await response.json();
