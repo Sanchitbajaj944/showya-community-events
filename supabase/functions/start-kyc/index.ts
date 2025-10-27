@@ -746,9 +746,18 @@ serve(async (req) => {
         tnc_accepted: true
       };
 
-      console.log('Updating product with settlement details...');
+      console.log('Updating product with settlement details (masked acct):', {
+        ...settlementPayload,
+        settlements: {
+          bank_account: {
+            ...settlementPayload.settlements.bank_account,
+            account_number: '****' + bankDetails.accountNumber.slice(-4)
+          }
+        }
+      });
+      
       try {
-        const updateData = await callRazorpay(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
+        const updateResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
           method: 'PATCH',
           headers: {
             'Authorization': `Basic ${auth}`,
@@ -757,7 +766,42 @@ serve(async (req) => {
           },
           body: JSON.stringify(settlementPayload)
         });
-        console.log('Settlement updated:', updateData.activation_status);
+
+        const requestId = updateResponse.headers.get('x-razorpay-request-id');
+        console.log('Settlement PATCH request ID:', requestId);
+
+        if (!updateResponse.ok) {
+          const errorText = await updateResponse.text();
+          console.error('Settlement PATCH failed:', errorText);
+          
+          // Non-fatal: under review / locked
+          if (errorText.toLowerCase().includes('activation form locked') || errorText.toLowerCase().includes('under_review')) {
+            console.log('Account under review - settlement will apply later');
+          } else {
+            throw new Error(errorText);
+          }
+        } else {
+          const updateData = await updateResponse.json();
+          console.log('Settlement updated, status:', updateData.activation_status);
+          
+          // Verify bank details were actually set
+          console.log('Verifying bank details were saved...');
+          const verifyResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
+            method: 'GET',
+            headers: { 'Authorization': `Basic ${auth}` }
+          });
+          
+          if (verifyResponse.ok) {
+            const verifiedProduct = await verifyResponse.json();
+            const bankConfigured = !!verifiedProduct.config?.settlements?.bank_account;
+            console.log('✓ Bank configured:', bankConfigured);
+            console.log('  Remaining requirements:', verifiedProduct.requirements?.currently_due || 'none');
+            
+            if (!bankConfigured) {
+              console.warn('⚠ Bank details not reflected in config after PATCH. May require hosted onboarding.');
+            }
+          }
+        }
       } catch (err: any) {
         const errText = err.message || String(err);
         // Non-fatal: under review / locked

@@ -79,11 +79,13 @@ serve(async (req) => {
     let productRequirements = null;
     let missingFields: string[] = [];
     let requirementErrors: any = {};
+    let hostedOnboardingRequired = false;
+    let bankConfigured = false;
     
-    if (razorpayAccount.razorpay_product_id) {
+    if (razorpayAccount.product_id) {
       try {
         const productResponse = await fetch(
-          `https://api.razorpay.com/v2/accounts/${razorpayAccount.razorpay_account_id}/products/${razorpayAccount.razorpay_product_id}`,
+          `https://api.razorpay.com/v2/accounts/${razorpayAccount.razorpay_account_id}/products/${razorpayAccount.product_id}`,
           {
             headers: {
               'Authorization': `Basic ${auth}`,
@@ -93,12 +95,24 @@ serve(async (req) => {
         
         if (productResponse.ok) {
           const productData = await productResponse.json();
-          console.log('Product data:', JSON.stringify(productData, null, 2));
+          console.log('Product activation status:', productData.activation_status);
+          console.log('Product requirements:', JSON.stringify(productData.requirements, null, 2));
+          console.log('Product config:', JSON.stringify(productData.config, null, 2));
+          
+          // Check if bank is configured
+          bankConfigured = !!productData.config?.settlements?.bank_account;
+          console.log('Bank configured in product:', bankConfigured);
           
           if (productData.requirements) {
             productRequirements = productData.requirements;
             missingFields = productData.requirements.currently_due || [];
             requirementErrors = productData.requirements.errors || {};
+            
+            // Check if hosted onboarding is required
+            if (productData.requirements.hosted_onboarding_required) {
+              hostedOnboardingRequired = true;
+              console.log('⚠ Hosted onboarding is REQUIRED for this account');
+            }
           }
           
           // Map product activation status to our status
@@ -145,7 +159,9 @@ serve(async (req) => {
         account_status: accountData.status,
         missing_fields: missingFields,
         requirement_errors: requirementErrors,
-        requirements: productRequirements
+        requirements: productRequirements,
+        hosted_onboarding_required: hostedOnboardingRequired,
+        bank_configured: bankConfigured
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

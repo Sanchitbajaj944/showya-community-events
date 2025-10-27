@@ -124,6 +124,30 @@ Deno.serve(async (req) => {
           throw new Error('No product found');
         }
 
+        console.log('Updating bank details for product:', razorpayAccount.product_id);
+        
+        // Use consistent schema with start-kyc
+        const settlementPayload = {
+          settlements: {
+            bank_account: {
+              name: data.beneficiary_name,
+              ifsc: data.ifsc,
+              account_number: data.account_number
+            }
+          },
+          tnc_accepted: true
+        };
+
+        console.log('Settlement payload (masked):', {
+          ...settlementPayload,
+          settlements: {
+            bank_account: {
+              ...settlementPayload.settlements.bank_account,
+              account_number: '****' + data.account_number.slice(-4)
+            }
+          }
+        });
+
         const response = await fetch(
           `https://api.razorpay.com/v2/accounts/${accountId}/products/${razorpayAccount.product_id}`,
           {
@@ -131,29 +155,54 @@ Deno.serve(async (req) => {
             headers: {
               'Authorization': `Basic ${auth}`,
               'Content-Type': 'application/json',
+              'X-Razorpay-Idempotency': `showya_${communityId}_upd_${razorpayAccount.product_id}_bank`
             },
-            body: JSON.stringify({
-              settlements: {
-                account_number: data.account_number,
-                ifsc_code: data.ifsc,
-                beneficiary_name: data.beneficiary_name
-              },
-              tnc_accepted: true
-            })
+            body: JSON.stringify(settlementPayload)
           }
         );
 
+        const requestId = response.headers.get('x-razorpay-request-id');
+        console.log('Razorpay request ID:', requestId);
+
         if (!response.ok) {
           const error = await response.json();
+          console.error('Bank update failed:', error);
           throw new Error(`Failed to update bank details: ${JSON.stringify(error)}`);
         }
+        
         updateResult = await response.json();
+        console.log('Bank update response status:', updateResult.activation_status);
+
+        // Verify bank details were actually set
+        console.log('Verifying bank details...');
+        const verifyResponse = await fetch(
+          `https://api.razorpay.com/v2/accounts/${accountId}/products/${razorpayAccount.product_id}`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+            }
+          }
+        );
+
+        if (verifyResponse.ok) {
+          const productDetails = await verifyResponse.json();
+          const bankConfigured = !!productDetails.config?.settlements?.bank_account;
+          console.log('Bank configured:', bankConfigured);
+          console.log('Requirements:', productDetails.requirements);
+          
+          if (!bankConfigured) {
+            console.warn('WARNING: Bank details not reflected in product config after PATCH');
+            throw new Error('Bank details could not be verified. They may require manual setup in Razorpay dashboard.');
+          }
+        }
 
         // Update our database
+        const maskedAccountNumber = `****${data.account_number.slice(-4)}`;
         await supabaseClient
           .from('razorpay_accounts')
           .update({
-            bank_account_number: data.account_number,
+            bank_account_number: maskedAccountNumber,
             bank_ifsc: data.ifsc,
             bank_beneficiary_name: data.beneficiary_name,
             last_updated: new Date().toISOString()
