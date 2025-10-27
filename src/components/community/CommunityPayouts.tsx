@@ -45,6 +45,7 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
     // Clear user profile data from database (phone, address, pan, dob)
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
+      setUserId(session.user.id);
       await supabase
         .from("profiles")
         .update({
@@ -320,6 +321,12 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   };
 
   const handlePhoneSubmit = async (phone: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("Please sign in to continue");
+      return;
+    }
+    setUserId(session.user.id);
     setUserPhone(phone);
     setPhoneDialogOpen(false);
     
@@ -328,6 +335,12 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   };
 
   const handleAddressComplete = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("Please sign in to continue");
+      return;
+    }
+    setUserId(session.user.id);
     setAddressDialogOpen(false);
     
     // Always go to PAN/DOB dialog next in the flow
@@ -335,6 +348,12 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   };
 
   const handlePanDobComplete = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("Please sign in to continue");
+      return;
+    }
+    setUserId(session.user.id);
     setPanDobDialogOpen(false);
     
     // Always go to documents dialog next in the flow
@@ -342,6 +361,12 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   };
 
   const handleDocumentsComplete = async (docs: { panCard: File; addressProof: File }) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("Please sign in to continue");
+      return;
+    }
+    setUserId(session.user.id);
     setDocuments(docs);
     setDocumentsDialogOpen(false);
     
