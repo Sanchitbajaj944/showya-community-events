@@ -701,6 +701,53 @@ serve(async (req) => {
       await new Promise(r => setTimeout(r, 200));
     }
 
+    // Try to set bank details at account level BEFORE requesting product
+    console.log('Setting bank details at account level...');
+    const accountBankPayload = {
+      bank_account: {
+        ifsc_code: bankDetails.ifsc,
+        account_number: bankDetails.accountNumber,
+        beneficiary_name: bankDetails.beneficiaryName
+      }
+    };
+    
+    console.log('PATCH account with bank (masked):', {
+      bank_account: {
+        ifsc_code: bankDetails.ifsc,
+        account_number: '****' + bankDetails.accountNumber.slice(-4),
+        beneficiary_name: bankDetails.beneficiaryName
+      }
+    });
+
+    try {
+      const accountBankResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/json',
+          'X-Razorpay-Idempotency': `showya_${communityId}_acc_bank`
+        },
+        body: JSON.stringify(accountBankPayload)
+      });
+
+      const accBankReqId = accountBankResponse.headers.get('x-razorpay-request-id');
+      console.log('Account bank PATCH request ID:', accBankReqId);
+
+      if (accountBankResponse.ok) {
+        const accountData = await accountBankResponse.json();
+        console.log('Account bank details updated, status:', accountData.status);
+      } else {
+        const errorText = await accountBankResponse.text();
+        console.warn('Account bank PATCH failed (non-fatal):', errorText);
+        // Continue anyway - will try product-level next
+      }
+    } catch (err: any) {
+      console.warn('Account-level bank update failed (non-fatal):', err.message);
+      // Continue anyway
+    }
+
+    await new Promise(r => setTimeout(r, 300));
+
     // Request Route product configuration
     let productId: string;
     let finalStatus = 'IN_PROGRESS';
@@ -715,7 +762,12 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           product_name: 'route',
-          tnc_accepted: true
+          tnc_accepted: true,
+          settlements: {
+            account_number: bankDetails.accountNumber,
+            ifsc_code: bankDetails.ifsc,
+            beneficiary_name: bankDetails.beneficiaryName
+          }
         })
       });
 
@@ -734,85 +786,86 @@ serve(async (req) => {
       const requiredDocs = productDetails?.requirements?.documents || [];
       console.log('Required documents:', requiredDocs);
 
-      // Update product configuration with settlement bank account (correct Razorpay format)
-      const settlementPayload = {
-        settlements: {
-          bank_account: {
-            name: bankDetails.beneficiaryName,
-            ifsc: bankDetails.ifsc,
-            account_number: bankDetails.accountNumber
-          }
-        },
-        tnc_accepted: true
-      };
-
-      console.log('Updating product with settlement details (masked acct):', {
-        ...settlementPayload,
-        settlements: {
-          bank_account: {
-            ...settlementPayload.settlements.bank_account,
-            account_number: '****' + bankDetails.accountNumber.slice(-4)
-          }
-        }
-      });
+      // Verify bank details were configured
+      console.log('Verifying bank configuration in product...');
+      const bankConfigured = !!productDetails.config?.settlements?.bank_account || 
+                            !!productDetails.config?.settlements?.account_number;
+      const bankInSettings = !!productDetails.settlements;
       
-      try {
-        const updateResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Basic ${auth}`,
-            'Content-Type': 'application/json',
-            'X-Razorpay-Idempotency': `showya_${communityId}_prd_${productId}_settlement`
+      console.log('✓ Bank in config:', bankConfigured);
+      console.log('✓ Bank in settings:', bankInSettings);
+      console.log('  Product status:', productDetails.activation_status);
+      console.log('  Requirements:', JSON.stringify(productDetails.requirements?.currently_due || []));
+      
+      if (!bankConfigured && !bankInSettings) {
+        console.warn('⚠️ Bank details not auto-configured. Trying product PATCH...');
+        
+        // Fallback: try PATCH on product
+        const settlementPayload = {
+          settlements: {
+            bank_account: {
+              name: bankDetails.beneficiaryName,
+              ifsc: bankDetails.ifsc,
+              account_number: bankDetails.accountNumber
+            }
           },
-          body: JSON.stringify(settlementPayload)
-        });
+          tnc_accepted: true
+        };
 
-        const requestId = updateResponse.headers.get('x-razorpay-request-id');
-        console.log('Settlement PATCH request ID:', requestId);
-
-        if (!updateResponse.ok) {
-          const errorText = await updateResponse.text();
-          console.error('Settlement PATCH failed:', errorText);
-          
-          // Non-fatal: under review / locked
-          if (errorText.toLowerCase().includes('activation form locked') || errorText.toLowerCase().includes('under_review')) {
-            console.log('Account under review - settlement will apply later');
-          } else {
-            throw new Error(errorText);
-          }
-        } else {
-          const updateData = await updateResponse.json();
-          console.log('Settlement updated, status:', updateData.activation_status);
-          
-          // Verify bank details were actually set
-          console.log('Verifying bank details were saved...');
-          const verifyResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
-            method: 'GET',
-            headers: { 'Authorization': `Basic ${auth}` }
-          });
-          
-          if (verifyResponse.ok) {
-            const verifiedProduct = await verifyResponse.json();
-            const bankConfigured = !!verifiedProduct.config?.settlements?.bank_account;
-            console.log('✓ Bank configured:', bankConfigured);
-            console.log('  Remaining requirements:', verifiedProduct.requirements?.currently_due || 'none');
-            
-            if (!bankConfigured) {
-              console.warn('⚠ Bank details not reflected in config after PATCH. May require hosted onboarding.');
+        console.log('PATCH product with bank (masked):', {
+          settlements: {
+            bank_account: {
+              name: bankDetails.beneficiaryName,
+              ifsc: bankDetails.ifsc,
+              account_number: '****' + bankDetails.accountNumber.slice(-4)
             }
           }
-        }
-      } catch (err: any) {
-        const errText = err.message || String(err);
-        // Non-fatal: under review / locked
-        if (errText.toLowerCase().includes('activation form locked') || errText.toLowerCase().includes('under_review')) {
-          console.log('Account under review - settlement will apply later');
-        } else {
-          throw err;
+        });
+        
+        try {
+          const updateResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+              'Content-Type': 'application/json',
+              'X-Razorpay-Idempotency': `showya_${communityId}_prd_${productId}_settlement`
+            },
+            body: JSON.stringify(settlementPayload)
+          });
+
+          const requestId = updateResponse.headers.get('x-razorpay-request-id');
+          console.log('Product PATCH request ID:', requestId);
+
+          if (updateResponse.ok) {
+            const updateData = await updateResponse.json();
+            console.log('Product PATCH status:', updateData.activation_status);
+            
+            // Re-check
+            await new Promise(r => setTimeout(r, 300));
+            const recheckResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
+              method: 'GET',
+              headers: { 'Authorization': `Basic ${auth}` }
+            });
+            
+            if (recheckResponse.ok) {
+              const recheckedProduct = await recheckResponse.json();
+              const nowConfigured = !!recheckedProduct.config?.settlements?.bank_account;
+              console.log('After PATCH - Bank configured:', nowConfigured);
+              
+              if (!nowConfigured) {
+                console.warn('⚠️ Bank still not in config after PATCH. Hosted onboarding may be required.');
+              }
+            }
+          } else {
+            const errorText = await updateResponse.text();
+            console.warn('Product PATCH failed (non-fatal):', errorText);
+          }
+        } catch (err: any) {
+          console.warn('Product PATCH error (non-fatal):', err.message);
         }
       }
 
-      // Final product status check
+      // Final status check
       const finalProduct = await callRazorpay(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products/${productId}`, {
         method: 'GET',
         headers: { 'Authorization': `Basic ${auth}` }
@@ -820,11 +873,11 @@ serve(async (req) => {
 
       console.log('Final product status:', finalProduct.activation_status);
       console.log('Requirements:', finalProduct.requirements);
-      const bankConfigured = !!finalProduct.config?.settlements?.bank_account;
-      console.log('Bank configured:', bankConfigured);
+      const finalBankConfigured = !!finalProduct.config?.settlements?.bank_account;
+      console.log('Final bank configured:', finalBankConfigured);
 
       // Check if hosted onboarding is required for bank details
-      const requiresHostedOnboarding = !bankConfigured && 
+      const requiresHostedOnboarding = !finalBankConfigured && 
         finalProduct.requirements?.currently_due?.some((req: any) => 
           req?.field_reference?.includes('settlements.')
         );
