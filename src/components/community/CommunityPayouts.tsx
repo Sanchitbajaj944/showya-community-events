@@ -189,6 +189,12 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         return;
       }
 
+      if (data?.action === 'hosted_onboarding_required') {
+        toast.info(data.message || "Bank details must be completed on Razorpay.", { duration: 6000 });
+        onRefresh();
+        return;
+      }
+
       if (data?.action === 'manual_setup') {
         console.log('Manual setup required, checking what is missing...');
         
@@ -557,6 +563,42 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         );
       
       case 'NEEDS_INFO':
+        // Check if hosted onboarding URL is available
+        const razorpayAccount = community.razorpay_accounts?.[0];
+        const hasHostedUrl = razorpayAccount?.onboarding_url;
+        
+        if (hasHostedUrl) {
+          return (
+            <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
+              <AlertCircle className="h-4 w-4 text-orange-500" />
+              <AlertDescription className="text-orange-700 dark:text-orange-300">
+                <strong>⚠️ Complete Bank Setup on Razorpay</strong>
+                <p className="mt-2">Bank details must be completed directly on Razorpay's secure platform.</p>
+                <div className="flex gap-2 mt-3">
+                  <Button 
+                    size="sm"
+                    onClick={() => {
+                      window.open(razorpayAccount.onboarding_url, '_blank');
+                      toast.info("Complete bank details on Razorpay, then return here and click Refresh.", { duration: 5000 });
+                    }}
+                  >
+                    Complete Bank Setup
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleCheckStatus}
+                    disabled={checking}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
+                    {checking ? "Checking..." : "Refresh"}
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          );
+        }
+        
         const getMissingFieldsMessage = () => {
           if (!missingFields || missingFields.length === 0) {
             return "Some details need to be updated. Please re-submit your KYC.";

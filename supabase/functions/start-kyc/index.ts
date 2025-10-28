@@ -820,7 +820,68 @@ serve(async (req) => {
 
       console.log('Final product status:', finalProduct.activation_status);
       console.log('Requirements:', finalProduct.requirements);
-      console.log('Bank configured:', !!finalProduct.config?.settlements?.bank_account);
+      const bankConfigured = !!finalProduct.config?.settlements?.bank_account;
+      console.log('Bank configured:', bankConfigured);
+
+      // Check if hosted onboarding is required for bank details
+      const requiresHostedOnboarding = !bankConfigured && 
+        finalProduct.requirements?.currently_due?.some((req: any) => 
+          req?.field_reference?.includes('settlements.')
+        );
+
+      if (requiresHostedOnboarding) {
+        console.log('🔔 Hosted onboarding required for bank details');
+        
+        // Get the onboarding URL
+        const accountResponse = await fetch(`https://api.razorpay.com/v2/accounts/${razorpayAccountId}`, {
+          method: 'GET',
+          headers: { 'Authorization': `Basic ${auth}` }
+        });
+        
+        let onboardingUrl = null;
+        if (accountResponse.ok) {
+          const accountData = await accountResponse.json();
+          onboardingUrl = accountData.activation_url || accountData.onboarding_url;
+          console.log('Hosted onboarding URL:', onboardingUrl ? 'Available' : 'Not found');
+        }
+        
+        // Save with onboarding URL
+        const maskedAccountNumber = `****${bankDetails.accountNumber.slice(-4)}`;
+        await supabaseClient
+          .from('razorpay_accounts')
+          .update({
+            stakeholder_id: razorpayStakeholderId,
+            product_id: productId,
+            onboarding_url: onboardingUrl,
+            kyc_status: 'NEEDS_INFO',
+            bank_account_number: maskedAccountNumber,
+            bank_ifsc: bankDetails.ifsc,
+            bank_beneficiary_name: bankDetails.beneficiaryName,
+            tnc_accepted: true,
+            tnc_accepted_at: new Date().toISOString(),
+            products_requested: true,
+            products_activated: false,
+            last_updated: new Date().toISOString()
+          })
+          .eq('razorpay_account_id', razorpayAccountId)
+          .eq('community_id', communityId);
+        
+        await supabaseClient
+          .from('communities')
+          .update({ kyc_status: 'NEEDS_INFO' })
+          .eq('id', communityId);
+        
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            action: 'hosted_onboarding_required',
+            kyc_status: 'NEEDS_INFO',
+            onboarding_url: onboardingUrl,
+            message: 'Bank details must be completed on Razorpay. Click "Complete Bank Setup" to continue.'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       // Map status for frontend
       if (finalProduct.activation_status === 'activated') {

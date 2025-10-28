@@ -46,10 +46,10 @@ export default function CommunityDashboard() {
     try {
       setLoading(true);
 
-      // Fetch community
+      // Fetch community with razorpay account details
       const { data: communityData, error: communityError } = await supabase
         .from("communities")
-        .select("*")
+        .select("*, razorpay_accounts(*)")
         .eq("id", communityId)
         .single();
 
