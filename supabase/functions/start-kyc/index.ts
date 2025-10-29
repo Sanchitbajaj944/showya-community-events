@@ -625,81 +625,8 @@ serve(async (req) => {
       );
     }
 
-    // Check product requirements before uploading documents
-    let requiredDocuments: string[] = [];
-    if (documents && razorpayStakeholderId) {
-      // Fetch product to check document requirements
-      try {
-        const productCheckResponse = await fetch(
-          `https://api.razorpay.com/v2/accounts/${razorpayAccountId}/products`,
-          {
-            method: 'GET',
-            headers: {
-              'Authorization': `Basic ${auth}`,
-              'Content-Type': 'application/json',
-            }
-          }
-        );
-
-        if (productCheckResponse.ok) {
-          const productsData = await productCheckResponse.json();
-          // Get the route product
-          const routeProduct = productsData.items?.find((p: any) => p.product_name === 'route');
-          requiredDocuments = routeProduct?.requirements?.documents || [];
-          console.log('Required documents:', requiredDocuments);
-        }
-      } catch (err) {
-        console.error('Failed to fetch product requirements:', err);
-        // Continue with default behavior if check fails
-        requiredDocuments = ['individual_proof_of_address'];
-      }
-
-      console.log('Uploading required KYC documents...');
-      
-      // Only upload PAN image if explicitly required
-      const needIdProof = requiredDocuments.includes('individual_proof_of_identification');
-      if (needIdProof && documents.panCard) {
-        try {
-          await uploadDocument(
-            razorpayAccountId,
-            razorpayStakeholderId,
-            'individual_proof_of_identification',
-            'personal_pan',
-            documents.panCard,
-            auth
-          );
-        } catch (err: any) {
-          const errorMsg = String(err.message || err);
-          if (errorMsg.includes('personal_pan is/are not required')) {
-            console.warn('PAN image not required for this account; skipping.');
-          } else {
-            throw err;
-          }
-        }
-      } else if (documents.panCard) {
-        console.log('PAN image not required according to product requirements; skipping upload.');
-      }
-
-      // Upload address proof if required
-      const needAddrProof = requiredDocuments.includes('individual_proof_of_address');
-      if (needAddrProof && documents.addressProof) {
-        const docType = documents.addressProof.type || 'voter_id';
-        const docSubType = docType === 'aadhaar' ? 'aadhaar_front' : 'voter_id_front';
-        
-        await uploadDocument(
-          razorpayAccountId,
-          razorpayStakeholderId,
-          'individual_proof_of_address',
-          docSubType,
-          documents.addressProof,
-          auth
-        );
-      } else if (documents.addressProof) {
-        console.log('Address proof not required according to product requirements; skipping upload.');
-      }
-      
-      await new Promise(r => setTimeout(r, 200));
-    }
+    // Documents (PAN/Aadhaar) are not required for route accounts
+    console.log('Skipping document uploads for route account - not required for individual route accounts');
 
     // Request Route product configuration
     let productId: string;
