@@ -99,13 +99,6 @@ serve(async (req) => {
           console.log('Product requirements:', JSON.stringify(productData.requirements, null, 2));
           console.log('Product config:', JSON.stringify(productData.config, null, 2));
           
-          // Check if bank is configured - either via flat keys or if product is activated
-          const hasSettlementFields = productData.config?.settlements?.beneficiary_name && 
-                                      productData.config?.settlements?.account_number &&
-                                      productData.config?.settlements?.ifsc_code;
-          bankConfigured = hasSettlementFields || productData.activation_status === 'activated';
-          console.log('Bank configured in product:', bankConfigured);
-          
           if (productData.requirements) {
             productRequirements = productData.requirements;
             missingFields = productData.requirements.currently_due || [];
@@ -117,6 +110,13 @@ serve(async (req) => {
               console.log('⚠ Hosted onboarding is REQUIRED for this account');
             }
           }
+          
+          // Check if bank is configured - if activated and no settlement requirements pending
+          const hasPendingSettlements = missingFields.some((field: string) => 
+            field.startsWith('settlements.')
+          );
+          bankConfigured = productData.activation_status === 'activated' && !hasPendingSettlements;
+          console.log('Bank configured:', bankConfigured, '(status:', productData.activation_status, ', pending settlements:', hasPendingSettlements, ')');
           
           // Map product activation status to our status
           if (productData.activation_status === 'activated') {
