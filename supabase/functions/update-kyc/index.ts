@@ -126,14 +126,12 @@ Deno.serve(async (req) => {
 
         console.log('Updating bank details for product:', razorpayAccount.product_id);
         
-        // Use consistent schema with start-kyc
+        // Use exact Razorpay flat keys format
         const settlementPayload = {
           settlements: {
-            bank_account: {
-              name: data.beneficiary_name,
-              ifsc: data.ifsc,
-              account_number: data.account_number
-            }
+            beneficiary_name: data.beneficiary_name,
+            account_number: data.account_number,
+            ifsc_code: data.ifsc
           },
           tnc_accepted: true
         };
@@ -141,10 +139,8 @@ Deno.serve(async (req) => {
         console.log('Settlement payload (masked):', {
           ...settlementPayload,
           settlements: {
-            bank_account: {
-              ...settlementPayload.settlements.bank_account,
-              account_number: '****' + data.account_number.slice(-4)
-            }
+            ...settlementPayload.settlements,
+            account_number: '****' + data.account_number.slice(-4)
           }
         });
 
@@ -187,8 +183,14 @@ Deno.serve(async (req) => {
 
         if (verifyResponse.ok) {
           const productDetails = await verifyResponse.json();
-          const bankConfigured = !!productDetails.config?.settlements?.bank_account;
+          const settlements = productDetails.config?.settlements || {};
+          const bankConfigured = !!(settlements.beneficiary_name && settlements.account_number && settlements.ifsc_code);
           console.log('Bank configured:', bankConfigured);
+          console.log('Settlement fields:', {
+            beneficiary_name: !!settlements.beneficiary_name,
+            account_number: !!settlements.account_number,
+            ifsc_code: !!settlements.ifsc_code
+          });
           console.log('Requirements:', productDetails.requirements);
           
           if (!bankConfigured) {

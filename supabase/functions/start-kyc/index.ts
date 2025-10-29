@@ -734,14 +734,12 @@ serve(async (req) => {
       const requiredDocs = productDetails?.requirements?.documents || [];
       console.log('Required documents:', requiredDocs);
 
-      // Update product configuration with settlement bank account (correct Razorpay format)
+      // Update product configuration with settlement bank account (exact Razorpay flat keys)
       const settlementPayload = {
         settlements: {
-          bank_account: {
-            name: bankDetails.beneficiaryName,
-            ifsc: bankDetails.ifsc,
-            account_number: bankDetails.accountNumber
-          }
+          beneficiary_name: bankDetails.beneficiaryName,
+          account_number: bankDetails.accountNumber,
+          ifsc_code: bankDetails.ifsc
         },
         tnc_accepted: true
       };
@@ -749,10 +747,8 @@ serve(async (req) => {
       console.log('Updating product with settlement details (masked acct):', {
         ...settlementPayload,
         settlements: {
-          bank_account: {
-            ...settlementPayload.settlements.bank_account,
-            account_number: '****' + bankDetails.accountNumber.slice(-4)
-          }
+          ...settlementPayload.settlements,
+          account_number: '****' + bankDetails.accountNumber.slice(-4)
         }
       });
       
@@ -793,8 +789,14 @@ serve(async (req) => {
           
           if (verifyResponse.ok) {
             const verifiedProduct = await verifyResponse.json();
-            const bankConfigured = !!verifiedProduct.config?.settlements?.bank_account;
+            const settlements = verifiedProduct.config?.settlements || {};
+            const bankConfigured = !!(settlements.beneficiary_name && settlements.account_number && settlements.ifsc_code);
             console.log('✓ Bank configured:', bankConfigured);
+            console.log('  Settlement fields:', { 
+              beneficiary_name: !!settlements.beneficiary_name,
+              account_number: !!settlements.account_number,
+              ifsc_code: !!settlements.ifsc_code
+            });
             console.log('  Remaining requirements:', verifiedProduct.requirements?.currently_due || 'none');
             
             if (!bankConfigured) {
@@ -820,8 +822,14 @@ serve(async (req) => {
 
       console.log('Final product status:', finalProduct.activation_status);
       console.log('Requirements:', finalProduct.requirements);
-      const bankConfigured = !!finalProduct.config?.settlements?.bank_account;
+      const settlements = finalProduct.config?.settlements || {};
+      const bankConfigured = !!(settlements.beneficiary_name && settlements.account_number && settlements.ifsc_code);
       console.log('Bank configured:', bankConfigured);
+      console.log('Settlement fields present:', {
+        beneficiary_name: !!settlements.beneficiary_name,
+        account_number: !!settlements.account_number,
+        ifsc_code: !!settlements.ifsc_code
+      });
 
       // Check if hosted onboarding is required for bank details
       const requiresHostedOnboarding = !bankConfigured && 
