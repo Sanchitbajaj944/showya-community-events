@@ -97,21 +97,21 @@ export default function CreateEvent() {
     if (!posterFile || !user) return null;
 
     const fileExt = posterFile.name.split('.').pop();
-    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-    const filePath = `event-posters/${fileName}`;
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
-      .from('profile-pictures')
-      .upload(filePath, posterFile);
+      .from('event-posters')
+      .upload(fileName, posterFile);
 
     if (uploadError) {
       console.error("Upload error:", uploadError);
+      toast.error("Failed to upload the poster");
       return null;
     }
 
     const { data } = supabase.storage
-      .from('profile-pictures')
-      .getPublicUrl(filePath);
+      .from('event-posters')
+      .getPublicUrl(fileName);
 
     return data.publicUrl;
   };
