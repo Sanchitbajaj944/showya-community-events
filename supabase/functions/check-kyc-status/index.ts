@@ -135,7 +135,7 @@ serve(async (req) => {
     let newStatus = 'IN_PROGRESS';
 
     if (accountData.status === 'activated') {
-      newStatus = 'APPROVED';
+      newStatus = 'ACTIVATED';
     } else if (accountData.status === 'rejected' || accountData.status === 'suspended') {
       newStatus = 'REJECTED';
     } else if (accountData.status === 'needs_clarification' || missingFields.length > 0) {
