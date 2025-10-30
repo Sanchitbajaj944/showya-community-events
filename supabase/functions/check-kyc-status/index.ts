@@ -145,9 +145,12 @@ serve(async (req) => {
     }
 
     // Update status if changed
+    console.log('Current DB status:', razorpayAccount.kyc_status, '| New calculated status:', newStatus);
     if (newStatus !== razorpayAccount.kyc_status) {
+      console.log('Status changed! Updating database...');
+      
       // Update razorpay_accounts table
-      await supabaseClient
+      const { error: razorpayUpdateError } = await supabaseClient
         .from('razorpay_accounts')
         .update({ 
           kyc_status: newStatus,
@@ -155,14 +158,28 @@ serve(async (req) => {
         })
         .eq('id', razorpayAccount.id);
       
+      if (razorpayUpdateError) {
+        console.error('Error updating razorpay_accounts:', razorpayUpdateError);
+      } else {
+        console.log('✓ Updated razorpay_accounts table');
+      }
+      
       // Also update the community kyc_status to keep them in sync
-      await supabaseClient
+      const { error: communityUpdateError } = await supabaseClient
         .from('communities')
         .update({ 
           kyc_status: newStatus,
           updated_at: new Date().toISOString()
         })
         .eq('id', community.id);
+      
+      if (communityUpdateError) {
+        console.error('Error updating communities:', communityUpdateError);
+      } else {
+        console.log('✓ Updated communities table');
+      }
+    } else {
+      console.log('No status change detected, skipping database update');
     }
 
     return new Response(
