@@ -192,7 +192,7 @@ export const CommunityOverview = ({ community, userRole }: CommunityOverviewProp
                 <div 
                   key={event.id} 
                   className="p-4 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/community/${community.id}?tab=events`)}
+                  onClick={() => navigate(`/events/${event.id}`)}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">

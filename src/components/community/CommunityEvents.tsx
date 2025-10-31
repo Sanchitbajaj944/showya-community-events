@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -45,8 +45,9 @@ export const CommunityEvents = ({ community, userRole }: CommunityEventsProps) =
   const pastEvents = events.filter(event => isPast(new Date(event.event_date)));
 
   const renderEventCard = (event: any) => (
-    <Card key={event.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-      <CardContent className="p-4">
+    <Link key={event.id} to={`/events/${event.id}`}>
+      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+        <CardContent className="p-4">
         {event.poster_url && (
           <div className="w-full h-48 rounded-lg overflow-hidden mb-4">
             <img 
@@ -101,6 +102,7 @@ export const CommunityEvents = ({ community, userRole }: CommunityEventsProps) =
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 
   return (

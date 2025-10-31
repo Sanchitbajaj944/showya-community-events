@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Users, Mic, Heart } from "lucide-react";
+import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import EventCard from "@/components/EventCard";
@@ -161,8 +162,12 @@ const Index = () => {
                 <p>No upcoming events yet. Create a community to host the first one!</p>
               </div>
             ) : (
-              events.map((event, index) => (
-                <div key={index} className="snap-start">
+              events.map((event) => (
+                <Link 
+                  key={event.id} 
+                  to={`/events/${event.id}`}
+                  className="snap-start"
+                >
                   <EventCard 
                     title={event.title}
                     community={event.community_name}
@@ -172,7 +177,7 @@ const Index = () => {
                     category={event.category || "Event"}
                     image={event.poster_url}
                   />
-                </div>
+                </Link>
               ))
             )}
           </div>
