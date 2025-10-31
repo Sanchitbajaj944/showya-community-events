@@ -8,10 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Calendar, MessageCircle, Share2, LogOut, Info, CheckCircle } from "lucide-react";
+import { Users, Calendar, MessageCircle, Share2, LogOut, Info, CheckCircle, MapPin, Clock } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
+import { format, isPast } from "date-fns";
 
 export default function CommunityMemberView() {
   const { communityId } = useParams();
@@ -247,14 +248,7 @@ export default function CommunityMemberView() {
           </TabsContent>
 
           <TabsContent value="events">
-            <Card>
-              <CardContent className="pt-4 sm:pt-6">
-                <div className="text-center py-8 sm:py-12 text-muted-foreground">
-                  <Calendar className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
-                  <p className="text-sm sm:text-base">No upcoming events. Stay tuned!</p>
-                </div>
-              </CardContent>
-            </Card>
+            <MemberEventsView communityId={communityId!} />
           </TabsContent>
 
           <TabsContent value="members">
@@ -303,3 +297,139 @@ export default function CommunityMemberView() {
     </div>
   );
 }
+
+const MemberEventsView = ({ communityId }: { communityId: string }) => {
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [communityId]);
+
+  const fetchEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .eq("community_id", communityId)
+        .order("event_date", { ascending: true });
+
+      if (error) throw error;
+      setEvents(data || []);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const upcomingEvents = events.filter(event => !isPast(new Date(event.event_date)));
+  const pastEvents = events.filter(event => isPast(new Date(event.event_date)));
+
+  const renderEventCard = (event: any) => (
+    <Card key={event.id} className="hover:shadow-lg transition-shadow">
+      <CardContent className="p-4">
+        {event.poster_url && (
+          <div className="w-full h-48 rounded-lg overflow-hidden mb-4">
+            <img 
+              src={event.poster_url} 
+              alt={event.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+        <div className="space-y-3">
+          <div>
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <h3 className="font-semibold text-lg line-clamp-2">{event.title}</h3>
+              <Badge variant={event.ticket_type === 'paid' ? 'default' : 'secondary'}>
+                {event.ticket_type === 'paid' ? 'Paid' : 'Free'}
+              </Badge>
+            </div>
+            {event.category && (
+              <Badge variant="outline" className="mb-2">{event.category}</Badge>
+            )}
+          </div>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span>{format(new Date(event.event_date), "MMM dd, yyyy • h:mm a")}</span>
+            </div>
+            {event.duration && (
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                <span>{event.duration} minutes</span>
+              </div>
+            )}
+            {event.location && (
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                <span className="line-clamp-1">{event.location}</span>
+              </div>
+            )}
+          </div>
+          {event.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2 pt-2 border-t">
+              {event.description}
+            </p>
+          )}
+          <Button className="w-full mt-2">
+            {event.ticket_type === 'paid' ? `Book Ticket • ₹${event.performer_ticket_price}` : 'View Details'}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center py-8">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-3" />
+            <p className="text-muted-foreground">Loading events...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <Tabs defaultValue="upcoming" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="upcoming">Upcoming ({upcomingEvents.length})</TabsTrigger>
+            <TabsTrigger value="past">Past ({pastEvents.length})</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="upcoming">
+            {upcomingEvents.length === 0 ? (
+              <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                <Calendar className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
+                <p className="text-sm sm:text-base">No upcoming events. Stay tuned!</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {upcomingEvents.map(renderEventCard)}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="past">
+            {pastEvents.length === 0 ? (
+              <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                <Calendar className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
+                <p className="text-sm sm:text-base">No past events</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {pastEvents.map(renderEventCard)}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+};

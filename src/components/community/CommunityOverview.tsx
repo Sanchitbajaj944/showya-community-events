@@ -2,9 +2,10 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, Calendar, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
+import { Users, Calendar, CheckCircle, Clock, XCircle, AlertCircle, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { format, isPast } from "date-fns";
 
 interface CommunityOverviewProps {
   community: any;
@@ -15,22 +16,43 @@ export const CommunityOverview = ({ community, userRole }: CommunityOverviewProp
   const navigate = useNavigate();
   const [memberCount, setMemberCount] = React.useState(0);
   const [eventCount, setEventCount] = React.useState(0);
+  const [upcomingEvents, setUpcomingEvents] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     fetchStats();
   }, [community.id]);
 
   const fetchStats = async () => {
-    // Get member count
-    const { count: members } = await supabase
-      .from("community_members")
-      .select("*", { count: 'exact', head: true })
-      .eq("community_id", community.id);
+    try {
+      setLoading(true);
+      
+      // Get member count
+      const { count: members } = await supabase
+        .from("community_members")
+        .select("*", { count: 'exact', head: true })
+        .eq("community_id", community.id);
 
-    setMemberCount(members || 0);
+      setMemberCount(members || 0);
 
-    // Get event count (TODO: when events table is ready)
-    setEventCount(0);
+      // Get all events
+      const { data: events } = await supabase
+        .from("events")
+        .select("*")
+        .eq("community_id", community.id)
+        .order("event_date", { ascending: true });
+
+      const allEvents = events || [];
+      setEventCount(allEvents.length);
+
+      // Filter upcoming events
+      const upcoming = allEvents.filter(event => !isPast(new Date(event.event_date)));
+      setUpcomingEvents(upcoming.slice(0, 3)); // Show max 3
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getKycBadge = (status: string) => {
@@ -142,13 +164,58 @@ export const CommunityOverview = ({ community, userRole }: CommunityOverviewProp
       {/* Upcoming Events */}
       <Card>
         <CardHeader>
-          <CardTitle>Upcoming Events</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Upcoming Events</CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate(`/community/${community.id}?tab=events`)}
+            >
+              View All
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-12 text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>No events yet. Click Create Event to host your first!</p>
-          </div>
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">Loading events...</p>
+            </div>
+          ) : upcomingEvents.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>No upcoming events. Click Create Event to host your first!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {upcomingEvents.map(event => (
+                <div 
+                  key={event.id} 
+                  className="p-4 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/community/${community.id}?tab=events`)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold truncate">{event.title}</h4>
+                      <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span>{format(new Date(event.event_date), "MMM dd, yyyy • h:mm a")}</span>
+                      </div>
+                      {event.location && (
+                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                          <MapPin className="h-3 w-3" />
+                          <span className="truncate">{event.location}</span>
+                        </div>
+                      )}
+                    </div>
+                    <Badge variant={event.ticket_type === 'paid' ? 'default' : 'secondary'}>
+                      {event.ticket_type === 'paid' ? 'Paid' : 'Free'}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

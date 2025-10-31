@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Calendar, UserPlus, Share2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { format, isPast } from "date-fns";
 
 export default function CommunityPublicView() {
   const { communityId } = useParams();
@@ -184,18 +185,79 @@ export default function CommunityPublicView() {
         </Card>
 
         {/* Upcoming Events Preview */}
-        <Card>
-          <CardContent className="pt-4 sm:pt-6">
-            <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Upcoming Events</h3>
-            <div className="text-center py-8 sm:py-12 text-muted-foreground">
-              <Calendar className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
-              <p className="text-sm sm:text-base mb-3 sm:mb-4 px-4">Join this community to see upcoming events!</p>
-            </div>
-          </CardContent>
-        </Card>
+        <EventsPreview communityId={communityId!} />
       </div>
 
       <BottomNav />
     </div>
   );
 }
+
+const EventsPreview = ({ communityId }: { communityId: string }) => {
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [communityId]);
+
+  const fetchEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .eq("community_id", communityId)
+        .order("event_date", { ascending: true })
+        .limit(3);
+
+      if (error) throw error;
+      
+      const upcoming = (data || []).filter(event => !isPast(new Date(event.event_date)));
+      setEvents(upcoming);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-4 sm:pt-6">
+        <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Upcoming Events</h3>
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-3" />
+            <p className="text-muted-foreground text-sm">Loading events...</p>
+          </div>
+        ) : events.length === 0 ? (
+          <div className="text-center py-8 sm:py-12 text-muted-foreground">
+            <Calendar className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
+            <p className="text-sm sm:text-base">No upcoming events. Join to see when new events are posted!</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {events.map(event => (
+              <div key={event.id} className="p-4 rounded-lg border hover:bg-muted/50 transition-colors">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold truncate">{event.title}</h4>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {format(new Date(event.event_date), "MMM dd, yyyy • h:mm a")}
+                    </p>
+                    {event.location && (
+                      <p className="text-xs text-muted-foreground mt-1 truncate">{event.location}</p>
+                    )}
+                  </div>
+                  <Badge variant={event.ticket_type === 'paid' ? 'default' : 'secondary'}>
+                    {event.ticket_type === 'paid' ? 'Paid' : 'Free'}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};

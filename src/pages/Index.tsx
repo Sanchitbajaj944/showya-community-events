@@ -6,43 +6,35 @@ import EventCard from "@/components/EventCard";
 import CommunityCard from "@/components/CommunityCard";
 import FeatureCard from "@/components/FeatureCard";
 import { BottomNav } from "@/components/BottomNav";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { format, isPast } from "date-fns";
 import heroImage from "@/assets/hero-image.jpg";
 
 const Index = () => {
-  const upcomingEvents = [
-    {
-      title: "Poetry Open Mic Night",
-      community: "Mumbai Poetry Club",
-      date: "Mar 15, 2025 • 7:00 PM",
-      location: "Prithvi Theatre, Mumbai",
-      attendees: 45,
-      category: "Poetry",
-    },
-    {
-      title: "Indie Music Jam Session",
-      community: "Bangalore Music Collective",
-      date: "Mar 18, 2025 • 6:30 PM",
-      location: "The Humming Tree, Bangalore",
-      attendees: 67,
-      category: "Music",
-    },
-    {
-      title: "Stand-up Comedy Night",
-      community: "Delhi Comedy Circuit",
-      date: "Mar 20, 2025 • 8:00 PM",
-      location: "Canvas Laugh Club, Delhi",
-      attendees: 89,
-      category: "Comedy",
-    },
-    {
-      title: "Art & Sketching Meetup",
-      community: "Pune Artists Guild",
-      date: "Mar 22, 2025 • 4:00 PM",
-      location: "Cafe Goodluck, Pune",
-      attendees: 32,
-      category: "Art",
-    },
-  ];
+  const [events, setEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchUpcomingEvents();
+  }, []);
+
+  const fetchUpcomingEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .order("event_date", { ascending: true })
+        .limit(8);
+
+      if (error) throw error;
+      
+      // Filter only upcoming events
+      const upcoming = (data || []).filter(event => !isPast(new Date(event.event_date)));
+      setEvents(upcoming.slice(0, 4)); // Show max 4 on homepage
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    }
+  };
 
   const communities = [
     {
@@ -164,11 +156,25 @@ const Index = () => {
             </p>
           </div>
           <div className="flex overflow-x-auto gap-4 sm:gap-6 pb-6 snap-x snap-mandatory hide-scrollbar -mx-4 px-4">
-            {upcomingEvents.map((event, index) => (
-              <div key={index} className="snap-start">
-                <EventCard {...event} />
+            {events.length === 0 ? (
+              <div className="w-full text-center py-8 text-muted-foreground">
+                <p>No upcoming events yet. Create a community to host the first one!</p>
               </div>
-            ))}
+            ) : (
+              events.map((event, index) => (
+                <div key={index} className="snap-start">
+                  <EventCard 
+                    title={event.title}
+                    community={event.community_name}
+                    date={format(new Date(event.event_date), "MMM dd, yyyy • h:mm a")}
+                    location={event.location || event.city || "Online"}
+                    attendees={event.performer_slots + (event.audience_enabled ? event.audience_slots : 0)}
+                    category={event.category || "Event"}
+                    image={event.poster_url}
+                  />
+                </div>
+              ))
+            )}
           </div>
           <div className="mt-8 sm:mt-10 md:mt-12 text-center">
             <Button size="lg" className="gap-2 w-full sm:w-auto">
