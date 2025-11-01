@@ -49,7 +49,7 @@ serve(async (req) => {
       .eq('community_id', event.community_id)
       .single();
 
-    if (!razorpayAccount || razorpayAccount.kyc_status !== 'APPROVED') {
+    if (!razorpayAccount || razorpayAccount.kyc_status !== 'ACTIVATED') {
       throw new Error('Community KYC not approved for payments');
     }
 
