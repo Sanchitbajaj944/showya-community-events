@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Tag } from "lucide-react";
 
 interface BookingModalProps {
   open: boolean;
@@ -37,6 +37,85 @@ export function BookingModal({
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingId, setBookingId] = useState("");
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<any>(null);
+  const [applyingPromo, setApplyingPromo] = useState(false);
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) {
+      toast.error("Please enter a promo code");
+      return;
+    }
+
+    try {
+      setApplyingPromo(true);
+
+      // Fetch promo code from database
+      const { data: promo, error } = await supabase
+        .from("promocodes")
+        .select("*")
+        .eq("event_id", event.id)
+        .eq("code", promoCode.toUpperCase())
+        .single();
+
+      if (error || !promo) {
+        toast.error("Invalid promo code");
+        return;
+      }
+
+      // Validate promo code
+      const now = new Date();
+      const validFrom = promo.valid_from ? new Date(promo.valid_from) : null;
+      const validUntil = promo.valid_until ? new Date(promo.valid_until) : null;
+
+      if (validFrom && now < validFrom) {
+        toast.error("Promo code is not yet active");
+        return;
+      }
+
+      if (validUntil && now > validUntil) {
+        toast.error("Promo code has expired");
+        return;
+      }
+
+      if (promo.usage_limit && promo.usage_count >= promo.usage_limit) {
+        toast.error("Promo code usage limit reached");
+        return;
+      }
+
+      // Check if promo applies to selected role
+      if (promo.applies_to !== 'all' && promo.applies_to !== role) {
+        toast.error(`This promo code is only valid for ${promo.applies_to} tickets`);
+        return;
+      }
+
+      setAppliedPromo(promo);
+      toast.success(`Promo code applied! ${promo.discount_type === 'percentage' ? `${promo.discount_value}% off` : `₹${promo.discount_value} off`}`);
+
+    } catch (error: any) {
+      console.error("Error applying promo:", error);
+      toast.error("Failed to apply promo code");
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+
+  const calculateFinalPrice = () => {
+    if (event.ticket_type !== 'paid') return 0;
+    
+    const basePrice = role === 'performer' ? event.performer_ticket_price : event.audience_ticket_price;
+    
+    if (!appliedPromo) return basePrice;
+
+    let discount = 0;
+    if (appliedPromo.discount_type === 'percentage') {
+      discount = (basePrice * appliedPromo.discount_value) / 100;
+    } else {
+      discount = appliedPromo.discount_value;
+    }
+
+    return Math.max(0, basePrice - discount);
+  };
 
   const handleFreeBooking = async () => {
     if (!termsAccepted) {
@@ -86,7 +165,7 @@ export function BookingModal({
     try {
       setLoading(true);
 
-      const ticketPrice = role === 'performer' ? event.performer_ticket_price : event.audience_ticket_price;
+      const finalPrice = calculateFinalPrice();
 
       // Create Razorpay order via edge function
       const { data: orderData, error: orderError } = await supabase.functions.invoke(
@@ -94,7 +173,7 @@ export function BookingModal({
         {
           body: {
             event_id: event.id,
-            amount: ticketPrice
+            amount: finalPrice
           }
         }
       );
@@ -173,6 +252,8 @@ export function BookingModal({
     setBookingId("");
     setTermsAccepted(false);
     setRole('performer');
+    setPromoCode("");
+    setAppliedPromo(null);
     onOpenChange(false);
   };
 
@@ -246,6 +327,55 @@ export function BookingModal({
             </RadioGroup>
           </div>
 
+          {/* Promo Code */}
+          {event.ticket_type === 'paid' && (
+            <div className="space-y-2">
+              <Label>Promo Code</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter promo code"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  disabled={!!appliedPromo}
+                />
+                {appliedPromo ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setAppliedPromo(null);
+                      setPromoCode("");
+                    }}
+                  >
+                    Remove
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={handleApplyPromo}
+                    disabled={applyingPromo || !promoCode.trim()}
+                  >
+                    {applyingPromo ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Apply"
+                    )}
+                  </Button>
+                )}
+              </div>
+              {appliedPromo && (
+                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                  <Tag className="h-4 w-4" />
+                  <span>
+                    {appliedPromo.discount_type === 'percentage' 
+                      ? `${appliedPromo.discount_value}% discount applied`
+                      : `₹${appliedPromo.discount_value} discount applied`
+                    }
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Booking Summary */}
           <div className="p-4 bg-muted rounded-lg space-y-2">
             <div className="flex justify-between text-sm">
@@ -263,10 +393,30 @@ export function BookingModal({
             {event.ticket_type === 'paid' && (
               <>
                 <div className="border-t border-border my-2 pt-2" />
+                {appliedPromo && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Original Price</span>
+                      <span className="line-through">
+                        ₹{role === 'performer' ? event.performer_ticket_price : event.audience_ticket_price}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                      <span>Discount</span>
+                      <span>
+                        - ₹{
+                          appliedPromo.discount_type === 'percentage'
+                            ? ((role === 'performer' ? event.performer_ticket_price : event.audience_ticket_price) * appliedPromo.discount_value / 100).toFixed(0)
+                            : appliedPromo.discount_value
+                        }
+                      </span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between">
                   <span className="font-semibold">Total Amount</span>
                   <span className="font-bold text-primary">
-                    ₹{role === 'performer' ? event.performer_ticket_price : event.audience_ticket_price}
+                    ₹{calculateFinalPrice()}
                   </span>
                 </div>
               </>
