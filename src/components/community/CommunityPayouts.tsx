@@ -134,11 +134,6 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   };
 
   const initiateKyc = async () => {
-    if (!documents) {
-      setDocumentsDialogOpen(true);
-      return;
-    }
-
     if (!bankDetails) {
       setBankDetailsDialogOpen(true);
       return;
@@ -146,31 +141,37 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
     setLoading(true);
     try {
-      // Convert files to base64 for edge function
-      const panCardBase64 = await fileToBase64(documents.panCard);
-      const addressProofBase64 = await fileToBase64(documents.addressProof);
+      // Prepare request body
+      const requestBody: any = { 
+        communityId: community.id,
+        bankDetails: {
+          accountNumber: bankDetails.accountNumber,
+          ifsc: bankDetails.ifsc,
+          beneficiaryName: bankDetails.beneficiaryName
+        }
+      };
+
+      // Only include documents if they were provided
+      if (documents) {
+        const panCardBase64 = await fileToBase64(documents.panCard);
+        const addressProofBase64 = await fileToBase64(documents.addressProof);
+        
+        requestBody.documents = {
+          panCard: {
+            name: documents.panCard.name,
+            type: documents.panCard.type,
+            data: panCardBase64
+          },
+          addressProof: {
+            name: documents.addressProof.name,
+            type: documents.addressProof.type,
+            data: addressProofBase64
+          }
+        };
+      }
 
       const { data, error } = await supabase.functions.invoke('start-kyc', {
-        body: { 
-          communityId: community.id,
-          documents: {
-            panCard: {
-              name: documents.panCard.name,
-              type: documents.panCard.type,
-              data: panCardBase64
-            },
-            addressProof: {
-              name: documents.addressProof.name,
-              type: documents.addressProof.type,
-              data: addressProofBase64
-            }
-          },
-          bankDetails: {
-            accountNumber: bankDetails.accountNumber,
-            ifsc: bankDetails.ifsc,
-            beneficiaryName: bankDetails.beneficiaryName
-          }
-        }
+        body: requestBody
       });
 
       // Handle special actions from backend
@@ -300,7 +301,10 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         } else {
           toast.success(data.message || "KYC submitted successfully");
         }
-        onRefresh();
+        
+        // Automatically check status to refresh UI
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds for backend processing
+        await handleCheckStatus();
       } else {
         toast.error("KYC submission failed. Please try again.");
         console.error('Start KYC response:', data);
@@ -362,8 +366,8 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
     setUserId(session.user.id);
     setPanDobDialogOpen(false);
     
-    // Always go to documents dialog next in the flow
-    setDocumentsDialogOpen(true);
+    // Skip documents and go directly to bank details
+    setBankDetailsDialogOpen(true);
   };
 
   const handleDocumentsComplete = async (docs: { panCard: File; addressProof: File }) => {
