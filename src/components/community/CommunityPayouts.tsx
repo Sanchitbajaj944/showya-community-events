@@ -550,12 +550,13 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           <Alert className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
             <Clock className="h-4 w-4 text-yellow-500" />
             <AlertDescription className="text-yellow-700 dark:text-yellow-300">
-              <strong>🟡 Verification in Progress</strong>
-              <p className="mt-1">Your KYC details are being reviewed. This typically takes 1-2 business days.</p>
+              <strong>🟡 KYC Under Processing</strong>
+              <p className="mt-1">Your authentication is being verified by Razorpay. This typically takes 5-10 minutes.</p>
+              <p className="mt-1 text-sm">You'll receive a small test transaction once your account is approved.</p>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="mt-2"
+                className="mt-3"
                 onClick={handleCheckStatus}
                 disabled={checking}
               >

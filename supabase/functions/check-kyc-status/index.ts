@@ -141,7 +141,7 @@ serve(async (req) => {
     } else if (accountData.status === 'needs_clarification' || missingFields.length > 0) {
       newStatus = 'NEEDS_INFO';
     } else if (accountData.status === 'under_review') {
-      newStatus = 'PENDING';
+      newStatus = 'IN_PROGRESS'; // Changed from 'PENDING' to 'IN_PROGRESS'
     }
 
     // Update status if changed
