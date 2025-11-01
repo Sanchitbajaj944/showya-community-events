@@ -13,8 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { Loader2, Tag } from "lucide-react";
+import { Loader2, Tag, AlertCircle } from "lucide-react";
 
 interface BookingModalProps {
   open: boolean;
@@ -22,6 +23,7 @@ interface BookingModalProps {
   event: any;
   availableSlots: number;
   onBookingComplete: () => void;
+  kycStatus?: string | null;
 }
 
 export function BookingModal({ 
@@ -29,7 +31,8 @@ export function BookingModal({
   onOpenChange, 
   event, 
   availableSlots,
-  onBookingComplete 
+  onBookingComplete,
+  kycStatus 
 }: BookingModalProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -294,6 +297,20 @@ export function BookingModal({
           </DialogDescription>
         </DialogHeader>
 
+        {/* KYC Status Warning */}
+        {event.ticket_type === 'paid' && kycStatus === 'IN_PROGRESS' && (
+          <Alert className="bg-yellow-50 border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-900">
+            <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
+            <AlertDescription className="text-yellow-800 dark:text-yellow-300">
+              <p className="font-semibold mb-1">Payment Verification in Progress</p>
+              <p className="text-sm">
+                The community's payment account is being verified by Razorpay. This typically takes 5-10 minutes. 
+                You'll be able to book once verification is complete.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="space-y-6 py-4">
           {/* Role Selection */}
           <div className="space-y-3">
@@ -439,7 +456,7 @@ export function BookingModal({
           {/* Book Button */}
           <Button 
             onClick={handleBooking}
-            disabled={loading || !termsAccepted}
+            disabled={loading || !termsAccepted || (event.ticket_type === 'paid' && kycStatus !== 'ACTIVATED')}
             className="w-full"
             size="lg"
           >

@@ -22,6 +22,7 @@ export default function EventDetails() {
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [userBooking, setUserBooking] = useState<any>(null);
   const [availableSlots, setAvailableSlots] = useState(0);
+  const [kycStatus, setKycStatus] = useState<string | null>(null);
 
   useEffect(() => {
     fetchEventDetails();
@@ -43,7 +44,7 @@ export default function EventDetails() {
       if (eventError) throw eventError;
       setEvent(eventData);
 
-      // Fetch community details
+      // Fetch community details and KYC status
       if (eventData.community_id) {
         const { data: communityData } = await supabase
           .from("communities")
@@ -52,6 +53,17 @@ export default function EventDetails() {
           .single();
         
         setCommunity(communityData);
+
+        // Fetch KYC status for paid events
+        if (eventData.ticket_type === 'paid') {
+          const { data: razorpayData } = await supabase
+            .from("razorpay_accounts")
+            .select("kyc_status")
+            .eq("community_id", eventData.community_id)
+            .single();
+          
+          setKycStatus(razorpayData?.kyc_status || null);
+        }
       }
 
       // Fetch user's booking if logged in
@@ -385,6 +397,7 @@ export default function EventDetails() {
           event={event}
           availableSlots={availableSlots}
           onBookingComplete={fetchEventDetails}
+          kycStatus={kycStatus}
         />
       )}
     </div>
