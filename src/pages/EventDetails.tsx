@@ -54,15 +54,9 @@ export default function EventDetails() {
         
         setCommunity(communityData);
 
-        // Fetch KYC status for paid events
-        if (eventData.ticket_type === 'paid') {
-          const { data: razorpayData } = await supabase
-            .from("razorpay_accounts")
-            .select("kyc_status")
-            .eq("community_id", eventData.community_id)
-            .maybeSingle();
-          
-          setKycStatus(razorpayData?.kyc_status || null);
+        // Use community's KYC status for paid events
+        if (eventData.ticket_type === 'paid' && communityData) {
+          setKycStatus(communityData.kyc_status);
         }
       }
 
