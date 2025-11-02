@@ -56,7 +56,7 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-3">
-          <img src={logo} alt="Showya Logo" className="h-8 w-8" />
+          <img src={logo} alt="Showya Logo" className="h-10 w-10 rounded-lg" />
           <span className="text-xl font-bold text-foreground">Showya</span>
         </Link>
 
