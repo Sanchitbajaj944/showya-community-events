@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, Edit } from "lucide-react";
 import { format, isPast, differenceInHours } from "date-fns";
 import { toast } from "sonner";
 import { BookingModal } from "@/components/BookingModal";
@@ -186,6 +186,7 @@ export default function EventDetails() {
   const isEventPast = isPast(new Date(event.event_date));
   const isSlotsFull = availableSlots <= 0;
   const canBook = !isEventPast && !isSlotsFull && !userBooking;
+  const isEventCreator = user && event.created_by === user.id;
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-8">
@@ -223,6 +224,19 @@ export default function EventDetails() {
                   Hosted by {community.name}
                   <ExternalLink className="h-3 w-3" />
                 </Link>
+              )}
+
+              {/* Edit Button for Creator */}
+              {isEventCreator && !isEventPast && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => navigate(`/events/${eventId}/edit`)}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Event
+                </Button>
               )}
             </div>
 

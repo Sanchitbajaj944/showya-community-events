@@ -175,6 +175,82 @@ export type Database = {
           },
         ]
       }
+      event_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          event_id: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          event_id: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_audit_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_notifications: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          is_read: boolean
+          message: string
+          notification_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          is_read?: boolean
+          message: string
+          notification_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          notification_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_participants: {
         Row: {
           event_id: string
@@ -223,9 +299,12 @@ export type Database = {
           created_by: string | null
           description: string | null
           duration: number | null
+          editable_before_event_minutes: number | null
           event_date: string
           id: string
+          is_cancelled: boolean | null
           location: string | null
+          meeting_link_last_updated_at: string | null
           meeting_url: string | null
           performer_slots: number
           performer_ticket_price: number
@@ -247,9 +326,12 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           duration?: number | null
+          editable_before_event_minutes?: number | null
           event_date: string
           id?: string
+          is_cancelled?: boolean | null
           location?: string | null
+          meeting_link_last_updated_at?: string | null
           meeting_url?: string | null
           performer_slots?: number
           performer_ticket_price?: number
@@ -271,9 +353,12 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           duration?: number | null
+          editable_before_event_minutes?: number | null
           event_date?: string
           id?: string
+          is_cancelled?: boolean | null
           location?: string | null
+          meeting_link_last_updated_at?: string | null
           meeting_url?: string | null
           performer_slots?: number
           performer_ticket_price?: number
@@ -591,6 +676,8 @@ export type Database = {
       }
     }
     Functions: {
+      event_has_bookings: { Args: { _event_id: string }; Returns: boolean }
+      get_event_booking_count: { Args: { _event_id: string }; Returns: number }
       get_event_details: {
         Args: { _event_id: string; _user_id?: string }
         Returns: {
