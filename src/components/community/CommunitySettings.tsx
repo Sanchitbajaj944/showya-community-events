@@ -39,24 +39,26 @@ export const CommunitySettings = ({ community, onUpdate }: CommunitySettingsProp
     setUploading(true);
     try {
       const fileExt = file.name.split(".").pop();
-      const fileName = `${community.id}-${Date.now()}.${fileExt}`;
-      const filePath = `community-banners/${fileName}`;
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${community.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("profile-pictures")
-        .upload(filePath, file);
+        .from("community-banners")
+        .upload(filePath, file, {
+          upsert: true
+        });
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from("profile-pictures")
+        .from("community-banners")
         .getPublicUrl(filePath);
 
       setFormData({ ...formData, banner_url: publicUrl });
-      toast.success("Image uploaded");
+      toast.success("Banner uploaded successfully");
     } catch (error: any) {
-      console.error("Error uploading image:", error);
-      toast.error("Failed to upload image");
+      console.error("Error uploading banner:", error);
+      toast.error("Failed to upload banner");
     } finally {
       setUploading(false);
     }
