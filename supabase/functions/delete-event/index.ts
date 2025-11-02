@@ -12,37 +12,21 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Get the authorization header
-    const authHeader = req.headers.get('authorization');
-    
-    console.log('Auth header present:', !!authHeader);
-    
-    if (!authHeader) {
-      console.error('No authorization header provided');
-      throw new Error('No authorization header provided');
-    }
-
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Get the authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseClient.auth.getUser();
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
+    }
 
-    console.log('Auth result:', { hasUser: !!user, error: authError?.message });
-
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
     if (authError || !user) {
-      console.error('Authentication failed:', authError);
-      throw new Error('Unauthorized - invalid session');
+      throw new Error('Unauthorized');
     }
 
     const { eventId } = await req.json();
@@ -52,7 +36,7 @@ serve(async (req: Request) => {
     }
 
     // Fetch event details
-    const { data: event, error: eventError } = await supabaseClient
+    const { data: event, error: eventError } = await supabase
       .from('events')
       .select('*')
       .eq('id', eventId)
@@ -81,7 +65,7 @@ serve(async (req: Request) => {
     }
 
     // Check for bookings
-    const { data: participants, error: participantsError } = await supabaseClient
+    const { data: participants, error: participantsError } = await supabase
       .from('event_participants')
       .select('*')
       .eq('event_id', eventId);
@@ -94,7 +78,7 @@ serve(async (req: Request) => {
 
     if (hasBookings) {
       // Soft delete - mark as cancelled
-      const { error: updateError } = await supabaseClient
+      const { error: updateError } = await supabase
         .from('events')
         .update({ is_cancelled: true })
         .eq('id', eventId);
@@ -104,7 +88,7 @@ serve(async (req: Request) => {
       }
 
       // Create notifications for all participants
-      const notifications = participants.map(participant => ({
+      const notifications = participants.map((participant: any) => ({
         event_id: eventId,
         user_id: participant.user_id,
         notification_type: 'event_cancelled',
@@ -112,7 +96,7 @@ serve(async (req: Request) => {
         is_read: false
       }));
 
-      const { error: notificationError } = await supabaseClient
+      const { error: notificationError } = await supabase
         .from('event_notifications')
         .insert(notifications);
 
@@ -127,7 +111,7 @@ serve(async (req: Request) => {
       }
 
       // Log the cancellation in audit log
-      const { error: auditError } = await supabaseClient
+      const { error: auditError } = await supabase
         .from('event_audit_log')
         .insert({
           event_id: eventId,
@@ -154,7 +138,7 @@ serve(async (req: Request) => {
       );
     } else {
       // Hard delete - no bookings
-      const { error: deleteError } = await supabaseClient
+      const { error: deleteError } = await supabase
         .from('events')
         .delete()
         .eq('id', eventId);
