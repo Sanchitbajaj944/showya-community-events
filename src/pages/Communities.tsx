@@ -67,9 +67,9 @@ export default function Communities() {
             >
                 {/* Banner Image */}
                 <div className="relative h-36 sm:h-44 overflow-hidden bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20">
-                  {community.banner_image ? (
+                  {community.banner_url ? (
                     <img 
-                      src={community.banner_image} 
+                      src={community.banner_url} 
                       alt={community.name} 
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                     />
