@@ -240,7 +240,7 @@ export default function EventDetails() {
           )}
 
           {/* Meeting URL */}
-          {event.meeting_url && (
+          {event.meeting_url && userBooking && (
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
