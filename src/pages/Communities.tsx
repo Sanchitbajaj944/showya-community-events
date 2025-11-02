@@ -63,17 +63,28 @@ export default function Communities() {
             communities.map((community, index) => (
             <div
               key={index}
-              className="group rounded-xl border border-border bg-card p-4 sm:p-6 hover:shadow-lg transition-all duration-300"
+              className="group rounded-xl border border-border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col"
             >
-                {/* Community Avatar */}
-                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-3 sm:mb-4">
-                  <Users className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                {/* Banner Image */}
+                <div className="relative h-36 sm:h-44 overflow-hidden bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20">
+                  {community.banner_image ? (
+                    <img 
+                      src={community.banner_image} 
+                      alt={community.name} 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Users className="h-12 w-12 sm:h-16 sm:w-16 text-primary/40" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                 </div>
 
                 {/* Community Info */}
-                <div className="space-y-2 sm:space-y-3">
+                <div className="p-4 sm:p-6 space-y-2 sm:space-y-3 flex-1 flex flex-col">
                   <div>
-                    <h3 className="font-semibold text-base sm:text-lg mb-1 group-hover:text-primary transition-colors">
+                    <h3 className="font-semibold text-base sm:text-lg mb-2 group-hover:text-primary transition-colors line-clamp-1">
                       {community.name}
                     </h3>
                     <div className="flex flex-wrap gap-1 mb-2">
@@ -86,13 +97,13 @@ export default function Communities() {
                   </div>
 
                   {community.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
+                    <p className="text-sm text-muted-foreground line-clamp-2 flex-1">
                       {community.description}
                     </p>
                   )}
 
                   <Button
-                    className="w-full mt-3 sm:mt-4" 
+                    className="w-full mt-auto" 
                     variant="outline"
                     onClick={() => navigate(`/community/${community.id}`)}
                   >
