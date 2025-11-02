@@ -91,6 +91,26 @@ export default function EventDetails() {
     }
   };
 
+  const handleCancelBooking = async () => {
+    if (!userBooking || !user) return;
+
+    try {
+      const { error } = await supabase
+        .from("event_participants")
+        .delete()
+        .eq("id", userBooking.id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      toast.success("Booking cancelled successfully");
+      fetchEventDetails();
+    } catch (error: any) {
+      console.error("Error cancelling booking:", error);
+      toast.error("Failed to cancel booking");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -341,9 +361,14 @@ export default function EventDetails() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Your booking confirmation has been sent to your email
                 </p>
-                <Button variant="outline" onClick={() => navigate("/profile")}>
-                  View My Bookings
-                </Button>
+                <div className="flex gap-3 justify-center">
+                  <Button variant="outline" onClick={() => navigate("/profile")}>
+                    View My Bookings
+                  </Button>
+                  <Button variant="destructive" onClick={handleCancelBooking}>
+                    Cancel Booking
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : isEventPast ? (
