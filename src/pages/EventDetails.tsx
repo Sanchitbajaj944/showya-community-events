@@ -34,6 +34,20 @@ export default function EventDetails() {
     try {
       setLoading(true);
 
+      // Fetch user's booking first if logged in
+      let userHasBooking = false;
+      if (user) {
+        const { data: bookingData } = await supabase
+          .from("event_participants")
+          .select("*")
+          .eq("event_id", eventId)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        setUserBooking(bookingData);
+        userHasBooking = !!bookingData;
+      }
+
       // Fetch event details
       const { data: eventData, error: eventError } = await supabase
         .from("events")
@@ -42,6 +56,12 @@ export default function EventDetails() {
         .single();
 
       if (eventError) throw eventError;
+      
+      // Remove meeting_url from data if user hasn't booked
+      if (!userHasBooking && eventData) {
+        eventData.meeting_url = null;
+      }
+      
       setEvent(eventData);
 
       // Fetch community details and KYC status
@@ -58,18 +78,6 @@ export default function EventDetails() {
         if (eventData.ticket_type === 'paid' && communityData) {
           setKycStatus(communityData.kyc_status);
         }
-      }
-
-      // Fetch user's booking if logged in
-      if (user) {
-        const { data: bookingData } = await supabase
-          .from("event_participants")
-          .select("*")
-          .eq("event_id", eventId)
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        setUserBooking(bookingData);
       }
 
       // Calculate available slots
