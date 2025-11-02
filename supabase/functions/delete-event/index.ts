@@ -12,12 +12,19 @@ serve(async (req: Request) => {
   }
 
   try {
+    // Get the authorization header (case-insensitive)
+    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+    
+    if (!authHeader) {
+      throw new Error('No authorization header provided');
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader },
         },
       }
     );
