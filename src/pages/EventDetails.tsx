@@ -8,9 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket } from "lucide-react";
-import { format, isPast } from "date-fns";
+import { format, isPast, differenceInHours } from "date-fns";
 import { toast } from "sonner";
 import { BookingModal } from "@/components/BookingModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function EventDetails() {
   const { eventId } = useParams();
@@ -23,6 +33,9 @@ export default function EventDetails() {
   const [userBooking, setUserBooking] = useState<any>(null);
   const [availableSlots, setAvailableSlots] = useState(0);
   const [kycStatus, setKycStatus] = useState<string | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [refundAmount, setRefundAmount] = useState(0);
+  const [refundPercentage, setRefundPercentage] = useState(0);
 
   useEffect(() => {
     fetchEventDetails();
@@ -91,6 +104,25 @@ export default function EventDetails() {
     }
   };
 
+  const calculateRefund = () => {
+    if (!event) return;
+
+    const hoursUntilEvent = differenceInHours(new Date(event.event_date), new Date());
+    const ticketPrice = event.ticket_type === 'paid' ? event.performer_ticket_price : 0;
+    
+    let percentage = 0;
+    if (hoursUntilEvent >= 48) {
+      percentage = 100; // Full refund
+    } else if (hoursUntilEvent >= 24) {
+      percentage = 50; // 50% refund
+    } else {
+      percentage = 0; // No refund
+    }
+    
+    setRefundPercentage(percentage);
+    setRefundAmount((ticketPrice * percentage) / 100);
+  };
+
   const handleCancelBooking = async () => {
     if (!userBooking || !user) return;
 
@@ -103,12 +135,22 @@ export default function EventDetails() {
 
       if (error) throw error;
 
-      toast.success("Booking cancelled successfully");
+      toast.success(
+        refundPercentage > 0 
+          ? `Booking cancelled successfully. Refund of ₹${refundAmount} will be processed within 5-7 business days.`
+          : "Booking cancelled successfully. No refund available."
+      );
+      setShowCancelDialog(false);
       fetchEventDetails();
     } catch (error: any) {
       console.error("Error cancelling booking:", error);
       toast.error("Failed to cancel booking");
     }
+  };
+
+  const openCancelDialog = () => {
+    calculateRefund();
+    setShowCancelDialog(true);
   };
 
   if (loading) {
@@ -365,7 +407,7 @@ export default function EventDetails() {
                   <Button variant="outline" onClick={() => navigate("/profile")}>
                     View My Bookings
                   </Button>
-                  <Button variant="destructive" onClick={handleCancelBooking}>
+                  <Button variant="destructive" onClick={openCancelDialog}>
                     Cancel Booking
                   </Button>
                 </div>
@@ -420,6 +462,71 @@ export default function EventDetails() {
           kycStatus={kycStatus}
         />
       )}
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Booking?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <div>
+                Are you sure you want to cancel your booking for <strong>{event?.title}</strong>?
+              </div>
+              
+              {event?.ticket_type === 'paid' && (
+                <>
+                  <div className="bg-muted p-4 rounded-lg space-y-3">
+                    <h4 className="font-semibold text-foreground">Refund Information</h4>
+                    <div className="space-y-2 text-sm">
+                      <p className="text-foreground">
+                        <strong>Refund Amount:</strong> ₹{refundAmount} ({refundPercentage}% of ₹{event.performer_ticket_price})
+                      </p>
+                      {refundPercentage === 100 && (
+                        <p className="text-green-600 dark:text-green-400">
+                          ✓ Full refund - Cancelling more than 48 hours before the event
+                        </p>
+                      )}
+                      {refundPercentage === 50 && (
+                        <p className="text-orange-600 dark:text-orange-400">
+                          ⚠ 50% refund - Cancelling between 24-48 hours before the event
+                        </p>
+                      )}
+                      {refundPercentage === 0 && (
+                        <p className="text-destructive">
+                          ✗ No refund available - Cancelling within 24 hours of the event
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="bg-muted/50 p-3 rounded text-xs space-y-1">
+                    <p className="font-semibold text-foreground">Refund Policy:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>48+ hours before: 100% refund</li>
+                      <li>24-48 hours before: 50% refund</li>
+                      <li>Within 24 hours: No refund</li>
+                    </ul>
+                    {refundPercentage > 0 && (
+                      <p className="mt-2 text-muted-foreground">
+                        Refunds will be processed within 5-7 business days.
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleCancelBooking}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirm Cancellation
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
