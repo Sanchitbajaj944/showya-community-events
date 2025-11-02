@@ -12,10 +12,13 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Get the authorization header (case-insensitive)
-    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+    // Get the authorization header
+    const authHeader = req.headers.get('authorization');
+    
+    console.log('Auth header present:', !!authHeader);
     
     if (!authHeader) {
+      console.error('No authorization header provided');
       throw new Error('No authorization header provided');
     }
 
@@ -35,8 +38,11 @@ serve(async (req: Request) => {
       error: authError,
     } = await supabaseClient.auth.getUser();
 
+    console.log('Auth result:', { hasUser: !!user, error: authError?.message });
+
     if (authError || !user) {
-      throw new Error('Unauthorized');
+      console.error('Authentication failed:', authError);
+      throw new Error('Unauthorized - invalid session');
     }
 
     const { eventId } = await req.json();

@@ -219,8 +219,18 @@ export default function EditEvent() {
     try {
       setIsDeleting(true);
 
+      // Get current session to ensure we have a valid token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("You must be logged in to delete events");
+      }
+
       const { data, error } = await supabase.functions.invoke("delete-event", {
-        body: { eventId }
+        body: { eventId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (error) throw error;
