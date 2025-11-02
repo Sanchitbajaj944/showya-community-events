@@ -128,10 +128,10 @@ export default function EventDetails() {
     <div className="min-h-screen bg-background pb-20 md:pb-8">
       <Header />
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-4xl">
         {/* Event Banner */}
         {event.poster_url && (
-          <div className="aspect-[21/9] rounded-2xl overflow-hidden mb-8 shadow-lg">
+          <div className="aspect-video sm:aspect-[21/9] rounded-lg sm:rounded-2xl overflow-hidden mb-6 sm:mb-8 shadow-lg">
             <img 
               src={event.poster_url} 
               alt={event.title}
@@ -141,21 +141,21 @@ export default function EventDetails() {
         )}
 
         {/* Event Header */}
-        <div className="space-y-4 mb-8">
-          <div className="flex items-start justify-between gap-4">
+        <div className="space-y-4 mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant="secondary">{event.category || 'Event'}</Badge>
-                {isEventPast && <Badge variant="outline">Past Event</Badge>}
-                {isSlotsFull && !isEventPast && <Badge variant="destructive">Sold Out</Badge>}
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <Badge variant="secondary" className="text-xs">{event.category || 'Event'}</Badge>
+                {isEventPast && <Badge variant="outline" className="text-xs">Past Event</Badge>}
+                {isSlotsFull && !isEventPast && <Badge variant="destructive" className="text-xs">Sold Out</Badge>}
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-3">{event.title}</h1>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">{event.title}</h1>
               
               {/* Community Link */}
               {community && (
                 <Link 
                   to={`/community/${community.id}/public`}
-                  className="text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
                 >
                   Hosted by {community.name}
                   <ExternalLink className="h-3 w-3" />
@@ -164,39 +164,39 @@ export default function EventDetails() {
             </div>
 
             {/* Booking Status / Button */}
-            <div className="shrink-0">
+            <div className="shrink-0 self-start sm:self-center">
               {userBooking ? (
-                <div className="text-right">
-                  <Badge className="mb-2">You're Booked</Badge>
-                  <p className="text-sm text-muted-foreground">Ticket: {userBooking.ticket_code}</p>
+                <div className="sm:text-right">
+                  <Badge className="mb-2 text-xs">You're Booked</Badge>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Ticket: {userBooking.ticket_code}</p>
                 </div>
               ) : event.ticket_type === 'paid' ? (
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-primary">₹{event.performer_ticket_price}</p>
-                  <p className="text-sm text-muted-foreground">per ticket</p>
+                <div className="sm:text-right">
+                  <p className="text-xl sm:text-2xl font-bold text-primary">₹{event.performer_ticket_price}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">per ticket</p>
                 </div>
               ) : (
-                <Badge variant="secondary" className="text-lg px-4 py-2">Free Event</Badge>
+                <Badge variant="secondary" className="text-sm sm:text-lg px-3 py-1.5 sm:px-4 sm:py-2">Free Event</Badge>
               )}
             </div>
           </div>
         </div>
 
         {/* Event Details Grid */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Date & Time */}
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-lg bg-primary/10">
-                  <Calendar className="h-6 w-6 text-primary" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 rounded-lg bg-primary/10">
+                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="font-semibold mb-1">Date & Time</p>
-                  <p className="text-muted-foreground">
-                    {format(new Date(event.event_date), "EEEE, MMMM dd, yyyy")}
+                  <p className="font-semibold mb-1 text-sm sm:text-base">Date & Time</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    {format(new Date(event.event_date), "EEE, MMM dd, yyyy")}
                   </p>
-                  <p className="text-muted-foreground">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     {format(new Date(event.event_date), "h:mm a")}
                   </p>
                 </div>
@@ -207,14 +207,14 @@ export default function EventDetails() {
           {/* Duration */}
           {event.duration && (
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-lg bg-primary/10">
-                    <Clock className="h-6 w-6 text-primary" />
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="p-2 sm:p-3 rounded-lg bg-primary/10">
+                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
                   <div>
-                    <p className="font-semibold mb-1">Duration</p>
-                    <p className="text-muted-foreground">{event.duration} minutes</p>
+                    <p className="font-semibold mb-1 text-sm sm:text-base">Duration</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{event.duration} minutes</p>
                   </div>
                 </div>
               </CardContent>
@@ -224,15 +224,15 @@ export default function EventDetails() {
           {/* Location */}
           {event.location && (
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-lg bg-primary/10">
-                    <MapPin className="h-6 w-6 text-primary" />
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="p-2 sm:p-3 rounded-lg bg-primary/10">
+                    <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold mb-1">Location</p>
-                    <p className="text-muted-foreground break-words">{event.location}</p>
-                    {event.city && <p className="text-sm text-muted-foreground">{event.city}</p>}
+                    <p className="font-semibold mb-1 text-sm sm:text-base">Location</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground break-words">{event.location}</p>
+                    {event.city && <p className="text-xs sm:text-sm text-muted-foreground">{event.city}</p>}
                   </div>
                 </div>
               </CardContent>

@@ -94,41 +94,53 @@ export const CommunityOverview = ({ community, userRole }: CommunityOverviewProp
     <div className="space-y-6">
       {/* Banner & Header */}
       <Card>
-        <CardContent className="pt-6">
-          {/* Banner placeholder */}
-          <div className="w-full h-48 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 mb-6" />
+        <CardContent className="p-4 sm:p-6">
+          {/* Banner with image or gradient */}
+          {community.banner_url ? (
+            <div className="w-full h-32 sm:h-48 rounded-lg overflow-hidden mb-4 sm:mb-6">
+              <img 
+                src={community.banner_url} 
+                alt={community.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="w-full h-32 sm:h-48 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 mb-4 sm:mb-6" />
+          )}
           
           <div className="space-y-4">
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
               <div className="flex-1">
-                <h1 className="text-3xl font-bold mb-2">{community.name}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2">{community.name}</h1>
                 {community.categories && community.categories.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3 sm:mb-4">
                     {community.categories.map((cat: string) => (
-                      <Badge key={cat} variant="secondary">
+                      <Badge key={cat} variant="secondary" className="text-xs">
                         {cat}
                       </Badge>
                     ))}
                   </div>
                 )}
                 {community.description && (
-                  <p className="text-muted-foreground">{community.description}</p>
+                  <p className="text-sm sm:text-base text-muted-foreground">{community.description}</p>
                 )}
               </div>
-              {getKycBadge(community.kyc_status)}
+              <div className="self-start">
+                {getKycBadge(community.kyc_status)}
+              </div>
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-              <div className="text-center p-4 rounded-lg bg-muted">
-                <Users className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p className="text-2xl font-bold">{memberCount}</p>
-                <p className="text-sm text-muted-foreground">Members</p>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 pt-4 border-t">
+              <div className="text-center p-3 sm:p-4 rounded-lg bg-muted">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 mx-auto mb-1.5 sm:mb-2 text-primary" />
+                <p className="text-xl sm:text-2xl font-bold">{memberCount}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Members</p>
               </div>
-              <div className="text-center p-4 rounded-lg bg-muted">
-                <Calendar className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p className="text-2xl font-bold">{eventCount}</p>
-                <p className="text-sm text-muted-foreground">Events Hosted</p>
+              <div className="text-center p-3 sm:p-4 rounded-lg bg-muted">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 mx-auto mb-1.5 sm:mb-2 text-primary" />
+                <p className="text-xl sm:text-2xl font-bold">{eventCount}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Events Hosted</p>
               </div>
             </div>
           </div>
@@ -137,12 +149,12 @@ export const CommunityOverview = ({ community, userRole }: CommunityOverviewProp
 
       {/* Quick Actions */}
       <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="text-lg sm:text-xl">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <Button 
-            className="w-full" 
+            className="w-full text-sm sm:text-base" 
             size="lg"
             onClick={() => navigate(`/community/${community.id}/create-event`)}
           >
@@ -150,11 +162,11 @@ export const CommunityOverview = ({ community, userRole }: CommunityOverviewProp
             Create Event
           </Button>
           {!canCreatePaidEvents && (
-            <p className="text-xs text-muted-foreground text-center">
+            <p className="text-xs text-muted-foreground text-center px-2">
               💡 Free events are always available. Complete KYC to enable paid events.
             </p>
           )}
-          <Button variant="outline" className="w-full" size="lg">
+          <Button variant="outline" className="w-full text-sm sm:text-base" size="lg">
             <Users className="h-4 w-4 mr-2" />
             Invite Members
           </Button>
@@ -163,12 +175,13 @@ export const CommunityOverview = ({ community, userRole }: CommunityOverviewProp
 
       {/* Upcoming Events */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-3 sm:pb-6">
           <div className="flex items-center justify-between">
-            <CardTitle>Upcoming Events</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">Upcoming Events</CardTitle>
             <Button 
               variant="ghost" 
               size="sm"
+              className="text-xs sm:text-sm"
               onClick={() => navigate(`/community/${community.id}?tab=events`)}
             >
               View All
@@ -177,38 +190,38 @@ export const CommunityOverview = ({ community, userRole }: CommunityOverviewProp
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">Loading events...</p>
+            <div className="text-center py-6 sm:py-8">
+              <div className="animate-spin h-6 w-6 sm:h-8 sm:w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2 sm:mb-3" />
+              <p className="text-xs sm:text-sm text-muted-foreground">Loading events...</p>
             </div>
           ) : upcomingEvents.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No upcoming events. Click Create Event to host your first!</p>
+            <div className="text-center py-8 sm:py-12 text-muted-foreground">
+              <Calendar className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
+              <p className="text-sm sm:text-base px-4">No upcoming events. Click Create Event to host your first!</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {upcomingEvents.map(event => (
                 <div 
                   key={event.id} 
-                  className="p-4 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
+                  className="p-3 sm:p-4 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
                   onClick={() => navigate(`/events/${event.id}`)}
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start justify-between gap-2 sm:gap-3">
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold truncate">{event.title}</h4>
-                      <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        <span>{format(new Date(event.event_date), "MMM dd, yyyy • h:mm a")}</span>
+                      <h4 className="font-semibold text-sm sm:text-base truncate">{event.title}</h4>
+                      <div className="flex items-center gap-1.5 sm:gap-2 mt-1 text-xs sm:text-sm text-muted-foreground">
+                        <Calendar className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                        <span className="truncate">{format(new Date(event.event_date), "MMM dd, yyyy • h:mm a")}</span>
                       </div>
                       {event.location && (
-                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
+                        <div className="flex items-center gap-1.5 sm:gap-2 mt-1 text-xs text-muted-foreground">
+                          <MapPin className="h-3 w-3 shrink-0" />
                           <span className="truncate">{event.location}</span>
                         </div>
                       )}
                     </div>
-                    <Badge variant={event.ticket_type === 'paid' ? 'default' : 'secondary'}>
+                    <Badge variant={event.ticket_type === 'paid' ? 'default' : 'secondary'} className="text-xs shrink-0">
                       {event.ticket_type === 'paid' ? 'Paid' : 'Free'}
                     </Badge>
                   </div>

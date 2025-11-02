@@ -55,23 +55,23 @@ export default function Events() {
         )}
       </div>
 
-      <div className="p-5 space-y-3">
+      <div className="p-4 sm:p-5 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-lg mb-1 truncate group-hover:text-primary transition-colors">
+            <h3 className="font-semibold text-base sm:text-lg mb-1 truncate group-hover:text-primary transition-colors">
               {event.title}
             </h3>
-            <p className="text-sm text-muted-foreground truncate">
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">
               {event.community_name}
             </p>
           </div>
-          <Badge variant="secondary">{event.category || 'Event'}</Badge>
+          <Badge variant="secondary" className="text-xs">{event.category || 'Event'}</Badge>
         </div>
 
-        <div className="space-y-2 text-sm text-muted-foreground">
+        <div className="space-y-2 text-xs sm:text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 shrink-0" />
-            <span>{format(new Date(event.event_date), "MMM dd, yyyy • h:mm a")}</span>
+            <span className="truncate">{format(new Date(event.event_date), "MMM dd, yyyy • h:mm a")}</span>
           </div>
           {event.duration && (
             <div className="flex items-center gap-2">
@@ -94,7 +94,7 @@ export default function Events() {
           </div>
         </div>
 
-        <Button className="w-full mt-4" variant={event.ticket_type === 'paid' ? 'default' : 'outline'}>
+        <Button className="w-full mt-4 text-xs sm:text-sm" variant={event.ticket_type === 'paid' ? 'default' : 'outline'}>
           {event.ticket_type === 'paid' ? `Book Now • ₹${event.performer_ticket_price}` : 'View Details'}
         </Button>
       </div>
@@ -105,11 +105,11 @@ export default function Events() {
     <div className="min-h-screen bg-background pb-20 md:pb-8">
       <Header />
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-6xl">
         {/* Page Header */}
-        <div className="mb-8 space-y-4">
-          <h1 className="text-3xl md:text-4xl font-bold">Creative Events</h1>
-          <p className="text-muted-foreground text-lg">
+        <div className="mb-6 sm:mb-8 space-y-2 sm:space-y-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">Creative Events</h1>
+          <p className="text-muted-foreground text-sm sm:text-base md:text-lg">
             Discover amazing creative experiences happening across communities
           </p>
         </div>
@@ -131,10 +131,14 @@ export default function Events() {
             </Link>
           </div>
         ) : (
-          <Tabs defaultValue="upcoming" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="upcoming">Upcoming ({upcomingEvents.length})</TabsTrigger>
-              <TabsTrigger value="past">Past ({pastEvents.length})</TabsTrigger>
+          <Tabs defaultValue="upcoming" className="space-y-4 sm:space-y-6">
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="upcoming" className="flex-1 sm:flex-initial text-xs sm:text-sm">
+                Upcoming ({upcomingEvents.length})
+              </TabsTrigger>
+              <TabsTrigger value="past" className="flex-1 sm:flex-initial text-xs sm:text-sm">
+                Past ({pastEvents.length})
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="upcoming">
