@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Users, Mic, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
@@ -14,9 +15,11 @@ import heroImage from "@/assets/hero-image.jpg";
 
 const Index = () => {
   const [events, setEvents] = useState<any[]>([]);
+  const [communities, setCommunities] = useState<any[]>([]);
 
   useEffect(() => {
     fetchUpcomingEvents();
+    fetchCommunities();
   }, []);
 
   const fetchUpcomingEvents = async () => {
@@ -37,44 +40,20 @@ const Index = () => {
     }
   };
 
-  const communities = [
-    {
-      name: "Mumbai Poetry Club",
-      description: "A vibrant community of poets, writers, and spoken word artists sharing their craft.",
-      members: 1234,
-      upcomingEvents: 5,
-    },
-    {
-      name: "Bangalore Music Collective",
-      description: "Musicians and music lovers coming together to jam, perform, and celebrate music.",
-      members: 2156,
-      upcomingEvents: 8,
-    },
-    {
-      name: "Delhi Comedy Circuit",
-      description: "Stand-up comedians and comedy enthusiasts creating laughter and memorable moments.",
-      members: 987,
-      upcomingEvents: 4,
-    },
-    {
-      name: "Chennai Theatre Group",
-      description: "Actors, directors, and theatre lovers producing amazing performances together.",
-      members: 756,
-      upcomingEvents: 3,
-    },
-    {
-      name: "Pune Artists Guild",
-      description: "Painters, sketchers, and visual artists exploring creativity through various mediums.",
-      members: 643,
-      upcomingEvents: 6,
-    },
-    {
-      name: "Kolkata Writers Circle",
-      description: "Authors, bloggers, and storytellers sharing their narratives and improving their craft.",
-      members: 892,
-      upcomingEvents: 4,
-    },
-  ];
+  const fetchCommunities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("communities")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(6);
+
+      if (error) throw error;
+      setCommunities(data || []);
+    } catch (error) {
+      console.error("Error fetching communities:", error);
+    }
+  };
 
   const features = [
     {
@@ -205,9 +184,55 @@ const Index = () => {
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-            {communities.map((community, index) => (
-              <CommunityCard key={index} {...community} />
-            ))}
+            {communities.length === 0 ? (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                <p>No communities yet. Be the first to create one!</p>
+              </div>
+            ) : (
+              communities.map((community) => (
+                <Link key={community.id} to={`/community/${community.id}/public`}>
+                  <div className="group rounded-xl border border-border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full">
+                    {/* Banner Image */}
+                    <div className="relative h-36 sm:h-44 overflow-hidden bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20">
+                      {community.banner_url ? (
+                        <img 
+                          src={community.banner_url} 
+                          alt={community.name} 
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Users className="h-12 w-12 sm:h-16 sm:w-16 text-primary/40" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    </div>
+
+                    {/* Community Info */}
+                    <div className="p-4 sm:p-6 space-y-2 sm:space-y-3 flex-1 flex flex-col">
+                      <div>
+                        <h3 className="font-semibold text-base sm:text-lg mb-2 group-hover:text-primary transition-colors line-clamp-1">
+                          {community.name}
+                        </h3>
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {community.categories?.map((cat: string) => (
+                            <Badge key={cat} variant="secondary" className="text-xs">
+                              {cat}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      {community.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 flex-1">
+                          {community.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
           <div className="mt-10 sm:mt-12 md:mt-16 text-center">
             <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto">
