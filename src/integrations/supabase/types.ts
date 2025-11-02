@@ -591,6 +591,33 @@ export type Database = {
       }
     }
     Functions: {
+      get_event_details: {
+        Args: { _event_id: string; _user_id?: string }
+        Returns: {
+          audience_enabled: boolean
+          audience_slots: number
+          audience_ticket_price: number
+          category: string
+          city: string
+          community_id: string
+          community_name: string
+          created_at: string
+          created_by: string
+          description: string
+          duration: number
+          event_date: string
+          id: string
+          location: string
+          meeting_url: string
+          performer_slots: number
+          performer_ticket_price: number
+          poster_url: string
+          price: number
+          ticket_type: string
+          title: string
+          updated_at: string
+        }[]
+      }
       is_community_member: {
         Args: { _community_id: string; _user_id: string }
         Returns: boolean

@@ -35,7 +35,6 @@ export default function EventDetails() {
       setLoading(true);
 
       // Fetch user's booking first if logged in
-      let userHasBooking = false;
       if (user) {
         const { data: bookingData } = await supabase
           .from("event_participants")
@@ -45,23 +44,17 @@ export default function EventDetails() {
           .maybeSingle();
         
         setUserBooking(bookingData);
-        userHasBooking = !!bookingData;
       }
 
-      // Fetch event details
+      // Use secure function to get event details (meeting_url only returned if user is registered)
       const { data: eventData, error: eventError } = await supabase
-        .from("events")
-        .select("*")
-        .eq("id", eventId)
-        .single();
+        .rpc("get_event_details", {
+          _event_id: eventId,
+          _user_id: user?.id || null
+        })
+        .maybeSingle();
 
       if (eventError) throw eventError;
-      
-      // Remove meeting_url from data if user hasn't booked
-      if (!userHasBooking && eventData) {
-        eventData.meeting_url = null;
-      }
-      
       setEvent(eventData);
 
       // Fetch community details and KYC status
