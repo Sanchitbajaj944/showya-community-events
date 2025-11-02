@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
-import { Calendar, Clock, MapPin, Users, Link as LinkIcon, Image, AlertTriangle } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Link as LinkIcon, Image, AlertTriangle, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import {
   AlertDialog,
@@ -35,6 +35,9 @@ export default function EditEvent() {
   const [event, setEvent] = useState<any>(null);
   const [bookingCount, setBookingCount] = useState(0);
   const [showDateChangeWarning, setShowDateChangeWarning] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isWithinRestrictedWindow, setIsWithinRestrictedWindow] = useState(false);
   const [restrictedMinutes, setRestrictedMinutes] = useState(60);
 
@@ -202,6 +205,40 @@ export default function EditEvent() {
     
     // Only meeting_url is editable within restricted window
     return field !== "meeting_url";
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!eventId || !user) return;
+
+    // Validate confirmation text
+    if (deleteConfirmText !== "DELETE") {
+      toast.error('Please type "DELETE" to confirm');
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+
+      const { data, error } = await supabase.functions.invoke("delete-event", {
+        body: { eventId }
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      toast.success(data.message);
+      navigate("/events");
+
+    } catch (error: any) {
+      console.error("Error deleting event:", error);
+      toast.error(error.message || "Failed to delete event");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
   };
 
   if (loading) {
@@ -472,6 +509,13 @@ export default function EditEvent() {
               >
                 Cancel
               </Button>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={submitting || (isWithinRestrictedWindow && restrictedMinutes < 60)}
+              >
+                Delete Event
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -508,6 +552,76 @@ export default function EditEvent() {
             }}>
               Confirm & Notify Attendees
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Delete Event
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              {bookingCount > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-semibold text-foreground mb-1">This event has {bookingCount} attendees</p>
+                      <p className="text-muted-foreground">
+                        The event will be cancelled and all attendees will be notified.
+                        {event?.ticket_type === 'paid' && ' Full refunds will be processed for all paid tickets.'}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    This action cannot be undone. Type <span className="font-mono font-bold text-foreground">DELETE</span> to confirm.
+                  </p>
+                  <Input
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder='Type "DELETE" to confirm'
+                    className="mt-2"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm">
+                    Are you sure you want to delete this event? This action cannot be undone.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Type <span className="font-mono font-bold text-foreground">DELETE</span> to confirm.
+                  </p>
+                  <Input
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder='Type "DELETE" to confirm'
+                    className="mt-2"
+                  />
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              onClick={() => {
+                setDeleteConfirmText("");
+                setShowDeleteDialog(false);
+              }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteEvent}
+              disabled={isDeleting || deleteConfirmText !== "DELETE"}
+            >
+              {isDeleting ? "Deleting..." : "Delete Event"}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
