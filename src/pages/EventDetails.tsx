@@ -60,7 +60,7 @@ export default function EventDetails() {
             .from("razorpay_accounts")
             .select("kyc_status")
             .eq("community_id", eventData.community_id)
-            .single();
+            .maybeSingle();
           
           setKycStatus(razorpayData?.kyc_status || null);
         }

@@ -445,10 +445,7 @@ export function BookingModal({
             <Checkbox 
               id="terms" 
               checked={termsAccepted}
-              onCheckedChange={(checked) => {
-                console.log('Checkbox changed:', checked, 'type:', typeof checked);
-                setTermsAccepted(!!checked);
-              }}
+              onCheckedChange={(checked) => setTermsAccepted(!!checked)}
             />
             <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
               I agree to the terms and conditions, cancellation policy, and understand that 
@@ -458,10 +455,7 @@ export function BookingModal({
 
           {/* Book Button */}
           <Button 
-            onClick={() => {
-              console.log('Button click - loading:', loading, 'termsAccepted:', termsAccepted, 'kycStatus:', kycStatus, 'ticket_type:', event.ticket_type);
-              handleBooking();
-            }}
+            onClick={handleBooking}
             disabled={loading || !termsAccepted || (event.ticket_type === 'paid' && kycStatus !== 'ACTIVATED')}
             className="w-full"
             size="lg"
