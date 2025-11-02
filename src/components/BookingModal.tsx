@@ -445,7 +445,7 @@ export function BookingModal({
             <Checkbox 
               id="terms" 
               checked={termsAccepted}
-              onCheckedChange={(checked) => setTermsAccepted(checked as boolean)}
+              onCheckedChange={(checked) => setTermsAccepted(checked === true)}
             />
             <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
               I agree to the terms and conditions, cancellation policy, and understand that 
