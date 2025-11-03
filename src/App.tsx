@@ -22,6 +22,7 @@ import CreateEvent from "./pages/CreateEvent";
 import EventDetails from "./pages/EventDetails";
 import EditEvent from "./pages/EditEvent";
 import EventDashboard from "./pages/EventDashboard";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/profile/edit" element={<EditProfile />} />
+            <Route path="/admin" element={<Admin />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -681,6 +681,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       profiles_public: {
@@ -754,10 +775,35 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_reports_admin: {
+        Args: { p_limit?: number; p_offset?: number; p_status?: string }
+        Returns: {
+          context_id: string
+          context_type: string
+          created_at: string
+          id: string
+          message: string
+          reason: string
+          reporter_id: string
+          reporter_name: string
+          status: string
+          target_name: string
+          target_type: string
+          target_user_id: string
+        }[]
+      }
       get_user_report_count: {
         Args: { p_days?: number; p_user_id: string }
         Returns: number
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_community_member: {
         Args: { _community_id: string; _user_id: string }
         Returns: boolean
@@ -768,6 +814,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       kyc_status:
         | "NOT_STARTED"
         | "IN_PROGRESS"
@@ -906,6 +953,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       kyc_status: [
         "NOT_STARTED",
         "IN_PROGRESS",

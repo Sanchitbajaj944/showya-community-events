@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, User } from "lucide-react";
+import { Menu, X, LogOut, User, Shield } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,10 +23,12 @@ const Header = () => {
     name?: string;
     profile_picture_url?: string;
   } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchProfileData();
+      checkAdminStatus();
     }
   }, [user]);
 
@@ -45,6 +47,23 @@ const Header = () => {
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
+    }
+  };
+
+  const checkAdminStatus = async () => {
+    if (!user) return;
+
+    try {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      setIsAdmin(!!data);
+    } catch (error) {
+      console.error("Error checking admin status:", error);
     }
   };
 
@@ -97,6 +116,12 @@ const Header = () => {
                     <User className="h-4 w-4 mr-2" />
                     My Profile
                   </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => navigate("/admin")} className="cursor-pointer">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Admin Dashboard
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={signOut} className="cursor-pointer">
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign out
@@ -173,6 +198,14 @@ const Header = () => {
                       My Profile
                     </Button>
                   </Link>
+                  {isAdmin && (
+                    <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="ghost" className="w-full">
+                        <Shield className="h-4 w-4 mr-2" />
+                        Admin Dashboard
+                      </Button>
+                    </Link>
+                  )}
                   <div className="flex items-center justify-between pt-2 border-t">
                     <div className="flex items-center gap-2">
                       <UserAvatar
