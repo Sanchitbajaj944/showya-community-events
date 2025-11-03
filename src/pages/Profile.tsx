@@ -10,10 +10,11 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { BottomNav } from "@/components/BottomNav";
 import Header from "@/components/Header";
 import { CommunityManagementCard } from "@/components/CommunityManagementCard";
-import { MapPin, Edit, Calendar, Star, ArrowLeft, Share2 } from "lucide-react";
+import { MapPin, Edit, Calendar, Star, ArrowLeft, Flag } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ShareDialog } from "@/components/ShareDialog";
+import { ReportDialog } from "@/components/ReportDialog";
 
 interface Profile {
   id: string;
@@ -58,6 +59,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [performanceCount, setPerformanceCount] = useState(0);
   const [userCommunity, setUserCommunity] = useState<any>(null);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   const isOwnProfile = !userId || userId === user?.id;
   const targetUserId = userId || user?.id;
@@ -213,6 +215,16 @@ export default function Profile() {
                 description={profile.bio}
                 triggerClassName="md:hidden"
               />
+              {!isOwnProfile && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setReportDialogOpen(true)}
+                  className="md:hidden"
+                >
+                  <Flag className="h-5 w-5" />
+                </Button>
+              )}
               {isOwnProfile && (
                 <Button
                   variant="ghost"
@@ -239,6 +251,15 @@ export default function Profile() {
                   title={`${displayName}'s Profile`}
                   description={profile.bio}
                 />
+                {!isOwnProfile && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setReportDialogOpen(true)}
+                  >
+                    <Flag className="h-4 w-4" />
+                  </Button>
+                )}
                 {isOwnProfile && (
                   <Button
                     variant="outline"
@@ -385,6 +406,17 @@ export default function Profile() {
       </div>
 
       <BottomNav />
+
+      {!isOwnProfile && targetUserId && (
+        <ReportDialog
+          open={reportDialogOpen}
+          onOpenChange={setReportDialogOpen}
+          targetUserId={targetUserId}
+          targetType="user"
+          contextType="profile"
+          targetName={displayName}
+        />
+      )}
     </div>
   );
 }

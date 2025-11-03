@@ -8,12 +8,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Calendar, MessageCircle, Share2, LogOut, Info, CheckCircle, MapPin, Clock } from "lucide-react";
+import { Users, Calendar, MessageCircle, LogOut, Info, CheckCircle, MapPin, Clock, Flag } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
 import { format, isPast } from "date-fns";
 import { CommunityChat } from "@/components/community/CommunityChat";
+import { ReportDialog } from "@/components/ReportDialog";
+import { ShareDialog } from "@/components/ShareDialog";
 
 export default function CommunityMemberView() {
   const { communityId } = useParams();
@@ -24,6 +26,7 @@ export default function CommunityMemberView() {
   const [ownerProfile, setOwnerProfile] = useState<any>(null);
   const [joinDate, setJoinDate] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -103,24 +106,6 @@ export default function CommunityMemberView() {
     } catch (error: any) {
       console.error("Error leaving community:", error);
       toast.error("Failed to leave community");
-    }
-  };
-
-  const handleShare = async () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: community.name,
-          text: community.description,
-          url: url,
-        });
-      } catch (error) {
-        // User cancelled
-      }
-    } else {
-      navigator.clipboard.writeText(url);
-      toast.success("Link copied to clipboard");
     }
   };
 
@@ -205,9 +190,19 @@ export default function CommunityMemberView() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-                <Button variant="outline" onClick={handleShare} className="w-full sm:w-auto">
-                  <Share2 className="h-4 w-4 mr-2" />
-                  <span className="text-sm sm:text-base">Share</span>
+                <ShareDialog
+                  url={`/community/${communityId}/member`}
+                  title={community.name}
+                  description={community.description}
+                  triggerClassName="w-full sm:w-auto h-10"
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={() => setReportDialogOpen(true)} 
+                  className="w-full sm:w-auto"
+                >
+                  <Flag className="h-4 w-4 mr-2" />
+                  <span className="text-sm sm:text-base">Report</span>
                 </Button>
               </div>
             </div>
@@ -260,14 +255,18 @@ export default function CommunityMemberView() {
               <CardContent>
                 <div className="space-y-2 sm:space-y-3">
                   {members.map((member) => (
-                    <div key={member.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg hover:bg-muted">
+                    <div 
+                      key={member.id} 
+                      className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
+                      onClick={() => navigate(`/profile/${member.user_id}`)}
+                    >
                       <UserAvatar
                         src={member.profile?.profile_picture_url}
                         name={member.profile?.display_name || member.profile?.name || "User"}
                         size="md"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm sm:text-base truncate">
+                        <p className="font-medium text-sm sm:text-base truncate hover:text-primary">
                           {member.profile?.display_name || member.profile?.name || "User"}
                         </p>
                         {member.role === 'owner' && (
@@ -288,6 +287,16 @@ export default function CommunityMemberView() {
       </div>
 
       <BottomNav />
+
+      <ReportDialog
+        open={reportDialogOpen}
+        onOpenChange={setReportDialogOpen}
+        targetUserId={community?.owner_id || ''}
+        targetType="community_owner"
+        contextType="community"
+        contextId={communityId}
+        targetName={community?.name}
+      />
     </div>
   );
 }
