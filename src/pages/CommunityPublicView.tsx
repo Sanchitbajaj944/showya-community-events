@@ -7,7 +7,9 @@ import { BottomNav } from "@/components/BottomNav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Calendar, UserPlus, Share2, CheckCircle } from "lucide-react";
+import { Users, Calendar, UserPlus, Share2, CheckCircle, MoreVertical, Flag } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ReportDialog } from "@/components/ReportDialog";
 import { toast } from "sonner";
 import { format, isPast } from "date-fns";
 
@@ -19,6 +21,7 @@ export default function CommunityPublicView() {
   const [memberCount, setMemberCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchCommunityData();
@@ -179,6 +182,19 @@ export default function CommunityPublicView() {
                   <Share2 className="h-4 w-4 sm:mr-0" />
                   <span className="sm:hidden ml-2">Share</span>
                 </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setReportDialogOpen(true)}>
+                      <Flag className="h-4 w-4 mr-2" />
+                      Report Community Owner
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </CardContent>
@@ -187,6 +203,18 @@ export default function CommunityPublicView() {
         {/* Upcoming Events Preview */}
         <EventsPreview communityId={communityId!} />
       </div>
+
+      {community && (
+        <ReportDialog
+          open={reportDialogOpen}
+          onOpenChange={setReportDialogOpen}
+          targetUserId={community.owner_id}
+          targetType="community_owner"
+          contextType="community"
+          contextId={communityId}
+          targetName={community.name}
+        />
+      )}
 
       <BottomNav />
     </div>

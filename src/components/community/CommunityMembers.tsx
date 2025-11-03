@@ -4,10 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Users, Search } from "lucide-react";
+import { Users, Search, MoreVertical, Flag } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { InviteMembersDialog } from "./InviteMembersDialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ReportDialog } from "@/components/ReportDialog";
 import { toast } from "sonner";
 
 interface CommunityMembersProps {
@@ -19,6 +21,9 @@ export const CommunityMembers = ({ community, userRole }: CommunityMembersProps)
   const navigate = useNavigate();
   const [members, setMembers] = React.useState<any[]>([]);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [reportDialogOpen, setReportDialogOpen] = React.useState(false);
+  const [reportTargetUserId, setReportTargetUserId] = React.useState<string | null>(null);
+  const [reportTargetName, setReportTargetName] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     fetchMembers();
@@ -129,25 +134,54 @@ export const CommunityMembers = ({ community, userRole }: CommunityMembersProps)
                       )}
                     </div>
                   </div>
-                  {userRole === 'owner' && member.role !== 'owner' && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="text-xs sm:text-sm h-8 px-2 sm:px-3"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveMember(member.id, member.user_id);
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {userRole === 'owner' && member.role !== 'owner' && (
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveMember(member.id, member.user_id);
+                          }}
+                          className="text-destructive"
+                        >
+                          Remove
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReportTargetUserId(member.user_id);
+                          setReportTargetName(member.profile?.display_name || member.profile?.name || 'User');
+                          setReportDialogOpen(true);
+                        }}
+                      >
+                        <Flag className="h-4 w-4 mr-2" />
+                        Report
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {reportTargetUserId && (
+        <ReportDialog
+          open={reportDialogOpen}
+          onOpenChange={setReportDialogOpen}
+          targetUserId={reportTargetUserId}
+          targetType="user"
+          contextType="profile"
+          targetName={reportTargetName || undefined}
+        />
+      )}
     </div>
   );
 };

@@ -2,13 +2,15 @@ import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, Send, AlertCircle, Loader2 } from "lucide-react";
+import { MessageCircle, Send, AlertCircle, Loader2, MoreVertical, Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ReportDialog } from "@/components/ReportDialog";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 interface CommunityChatProps {
@@ -46,6 +48,10 @@ export const CommunityChat = ({ community, userRole }: CommunityChatProps) => {
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportTargetUserId, setReportTargetUserId] = useState<string | null>(null);
+  const [reportTargetName, setReportTargetName] = useState<string | null>(null);
+  const [reportMessageId, setReportMessageId] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -322,7 +328,7 @@ export const CommunityChat = ({ community, userRole }: CommunityChatProps) => {
                   key={msg.id}
                   className={`flex gap-2 ${isOwnMessage ? 'flex-row-reverse' : ''} ${
                     msg.optimistic ? 'opacity-50' : ''
-                  }`}
+                  } group`}
                 >
                   {!isOwnMessage && (
                     <Avatar className="h-7 w-7 flex-shrink-0 mt-1">
@@ -341,16 +347,44 @@ export const CommunityChat = ({ community, userRole }: CommunityChatProps) => {
                         {format(new Date(msg.created_at), 'HH:mm')}
                       </span>
                     </div>
-                    <div
-                      className={`px-3 py-2 rounded-2xl ${
-                        isOwnMessage
-                          ? 'bg-primary text-primary-foreground rounded-tr-sm'
-                          : 'bg-muted text-foreground rounded-tl-sm'
-                      }`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
-                        {msg.content}
-                      </p>
+                    <div className="flex items-start gap-1">
+                      <div
+                        className={`px-3 py-2 rounded-2xl ${
+                          isOwnMessage
+                            ? 'bg-primary text-primary-foreground rounded-tr-sm'
+                            : 'bg-muted text-foreground rounded-tl-sm'
+                        }`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+                          {msg.content}
+                        </p>
+                      </div>
+                      {!isOwnMessage && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <MoreVertical className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setReportTargetUserId(msg.user_id);
+                                setReportTargetName(msg.profile?.name || 'User');
+                                setReportMessageId(msg.id);
+                                setReportDialogOpen(true);
+                              }}
+                            >
+                              <Flag className="h-4 w-4 mr-2" />
+                              Report
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -393,6 +427,18 @@ export const CommunityChat = ({ community, userRole }: CommunityChatProps) => {
           </p>
         )}
       </div>
+
+      {reportTargetUserId && (
+        <ReportDialog
+          open={reportDialogOpen}
+          onOpenChange={setReportDialogOpen}
+          targetUserId={reportTargetUserId}
+          targetType="user"
+          contextType="chat"
+          contextId={reportMessageId || undefined}
+          targetName={reportTargetName || undefined}
+        />
+      )}
     </Card>
   );
 };

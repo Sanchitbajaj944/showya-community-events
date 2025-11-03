@@ -601,6 +601,51 @@ export type Database = {
           },
         ]
       }
+      reports: {
+        Row: {
+          context_id: string | null
+          context_type:
+            | Database["public"]["Enums"]["report_context_type"]
+            | null
+          created_at: string
+          id: string
+          message: string | null
+          reason: string
+          reporter_id: string
+          status: Database["public"]["Enums"]["report_status"]
+          target_type: Database["public"]["Enums"]["report_target_type"]
+          target_user_id: string
+        }
+        Insert: {
+          context_id?: string | null
+          context_type?:
+            | Database["public"]["Enums"]["report_context_type"]
+            | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          reason: string
+          reporter_id: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_type: Database["public"]["Enums"]["report_target_type"]
+          target_user_id: string
+        }
+        Update: {
+          context_id?: string | null
+          context_type?:
+            | Database["public"]["Enums"]["report_context_type"]
+            | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          reason?: string
+          reporter_id?: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_type?: Database["public"]["Enums"]["report_target_type"]
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       spotlights: {
         Row: {
           community_name: string
@@ -709,6 +754,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_user_report_count: {
+        Args: { p_days?: number; p_user_id: string }
+        Returns: number
+      }
       is_community_member: {
         Args: { _community_id: string; _user_id: string }
         Returns: boolean
@@ -727,6 +776,9 @@ export type Database = {
         | "NEEDS_INFO"
         | "REJECTED"
       participant_role: "performer" | "audience"
+      report_context_type: "event" | "chat" | "profile" | "community"
+      report_status: "pending" | "reviewed" | "resolved"
+      report_target_type: "user" | "community_owner"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -863,6 +915,9 @@ export const Constants = {
         "REJECTED",
       ],
       participant_role: ["performer", "audience"],
+      report_context_type: ["event", "chat", "profile", "community"],
+      report_status: ["pending", "reviewed", "resolved"],
+      report_target_type: ["user", "community_owner"],
     },
   },
 } as const
