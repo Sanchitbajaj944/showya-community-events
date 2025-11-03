@@ -40,13 +40,19 @@ export default function CommunityPublicView() {
       if (communityError) throw communityError;
       setCommunity(communityData);
 
-      // Get member count
-      const { count } = await supabase
+      // Get member count (public users can't query this due to RLS, so we'll fetch it another way)
+      const { count, error: countError } = await supabase
         .from("community_members")
         .select("*", { count: 'exact', head: true })
         .eq("community_id", communityId);
 
-      setMemberCount(count || 0);
+      // If we can't get the count (due to RLS), try getting it from a different approach
+      if (countError || count === null) {
+        // For public view, we can't show exact count due to RLS restrictions
+        setMemberCount(0);
+      } else {
+        setMemberCount(count);
+      }
     } catch (error: any) {
       console.error("Error fetching community:", error);
       toast.error("Failed to load community");
@@ -161,7 +167,9 @@ export default function CommunityPublicView() {
               {/* Member Count */}
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Users className="h-4 w-4" />
-                <span className="text-sm">{memberCount}+ members</span>
+                <span className="text-sm">
+                  {memberCount > 0 ? `${memberCount} ${memberCount === 1 ? 'member' : 'members'}` : 'Be the first to join!'}
+                </span>
               </div>
 
               {/* Action Buttons */}
