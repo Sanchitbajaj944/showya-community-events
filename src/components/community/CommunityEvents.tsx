@@ -45,9 +45,8 @@ export const CommunityEvents = ({ community, userRole }: CommunityEventsProps) =
   const pastEvents = events.filter(event => isPast(new Date(event.event_date)));
 
   const renderEventCard = (event: any) => (
-    <Link key={event.id} to={`/events/${event.id}`}>
-      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-        <CardContent className="p-4">
+    <Card key={event.id} className="hover:shadow-lg transition-shadow">
+      <CardContent className="p-4">
         {event.poster_url && (
           <div className="w-full h-48 rounded-lg overflow-hidden mb-4">
             <img 
@@ -100,9 +99,20 @@ export const CommunityEvents = ({ community, userRole }: CommunityEventsProps) =
             </p>
           )}
         </div>
+        
+        {/* Action Buttons */}
+        <div className="flex gap-2 pt-4 border-t mt-4">
+          <Link to={`/events/${event.id}`} className="flex-1">
+            <Button variant="outline" className="w-full">View</Button>
+          </Link>
+          {userRole === 'owner' && (
+            <Link to={`/events/${event.id}/dashboard`} className="flex-1">
+              <Button className="w-full">Manage</Button>
+            </Link>
+          )}
+        </div>
       </CardContent>
     </Card>
-    </Link>
   );
 
   return (

@@ -21,6 +21,7 @@ import CommunityPublicView from "./pages/CommunityPublicView";
 import CreateEvent from "./pages/CreateEvent";
 import EventDetails from "./pages/EventDetails";
 import EditEvent from "./pages/EditEvent";
+import EventDashboard from "./pages/EventDashboard";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/events" element={<Events />} />
             <Route path="/events/:eventId" element={<EventDetails />} />
             <Route path="/events/:eventId/edit" element={<EditEvent />} />
+            <Route path="/events/:eventId/dashboard" element={<EventDashboard />} />
             <Route path="/communities" element={<Communities />} />
             <Route path="/community/:communityId" element={<CommunityDashboard />} />
             <Route path="/community/:communityId/create-event" element={<CreateEvent />} />
