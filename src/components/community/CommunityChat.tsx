@@ -287,21 +287,20 @@ export const CommunityChat = ({ community, userRole }: CommunityChatProps) => {
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="h-[600px] flex flex-col">
-        <CardHeader className="border-b">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Community Chat</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                {onlineCount} {onlineCount === 1 ? 'member' : 'members'} online
-              </p>
-            </div>
+    <Card className="h-[600px] flex flex-col border-0 shadow-none">
+      <CardHeader className="border-b bg-muted/30 py-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg">Community Chat</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {onlineCount} {onlineCount === 1 ? 'member' : 'members'} online
+            </p>
           </div>
-        </CardHeader>
+        </div>
+      </CardHeader>
 
-        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-          {loading ? (
+      <CardContent className="flex-1 overflow-y-auto p-4 space-y-3 bg-background">
+        {loading ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
@@ -321,33 +320,35 @@ export const CommunityChat = ({ community, userRole }: CommunityChatProps) => {
               return (
                 <div
                   key={msg.id}
-                  className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''} ${
-                    msg.optimistic ? 'opacity-60' : ''
+                  className={`flex gap-2 ${isOwnMessage ? 'flex-row-reverse' : ''} ${
+                    msg.optimistic ? 'opacity-50' : ''
                   }`}
                 >
-                  <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarImage src={msg.profile?.profile_picture_url} />
-                    <AvatarFallback>
-                      {msg.profile?.name?.charAt(0).toUpperCase() || '?'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className={`flex-1 ${isOwnMessage ? 'text-right' : ''}`}>
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className={`text-sm font-medium ${isOwnMessage ? 'order-2' : ''}`}>
+                  {!isOwnMessage && (
+                    <Avatar className="h-7 w-7 flex-shrink-0 mt-1">
+                      <AvatarImage src={msg.profile?.profile_picture_url} />
+                      <AvatarFallback className="text-xs">
+                        {msg.profile?.name?.charAt(0).toUpperCase() || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div className={`flex flex-col max-w-[75%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                    <div className={`flex items-baseline gap-2 mb-0.5 px-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+                      <span className="text-xs font-medium text-foreground">
                         {isOwnMessage ? 'You' : msg.profile?.name || 'Unknown'}
                       </span>
-                      <span className={`text-xs text-muted-foreground ${isOwnMessage ? 'order-1' : ''}`}>
+                      <span className="text-[10px] text-muted-foreground">
                         {format(new Date(msg.created_at), 'HH:mm')}
                       </span>
                     </div>
                     <div
-                      className={`inline-block px-3 py-2 rounded-lg ${
+                      className={`px-3 py-2 rounded-2xl ${
                         isOwnMessage
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
+                          ? 'bg-primary text-primary-foreground rounded-tr-sm'
+                          : 'bg-muted text-foreground rounded-tl-sm'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap break-words">
+                      <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
                         {msg.content}
                       </p>
                     </div>
@@ -356,38 +357,42 @@ export const CommunityChat = ({ community, userRole }: CommunityChatProps) => {
               );
             })
           )}
-          <div ref={messagesEndRef} />
-        </CardContent>
+        <div ref={messagesEndRef} />
+      </CardContent>
 
-        <div className="p-4 border-t">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Type a message..."
-              value={message}
-              onChange={(e) => {
-                setMessage(e.target.value);
-                handleTyping();
-              }}
-              onKeyPress={handleKeyPress}
-              disabled={sending}
-              maxLength={MAX_MESSAGE_LENGTH}
-            />
-            <Button 
-              onClick={handleSend} 
-              disabled={!message.trim() || sending}
-            >
-              {sending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1 text-right">
+      <div className="p-3 border-t bg-muted/30">
+        <div className="flex gap-2 items-end">
+          <Input
+            placeholder="Type a message..."
+            value={message}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              handleTyping();
+            }}
+            onKeyPress={handleKeyPress}
+            disabled={sending}
+            maxLength={MAX_MESSAGE_LENGTH}
+            className="flex-1 bg-background"
+          />
+          <Button 
+            onClick={handleSend} 
+            disabled={!message.trim() || sending}
+            size="icon"
+            className="h-10 w-10 flex-shrink-0"
+          >
+            {sending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+        {message.length > 0 && (
+          <p className="text-[10px] text-muted-foreground mt-1.5 px-1">
             {message.length}/{MAX_MESSAGE_LENGTH}
           </p>
-        </div>
-      </Card>
-    </div>
+        )}
+      </div>
+    </Card>
   );
 };
