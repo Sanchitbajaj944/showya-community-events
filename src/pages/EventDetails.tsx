@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, Edit } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, LayoutDashboard } from "lucide-react";
 import { format, isPast, differenceInHours } from "date-fns";
 import { toast } from "sonner";
 import { BookingModal } from "@/components/BookingModal";
@@ -226,16 +226,16 @@ export default function EventDetails() {
                 </Link>
               )}
 
-              {/* Edit Button for Creator */}
+              {/* Manage Button for Creator */}
               {isEventCreator && !isEventPast && (
                 <Button
                   variant="outline"
                   size="sm"
                   className="mt-3"
-                  onClick={() => navigate(`/events/${eventId}/edit`)}
+                  onClick={() => navigate(`/events/${eventId}/dashboard`)}
                 >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Event
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  Manage Event
                 </Button>
               )}
             </div>
