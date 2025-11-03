@@ -1,23 +1,287 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, Send, Paperclip, Smile, Settings, Pin } from "lucide-react";
+import { MessageCircle, Send, AlertCircle, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 interface CommunityChatProps {
   community: any;
   userRole: 'owner' | 'member' | 'public';
 }
 
-export const CommunityChat = ({ community, userRole }: CommunityChatProps) => {
-  const [message, setMessage] = useState("");
+interface Message {
+  id: string;
+  content: string;
+  user_id: string;
+  created_at: string;
+  profile?: {
+    name: string;
+    profile_picture_url?: string;
+  };
+  optimistic?: boolean;
+}
 
-  const handleSend = () => {
-    if (message.trim()) {
-      // TODO: Implement send message
-      setMessage("");
+interface TypingUser {
+  user_id: string;
+  name: string;
+}
+
+const MAX_MESSAGE_LENGTH = 2000;
+const TYPING_TIMEOUT = 3000;
+
+export const CommunityChat = ({ community, userRole }: CommunityChatProps) => {
+  const { user } = useAuth();
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [onlineCount, setOnlineCount] = useState(0);
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastMessageTimeRef = useRef<number>(0);
+
+  // Auto-scroll to bottom
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Load initial messages
+  useEffect(() => {
+    if (!community?.id || userRole === 'public') return;
+
+    const loadMessages = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const { data, error: fetchError } = await supabase
+          .from('community_messages')
+          .select(`
+            id,
+            content,
+            user_id,
+            created_at,
+            profiles:user_id (
+              name,
+              profile_picture_url
+            )
+          `)
+          .eq('community_id', community.id)
+          .order('created_at', { ascending: true })
+          .limit(100);
+
+        if (fetchError) throw fetchError;
+
+        const formattedMessages = (data || []).map(msg => ({
+          id: msg.id,
+          content: msg.content,
+          user_id: msg.user_id,
+          created_at: msg.created_at,
+          profile: Array.isArray(msg.profiles) ? msg.profiles[0] : msg.profiles
+        }));
+
+        setMessages(formattedMessages);
+      } catch (err: any) {
+        console.error('Error loading messages:', err);
+        setError('Failed to load messages. Please refresh the page.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMessages();
+  }, [community?.id, userRole]);
+
+  // Set up realtime subscription
+  useEffect(() => {
+    if (!community?.id || !user || userRole === 'public') return;
+
+    const channel = supabase
+      .channel(`community-chat:${community.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'community_messages',
+          filter: `community_id=eq.${community.id}`
+        },
+        async (payload) => {
+          // Fetch user profile for the new message
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('name, profile_picture_url')
+            .eq('user_id', payload.new.user_id)
+            .single();
+
+          const newMessage: Message = {
+            id: payload.new.id,
+            content: payload.new.content,
+            user_id: payload.new.user_id,
+            created_at: payload.new.created_at,
+            profile: profile || { name: 'Unknown User' }
+          };
+
+          setMessages(prev => {
+            // Remove optimistic message if exists
+            const filtered = prev.filter(m => !m.optimistic || m.user_id !== newMessage.user_id);
+            return [...filtered, newMessage];
+          });
+        }
+      )
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        setOnlineCount(Object.keys(state).length);
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        console.log('User joined:', key, newPresences);
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        console.log('User left:', key, leftPresences);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            user_id: user.id,
+            online_at: new Date().toISOString()
+          });
+        }
+      });
+
+    channelRef.current = channel;
+
+    return () => {
+      channel.unsubscribe();
+      channelRef.current = null;
+    };
+  }, [community?.id, user, userRole]);
+
+  // Handle typing indicator
+  const handleTyping = () => {
+    if (!isTyping && channelRef.current) {
+      setIsTyping(true);
+      channelRef.current.track({
+        user_id: user?.id,
+        typing: true
+      });
+    }
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+      if (channelRef.current) {
+        channelRef.current.track({
+          user_id: user?.id,
+          typing: false
+        });
+      }
+    }, TYPING_TIMEOUT);
+  };
+
+  const handleSend = async () => {
+    if (!message.trim() || !user || sending) return;
+
+    // Client-side validation
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      toast.error(`Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters.`);
+      return;
+    }
+
+    // Rate limiting check (10 messages per minute)
+    const now = Date.now();
+    if (now - lastMessageTimeRef.current < 6000) {
+      toast.error('Please wait a moment before sending another message.');
+      return;
+    }
+
+    const messageContent = message.trim();
+    setMessage("");
+    setSending(true);
+    setError(null);
+
+    // Optimistic UI update
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`,
+      content: messageContent,
+      user_id: user.id,
+      created_at: new Date().toISOString(),
+      optimistic: true,
+      profile: {
+        name: user.email || 'You',
+        profile_picture_url: undefined
+      }
+    };
+
+    setMessages(prev => [...prev, optimisticMessage]);
+
+    try {
+      const { error: insertError } = await supabase
+        .from('community_messages')
+        .insert({
+          community_id: community.id,
+          user_id: user.id,
+          content: messageContent,
+          message_type: 'text'
+        });
+
+      if (insertError) {
+        // Handle rate limiting error
+        if (insertError.message.includes('Rate limit exceeded')) {
+          toast.error('You\'re sending messages too quickly. Please slow down.');
+        } else {
+          throw insertError;
+        }
+        // Remove optimistic message on error
+        setMessages(prev => prev.filter(m => !m.optimistic));
+      } else {
+        lastMessageTimeRef.current = now;
+      }
+    } catch (err: any) {
+      console.error('Error sending message:', err);
+      toast.error('Failed to send message. Please try again.');
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => !m.optimistic));
+    } finally {
+      setSending(false);
     }
   };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  if (userRole === 'public') {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Join this community to access the chat.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -26,44 +290,99 @@ export const CommunityChat = ({ community, userRole }: CommunityChatProps) => {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Community Chat</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">0 members</p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="icon">
-                <Pin className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <Settings className="h-4 w-4" />
-              </Button>
+              <p className="text-sm text-muted-foreground mt-1">
+                {onlineCount} {onlineCount === 1 ? 'member' : 'members'} online
+              </p>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-y-auto p-4">
-          <div className="text-center py-12 text-muted-foreground">
-            <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>No messages yet — say hi 👋</p>
-          </div>
+        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : error ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : messages.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>No messages yet — say hi 👋</p>
+            </div>
+          ) : (
+            messages.map((msg) => {
+              const isOwnMessage = msg.user_id === user?.id;
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''} ${
+                    msg.optimistic ? 'opacity-60' : ''
+                  }`}
+                >
+                  <Avatar className="h-8 w-8 flex-shrink-0">
+                    <AvatarImage src={msg.profile?.profile_picture_url} />
+                    <AvatarFallback>
+                      {msg.profile?.name?.charAt(0).toUpperCase() || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className={`flex-1 ${isOwnMessage ? 'text-right' : ''}`}>
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className={`text-sm font-medium ${isOwnMessage ? 'order-2' : ''}`}>
+                        {isOwnMessage ? 'You' : msg.profile?.name || 'Unknown'}
+                      </span>
+                      <span className={`text-xs text-muted-foreground ${isOwnMessage ? 'order-1' : ''}`}>
+                        {format(new Date(msg.created_at), 'HH:mm')}
+                      </span>
+                    </div>
+                    <div
+                      className={`inline-block px-3 py-2 rounded-lg ${
+                        isOwnMessage
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap break-words">
+                        {msg.content}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+          <div ref={messagesEndRef} />
         </CardContent>
 
         <div className="p-4 border-t">
           <div className="flex gap-2">
-            <Button variant="ghost" size="icon">
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Smile className="h-4 w-4" />
-            </Button>
             <Input
               placeholder="Type a message..."
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onChange={(e) => {
+                setMessage(e.target.value);
+                handleTyping();
+              }}
+              onKeyPress={handleKeyPress}
+              disabled={sending}
+              maxLength={MAX_MESSAGE_LENGTH}
             />
-            <Button onClick={handleSend} disabled={!message.trim()}>
-              <Send className="h-4 w-4" />
+            <Button 
+              onClick={handleSend} 
+              disabled={!message.trim() || sending}
+            >
+              {sending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground mt-1 text-right">
+            {message.length}/{MAX_MESSAGE_LENGTH}
+          </p>
         </div>
       </Card>
     </div>
