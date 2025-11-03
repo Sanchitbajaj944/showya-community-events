@@ -7,9 +7,10 @@ import { BottomNav } from "@/components/BottomNav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Calendar, UserPlus, Share2, CheckCircle, MoreVertical, Flag } from "lucide-react";
+import { Users, Calendar, UserPlus, CheckCircle, MoreVertical, Flag } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ReportDialog } from "@/components/ReportDialog";
+import { ShareDialog } from "@/components/ShareDialog";
 import { toast } from "sonner";
 import { format, isPast } from "date-fns";
 
@@ -84,23 +85,6 @@ export default function CommunityPublicView() {
     }
   };
 
-  const handleShare = async () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: community.name,
-          text: community.description,
-          url: url,
-        });
-      } catch (error) {
-        // User cancelled
-      }
-    } else {
-      navigator.clipboard.writeText(url);
-      toast.success("Link copied to clipboard");
-    }
-  };
 
   if (loading) {
     return (
@@ -178,10 +162,12 @@ export default function CommunityPublicView() {
                   <UserPlus className="h-4 w-4 mr-2" />
                   <span className="text-sm sm:text-base">{joining ? "Joining..." : "Join Community"}</span>
                 </Button>
-                <Button variant="outline" size="lg" onClick={handleShare} className="w-full sm:w-auto">
-                  <Share2 className="h-4 w-4 sm:mr-0" />
-                  <span className="sm:hidden ml-2">Share</span>
-                </Button>
+                <ShareDialog
+                  url={`/community/${communityId}/public`}
+                  title={community.name}
+                  description={community.description}
+                  triggerClassName="w-full sm:w-auto h-10"
+                />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="lg" className="w-full sm:w-auto">

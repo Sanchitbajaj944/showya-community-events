@@ -7,10 +7,11 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, LayoutDashboard } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, LayoutDashboard, Share2 } from "lucide-react";
 import { format, isPast, differenceInHours } from "date-fns";
 import { toast } from "sonner";
 import { BookingModal } from "@/components/BookingModal";
+import { ShareDialog } from "@/components/ShareDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -212,6 +213,13 @@ export default function EventDetails() {
                 <Badge variant="secondary" className="text-xs">{event.category || 'Event'}</Badge>
                 {isEventPast && <Badge variant="outline" className="text-xs">Past Event</Badge>}
                 {isSlotsFull && !isEventPast && <Badge variant="destructive" className="text-xs">Sold Out</Badge>}
+                <div className="ml-auto">
+                  <ShareDialog
+                    url={`/events/${eventId}`}
+                    title={event.title}
+                    description={event.description}
+                  />
+                </div>
               </div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">{event.title}</h1>
               

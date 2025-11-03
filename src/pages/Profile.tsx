@@ -10,9 +10,10 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { BottomNav } from "@/components/BottomNav";
 import Header from "@/components/Header";
 import { CommunityManagementCard } from "@/components/CommunityManagementCard";
-import { MapPin, Edit, Calendar, Star, ArrowLeft } from "lucide-react";
+import { MapPin, Edit, Calendar, Star, ArrowLeft, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { ShareDialog } from "@/components/ShareDialog";
 
 interface Profile {
   id: string;
@@ -205,15 +206,23 @@ export default function Profile() {
             <h1 className="text-lg font-semibold flex-1 text-center">
               {isOwnProfile ? "My Profile" : displayName}
             </h1>
-            {isOwnProfile && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/profile/edit")}
-              >
-                <Edit className="h-5 w-5" />
-              </Button>
-            )}
+            <div className="flex items-center gap-1">
+              <ShareDialog
+                url={isOwnProfile ? "/profile" : `/profile/${userId}`}
+                title={`${displayName}'s Profile`}
+                description={profile.bio}
+                triggerClassName="md:hidden"
+              />
+              {isOwnProfile && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/profile/edit")}
+                >
+                  <Edit className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -223,18 +232,24 @@ export default function Profile() {
         <Card>
           <CardContent className="pt-6 relative">
             <div className="flex flex-col items-center text-center space-y-4">
-              {/* Desktop/Tablet Edit Button */}
-              {isOwnProfile && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate("/profile/edit")}
-                  className="hidden md:flex absolute top-6 right-6"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </Button>
-              )}
+              {/* Desktop/Tablet Actions */}
+              <div className="hidden md:flex absolute top-6 right-6 gap-2">
+                <ShareDialog
+                  url={isOwnProfile ? "/profile" : `/profile/${userId}`}
+                  title={`${displayName}'s Profile`}
+                  description={profile.bio}
+                />
+                {isOwnProfile && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate("/profile/edit")}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </Button>
+                )}
+              </div>
               
               <UserAvatar
                 src={profile.profile_picture_url}
