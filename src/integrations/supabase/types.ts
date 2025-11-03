@@ -677,6 +677,10 @@ export type Database = {
     }
     Functions: {
       event_has_bookings: { Args: { _event_id: string }; Returns: boolean }
+      get_community_member_count: {
+        Args: { p_community_id: string }
+        Returns: number
+      }
       get_event_booking_count: { Args: { _event_id: string }; Returns: number }
       get_event_details: {
         Args: { _event_id: string; _user_id?: string }
