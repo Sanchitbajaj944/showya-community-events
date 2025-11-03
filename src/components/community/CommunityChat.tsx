@@ -72,28 +72,31 @@ export const CommunityChat = ({ community, userRole }: CommunityChatProps) => {
 
         const { data, error: fetchError } = await supabase
           .from('community_messages')
-          .select(`
-            id,
-            content,
-            user_id,
-            created_at,
-            profiles:user_id (
-              name,
-              profile_picture_url
-            )
-          `)
+          .select('id, content, user_id, created_at')
           .eq('community_id', community.id)
           .order('created_at', { ascending: true })
           .limit(100);
 
         if (fetchError) throw fetchError;
 
+        // Fetch profiles separately
+        const userIds = [...new Set(data?.map(m => m.user_id) || [])];
+        const { data: profilesData } = await supabase
+          .from('profiles_public')
+          .select('user_id, name, profile_picture_url')
+          .in('user_id', userIds);
+
+        // Create a map of user profiles
+        const profilesMap = new Map(
+          (profilesData || []).map(p => [p.user_id, p])
+        );
+
         const formattedMessages = (data || []).map(msg => ({
           id: msg.id,
           content: msg.content,
           user_id: msg.user_id,
           created_at: msg.created_at,
-          profile: Array.isArray(msg.profiles) ? msg.profiles[0] : msg.profiles
+          profile: profilesMap.get(msg.user_id) || { name: 'Unknown User' }
         }));
 
         setMessages(formattedMessages);
@@ -125,7 +128,7 @@ export const CommunityChat = ({ community, userRole }: CommunityChatProps) => {
         async (payload) => {
           // Fetch user profile for the new message
           const { data: profile } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('name, profile_picture_url')
             .eq('user_id', payload.new.user_id)
             .single();

@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
 import { format, isPast } from "date-fns";
+import { CommunityChat } from "@/components/community/CommunityChat";
 
 export default function CommunityMemberView() {
   const { communityId } = useParams();
@@ -281,14 +282,7 @@ export default function CommunityMemberView() {
           </TabsContent>
 
           <TabsContent value="chat">
-            <Card>
-              <CardContent className="pt-4 sm:pt-6">
-                <div className="text-center py-8 sm:py-12 text-muted-foreground">
-                  <MessageCircle className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
-                  <p className="text-sm sm:text-base">Start a conversation!</p>
-                </div>
-              </CardContent>
-            </Card>
+            <CommunityChat community={community} userRole="member" />
           </TabsContent>
         </Tabs>
       </div>
