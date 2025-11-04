@@ -271,9 +271,6 @@ const Index = () => {
         </div>
         <div className="container relative px-4 md:px-6">
           <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-12 md:mb-16 space-y-3 sm:space-y-4 md:space-y-5">
-            <div className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-gradient-card border-2 border-accent/20">
-              <span className="text-xs sm:text-sm font-bold text-accent">Why Showya</span>
-            </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight">
               Made for <span className="text-gradient">creators</span>, by creators
             </h2>
