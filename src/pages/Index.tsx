@@ -66,21 +66,37 @@ const Index = () => {
 
       if (communitiesError) throw communitiesError;
 
+      if (!communitiesData || communitiesData.length === 0) {
+        setCommunities([]);
+        return;
+      }
+
       // Fetch owner details for each community
-      const ownerIds = [...new Set(communitiesData?.map(c => c.owner_id) || [])];
+      const ownerIds = [...new Set(communitiesData.map(c => c.owner_id).filter(Boolean))];
+      
+      if (ownerIds.length === 0) {
+        setCommunities(communitiesData.map(c => ({ ...c, owner: null })));
+        return;
+      }
+
       const { data: ownersData, error: ownersError } = await supabase
         .from("profiles")
         .select("user_id, name, display_name, profile_picture_url")
         .in("user_id", ownerIds);
 
-      if (ownersError) throw ownersError;
+      if (ownersError) {
+        console.error("Error fetching owners:", ownersError);
+        setCommunities(communitiesData.map(c => ({ ...c, owner: null })));
+        return;
+      }
 
       // Combine communities with owner data
-      const communitiesWithOwners = communitiesData?.map(community => ({
+      const communitiesWithOwners = communitiesData.map(community => ({
         ...community,
-        owner: ownersData?.find(owner => owner.user_id === community.owner_id)
-      })) || [];
+        owner: ownersData?.find(owner => owner.user_id === community.owner_id) || null
+      }));
 
+      console.log("Communities with owners:", communitiesWithOwners);
       setCommunities(communitiesWithOwners);
     } catch (error) {
       console.error("Error fetching communities:", error);
