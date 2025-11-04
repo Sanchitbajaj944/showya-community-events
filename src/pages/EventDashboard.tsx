@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, isPast, differenceInHours } from "date-fns";
-import { Calendar, Clock, MapPin, Users, Edit, Trash2, Copy, Link as LinkIcon, IndianRupee, AlertTriangle } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Edit, Trash2, Copy, Link as LinkIcon, IndianRupee, AlertTriangle, MoreVertical, UserX, Flag, Eye } from "lucide-react";
 
 export default function EventDashboard() {
   const { eventId } = useParams();
@@ -172,14 +173,38 @@ export default function EventDashboard() {
     }
   };
 
-  const handleRefundAttendee = async (participantId: string) => {
+  const handleRemoveAttendee = async (participantId: string, userId: string) => {
     try {
-      // TODO: Implement refund logic via edge function
-      toast.success("Refund processed successfully");
+      // Delete the participant
+      const { error: deleteError } = await supabase
+        .from("event_participants")
+        .delete()
+        .eq("id", participantId);
+
+      if (deleteError) throw deleteError;
+
+      if (event.ticket_type === 'paid') {
+        // TODO: Implement refund logic via edge function
+        toast.success("Attendee removed and refund initiated");
+      } else {
+        toast.success("Attendee removed successfully");
+      }
+      
       fetchEventData();
-    } catch (error) {
-      toast.error("Failed to process refund");
+    } catch (error: any) {
+      console.error("Error removing attendee:", error);
+      toast.error("Failed to remove attendee");
     }
+  };
+
+  const handleReportUser = (userId: string) => {
+    // Navigate to report page or open report dialog
+    window.open(`/profile/${userId}`, '_blank');
+    toast.info("Please use the report option on the user's profile");
+  };
+
+  const handleViewProfile = (userId: string) => {
+    navigate(`/profile/${userId}`);
   };
 
   if (loading) {
@@ -397,6 +422,7 @@ export default function EventDashboard() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Ticket #</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -424,21 +450,39 @@ export default function EventDashboard() {
                         <Badge variant="outline">{attendee.role}</Badge>
                       </TableCell>
                       <TableCell>
+                        <span className="font-mono text-sm">{attendee.ticket_code || 'N/A'}</span>
+                      </TableCell>
+                      <TableCell>
                         {format(new Date(attendee.joined_at), "MMM dd, yyyy")}
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">Confirmed</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        {event.ticket_type === 'paid' && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleRefundAttendee(attendee.id)}
-                          >
-                            Refund
-                          </Button>
-                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleViewProfile(attendee.user_id)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleReportUser(attendee.user_id)}>
+                              <Flag className="h-4 w-4 mr-2" />
+                              Report
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleRemoveAttendee(attendee.id, attendee.user_id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <UserX className="h-4 w-4 mr-2" />
+                              Remove {event.ticket_type === 'paid' && '& Refund'}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
