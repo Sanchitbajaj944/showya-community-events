@@ -60,7 +60,14 @@ const Index = () => {
     try {
       const { data, error } = await supabase
         .from("communities")
-        .select("*")
+        .select(`
+          *,
+          owner:profiles!communities_owner_id_fkey(
+            name,
+            display_name,
+            profile_picture_url
+          )
+        `)
         .order("created_at", { ascending: false })
         .limit(6);
 
@@ -241,6 +248,24 @@ const Index = () => {
                             </Badge>
                           ))}
                         </div>
+                        {community.owner && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                              {community.owner.profile_picture_url ? (
+                                <img 
+                                  src={community.owner.profile_picture_url} 
+                                  alt={community.owner.display_name || community.owner.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Users className="h-3 w-3 text-primary" />
+                              )}
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              by {community.owner.display_name || community.owner.name}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {community.description && (
