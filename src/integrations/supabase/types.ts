@@ -796,6 +796,10 @@ export type Database = {
         Args: { p_days?: number; p_user_id: string }
         Returns: number
       }
+      has_recent_report: {
+        Args: { _reporter_id: string; _target_user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
