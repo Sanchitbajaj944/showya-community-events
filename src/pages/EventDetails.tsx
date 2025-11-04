@@ -7,11 +7,12 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, LayoutDashboard, Share2 } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, LayoutDashboard, Share2, Flag } from "lucide-react";
 import { format, isPast, differenceInHours } from "date-fns";
 import { toast } from "sonner";
 import { BookingModal } from "@/components/BookingModal";
 import { ShareDialog } from "@/components/ShareDialog";
+import { ReportDialog } from "@/components/ReportDialog";
 import {
   Drawer,
   DrawerClose,
@@ -47,6 +48,7 @@ export default function EventDetails() {
   const [refundAmount, setRefundAmount] = useState(0);
   const [refundPercentage, setRefundPercentage] = useState(0);
   const [showBookingDrawer, setShowBookingDrawer] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchEventDetails();
@@ -230,12 +232,21 @@ export default function EventDetails() {
                 <Badge variant="secondary" className="text-xs">{event.category || 'Event'}</Badge>
                 {isEventPast && <Badge variant="outline" className="text-xs">Past Event</Badge>}
                 {isSlotsFull && !isEventPast && <Badge variant="destructive" className="text-xs">Sold Out</Badge>}
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center gap-1">
                   <ShareDialog
                     url={`/events/${eventId}`}
                     title={event.title}
                     description={event.description}
                   />
+                  {user && event.created_by !== user.id && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setReportDialogOpen(true)}
+                    >
+                      <Flag className="h-5 w-5" />
+                    </Button>
+                  )}
                 </div>
               </div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">{event.title}</h1>
@@ -595,6 +606,18 @@ export default function EventDetails() {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+
+      {/* Report Dialog */}
+      {event && event.created_by && (
+        <ReportDialog
+          open={reportDialogOpen}
+          onOpenChange={setReportDialogOpen}
+          targetUserId={event.created_by}
+          targetType="user"
+          contextType="event"
+          contextId={eventId}
+        />
+      )}
     </div>
   );
 }
