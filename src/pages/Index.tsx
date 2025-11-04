@@ -117,22 +117,6 @@ const Index = () => {
                 Join as Performer
               </Button>
             </div>
-            
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 pt-12 sm:pt-16">
-              <div className="space-y-2">
-                <div className="text-4xl sm:text-5xl font-extrabold text-primary">100+</div>
-                <div className="text-sm sm:text-base text-muted-foreground">Communities</div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-4xl sm:text-5xl font-extrabold text-accent">500+</div>
-                <div className="text-sm sm:text-base text-muted-foreground">Events Hosted</div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-4xl sm:text-5xl font-extrabold text-secondary">5K+</div>
-                <div className="text-sm sm:text-base text-muted-foreground">Members</div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
