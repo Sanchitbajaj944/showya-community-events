@@ -178,26 +178,11 @@ const Header = () => {
               className="block text-base font-medium text-foreground hover:text-primary transition-colors py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Communities
+            Communities
             </Link>
-            {user && (
-              <Link
-                to="/profile"
-                className="block text-base font-medium text-foreground hover:text-primary transition-colors py-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Profile
-              </Link>
-            )}
             <div className="pt-4 space-y-3">
               {user ? (
                 <>
-                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full">
-                      <User className="h-4 w-4 mr-2" />
-                      My Profile
-                    </Button>
-                  </Link>
                   {isAdmin && (
                     <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="ghost" className="w-full">
