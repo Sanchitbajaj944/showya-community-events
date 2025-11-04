@@ -156,16 +156,18 @@ const Index = () => {
               <p>No upcoming events yet. Create a community to host the first one!</p>
             </div>
           ) : (
-            <>
+            <div className="relative">
               <div 
                 ref={scrollContainerRef}
-                className="flex overflow-x-auto gap-4 pb-6 snap-x snap-mandatory hide-scrollbar pl-4"
+                className="flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory hide-scrollbar px-4 -mx-4"
+                style={{ scrollPaddingLeft: '1rem' }}
               >
                 {events.map((event) => (
                   <Link 
                     key={event.id} 
                     to={`/events/${event.id}`}
-                    className="snap-start shrink-0 w-[280px] sm:w-[320px]"
+                    className="snap-start shrink-0 first:ml-0"
+                    style={{ width: 'min(320px, 85vw)' }}
                   >
                     <EventCard 
                       title={event.title}
@@ -189,7 +191,7 @@ const Index = () => {
                   />
                 ))}
               </div>
-            </>
+            </div>
           )}
           <div className="mt-8 sm:mt-10 md:mt-12 text-center">
             <Button size="lg" className="gap-2 w-full sm:w-auto">
