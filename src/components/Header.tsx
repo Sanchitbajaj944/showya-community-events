@@ -180,6 +180,15 @@ const Header = () => {
             >
             Communities
             </Link>
+            {user && (
+              <Link
+                to="/profile"
+                className="block text-base font-medium text-foreground hover:text-primary transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Profile
+              </Link>
+            )}
             <div className="pt-4 space-y-3">
               {user ? (
                 <>
