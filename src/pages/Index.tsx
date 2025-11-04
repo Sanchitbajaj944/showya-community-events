@@ -111,7 +111,7 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link to="/auth/signup">
                 <Button size="lg" variant="default" className="text-base w-full sm:w-auto">
-                  Join as host
+                  Create Your Community
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
