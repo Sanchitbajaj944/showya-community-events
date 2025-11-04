@@ -98,7 +98,7 @@ const Index = () => {
         <div className="container px-4 md:px-6">
           <div className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8">
             <div className="inline-block px-5 py-2 rounded-full bg-primary/10 border border-primary/20">
-              <span className="text-sm font-semibold text-primary">✨ Where Communities Come Alive</span>
+              <span className="text-sm font-semibold text-primary">🇮🇳 India's Largest Online Open Mic Platform</span>
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight">
               Discover Events.
