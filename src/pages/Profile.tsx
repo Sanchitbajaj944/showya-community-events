@@ -148,11 +148,15 @@ export default function Profile() {
 
       // Fetch user's community if viewing own profile
       if (isOwnProfile) {
-        const { data: communityData } = await supabase
+        const { data: communityData, error: communityError } = await supabase
           .from("communities")
-          .select("*")
+          .select("id, name, description, owner_id, kyc_status, categories, banner_url, created_at, updated_at")
           .eq("owner_id", targetUserId)
-          .single();
+          .maybeSingle();
+        
+        if (communityError) {
+          console.error("Error fetching community:", communityError);
+        }
         
         setUserCommunity(communityData || null);
       }
