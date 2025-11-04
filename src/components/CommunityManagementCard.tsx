@@ -16,8 +16,9 @@ export const CommunityManagementCard = ({ community, onCommunityCreated }: Commu
   
   const getKycStatusBadge = (status: string) => {
     switch (status) {
+      case 'ACTIVATED':
       case 'APPROVED':
-        return null; // Don't show badge when approved
+        return null; // Don't show badge when approved/activated
       case 'IN_PROGRESS':
         return (
           <Badge variant="outline" className="border-yellow-500 text-yellow-500">
