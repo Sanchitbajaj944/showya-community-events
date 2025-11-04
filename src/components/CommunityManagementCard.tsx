@@ -76,27 +76,28 @@ export const CommunityManagementCard = ({ community, onCommunityCreated }: Commu
   return (
     <Card className="overflow-hidden">
       {/* Banner Image */}
-      {community.banner_url && (
-        <div className="relative h-32 overflow-hidden bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20">
-          <img 
-            src={community.banner_url} 
-            alt={community.name} 
-            className="w-full h-full object-cover" 
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        </div>
-      )}
+      <div className="relative h-32 overflow-hidden bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20">
+        {community.banner_url ? (
+          <>
+            <img 
+              src={community.banner_url} 
+              alt={community.name} 
+              className="w-full h-full object-cover" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Users className="h-12 w-12 text-primary/40" />
+          </div>
+        )}
+      </div>
       
-      <CardContent className={community.banner_url ? "pt-6" : "pt-6"}>
+      <CardContent className="pt-6">
         <div className="space-y-4">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                {!community.banner_url && (
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                    <Users className="h-6 w-6 text-primary" />
-                  </div>
-                )}
                 <div>
                   <h3 className="font-semibold text-lg">{community.name}</h3>
                   <p className="text-xs text-muted-foreground">Your Community</p>

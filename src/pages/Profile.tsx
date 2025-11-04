@@ -346,10 +346,13 @@ export default function Profile() {
 
         {/* Community Management - Only for own profile */}
         {isOwnProfile && (
-          <CommunityManagementCard 
-            community={userCommunity} 
-            onCommunityCreated={fetchProfileData}
-          />
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">My Community</h2>
+            <CommunityManagementCard 
+              community={userCommunity} 
+              onCommunityCreated={fetchProfileData}
+            />
+          </div>
         )}
 
         {/* Experience Tabs */}
