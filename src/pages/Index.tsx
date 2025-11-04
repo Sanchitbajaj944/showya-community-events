@@ -62,7 +62,7 @@ const Index = () => {
         .from("communities")
         .select(`
           *,
-          owner:profiles!communities_owner_id_fkey(
+          owner:profiles!owner_id(
             name,
             display_name,
             profile_picture_url
