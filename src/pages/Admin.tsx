@@ -23,6 +23,7 @@ interface Report {
   target_type: string;
   reason: string;
   message: string | null;
+  incident_location: string | null;
   context_type: string | null;
   context_id: string | null;
   status: string;
@@ -403,11 +404,22 @@ function ReportsList({ reports, onUpdateStatus }: ReportsListProps) {
                 </div>
               </div>
 
+              {/* Incident Location */}
+              {report.incident_location && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-sm">
+                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <span className="font-medium">Location: </span>
+                    <span className="text-muted-foreground">{report.incident_location}</span>
+                  </div>
+                </div>
+              )}
+
               {/* Message */}
               {report.message && (
                 <div className="p-3 rounded-lg bg-muted text-sm">
-                  <p className="font-medium mb-1">Additional Details:</p>
-                  <p className="text-muted-foreground">{report.message}</p>
+                  <p className="font-medium mb-1">Detailed Description:</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{report.message}</p>
                 </div>
               )}
 

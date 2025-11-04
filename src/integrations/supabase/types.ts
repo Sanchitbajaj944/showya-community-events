@@ -785,6 +785,7 @@ export type Database = {
           context_type: string
           created_at: string
           id: string
+          incident_location: string
           message: string
           reason: string
           reporter_id: string
