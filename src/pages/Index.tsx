@@ -12,6 +12,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast } from "date-fns";
 import heroImage from "@/assets/hero-image.jpg";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
 
 const Index = () => {
   const [events, setEvents] = useState<any[]>([]);
@@ -135,31 +140,45 @@ const Index = () => {
               Browse open mics, art jams, and creative meetups hosted by passionate communities.
             </p>
           </div>
-          <div className="flex overflow-x-auto gap-4 sm:gap-6 pb-6 snap-x snap-mandatory hide-scrollbar -mx-4 px-4">
-            {events.length === 0 ? (
-              <div className="w-full text-center py-8 text-muted-foreground">
-                <p>No upcoming events yet. Create a community to host the first one!</p>
-              </div>
-            ) : (
-              events.map((event) => (
-                <Link 
-                  key={event.id} 
-                  to={`/events/${event.id}`}
-                  className="snap-start"
-                >
-                  <EventCard 
-                    title={event.title}
-                    community={event.community_name}
-                    date={format(new Date(event.event_date), "MMM dd, yyyy • h:mm a")}
-                    location={event.location || event.city || "Online"}
-                    attendees={event.performer_slots + (event.audience_enabled ? event.audience_slots : 0)}
-                    category={event.category || "Event"}
-                    image={event.poster_url}
+          {events.length === 0 ? (
+            <div className="w-full text-center py-8 text-muted-foreground">
+              <p>No upcoming events yet. Create a community to host the first one!</p>
+            </div>
+          ) : (
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              className="w-full pl-4"
+            >
+              <CarouselContent className="-ml-4">
+                {events.map((event) => (
+                  <CarouselItem key={event.id} className="pl-4 basis-[85%] sm:basis-[45%] lg:basis-[30%]">
+                    <Link to={`/events/${event.id}`}>
+                      <EventCard 
+                        title={event.title}
+                        community={event.community_name}
+                        date={format(new Date(event.event_date), "MMM dd, yyyy • h:mm a")}
+                        location={event.location || event.city || "Online"}
+                        attendees={event.performer_slots + (event.audience_enabled ? event.audience_slots : 0)}
+                        category={event.category || "Event"}
+                        image={event.poster_url}
+                      />
+                    </Link>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <div className="flex justify-center gap-2 mt-4">
+                {events.map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-2 w-2 rounded-full bg-primary/30"
                   />
-                </Link>
-              ))
-            )}
-          </div>
+                ))}
+              </div>
+            </Carousel>
+          )}
           <div className="mt-8 sm:mt-10 md:mt-12 text-center">
             <Button size="lg" className="gap-2 w-full sm:w-auto">
               Explore All Events
