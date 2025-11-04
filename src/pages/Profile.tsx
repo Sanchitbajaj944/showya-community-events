@@ -455,8 +455,7 @@ function EventCard({ event, role, ticketCode }: EventCardProps) {
             <Calendar className="h-3 w-3" />
             <span>{format(new Date(event.event_date), "MMM d, yyyy • h:mm a")}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <MapPin className="h-3 w-3" />
+          <div>
             <span className="truncate">{event.location}</span>
           </div>
         </div>
