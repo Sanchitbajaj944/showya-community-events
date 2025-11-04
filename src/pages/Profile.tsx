@@ -393,6 +393,7 @@ export default function Profile() {
                       event={participation.event}
                       role={participation.role === "performer" ? "Performer" : "Audience"}
                       ticketCode={participation.ticket_code}
+                      isOwnProfile={isOwnProfile}
                     />
                   ))
                 )}
@@ -411,6 +412,7 @@ export default function Profile() {
                       event={participation.event}
                       role={participation.role === "performer" ? "Performer" : "Audience"}
                       ticketCode={participation.ticket_code}
+                      isOwnProfile={isOwnProfile}
                     />
                   ))
                 )}
@@ -447,9 +449,10 @@ interface EventCardProps {
   };
   role: string;
   ticketCode?: string;
+  isOwnProfile: boolean;
 }
 
-function EventCard({ event, role, ticketCode }: EventCardProps) {
+function EventCard({ event, role, ticketCode, isOwnProfile }: EventCardProps) {
   const navigate = useNavigate();
   
   return (
@@ -475,7 +478,7 @@ function EventCard({ event, role, ticketCode }: EventCardProps) {
           </div>
         </div>
 
-        {ticketCode && (
+        {ticketCode && isOwnProfile && (
           <div className="mt-2 p-2 bg-muted rounded text-xs font-mono text-center">
             Ticket: {ticketCode}
           </div>
