@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, isPast, differenceInHours } from "date-fns";
-import { Calendar, Clock, MapPin, Users, Edit, Trash2, Copy, Link as LinkIcon, IndianRupee, AlertTriangle, MoreVertical, UserX, Flag, Eye } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Edit, Trash2, Link as LinkIcon, IndianRupee, AlertTriangle, MoreVertical, UserX, Flag, Eye } from "lucide-react";
 
 export default function EventDashboard() {
   const { eventId } = useParams();
@@ -133,45 +133,6 @@ export default function EventDashboard() {
     }
   };
 
-  const handleDuplicateEvent = async () => {
-    if (!event) return;
-
-    try {
-      const { data: newEvent, error } = await supabase
-        .from("events")
-        .insert({
-          title: `${event.title} (Copy)`,
-          description: event.description,
-          event_date: new Date(new Date(event.event_date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week later
-          location: event.location,
-          city: event.city,
-          community_id: event.community_id,
-          community_name: event.community_name,
-          category: event.category,
-          created_by: user?.id,
-          ticket_type: event.ticket_type,
-          price: event.price,
-          duration: event.duration,
-          performer_slots: event.performer_slots,
-          performer_ticket_price: event.performer_ticket_price,
-          audience_enabled: event.audience_enabled,
-          audience_slots: event.audience_slots,
-          audience_ticket_price: event.audience_ticket_price,
-          meeting_url: event.meeting_url,
-          poster_url: event.poster_url,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast.success("Event duplicated successfully!");
-      navigate(`/events/${newEvent.id}/edit`);
-    } catch (error: any) {
-      console.error("Error duplicating event:", error);
-      toast.error("Failed to duplicate event");
-    }
-  };
 
   const handleRemoveAttendee = async (participantId: string, userId: string) => {
     try {
@@ -372,16 +333,7 @@ export default function EventDashboard() {
                 Edit Event
               </Button>
 
-              <Button 
-                className="w-full justify-start" 
-                variant="outline"
-                onClick={handleDuplicateEvent}
-              >
-                <Copy className="h-4 w-4 mr-2" />
-                Duplicate Event
-              </Button>
-
-              <Button 
+              <Button
                 className="w-full justify-start" 
                 variant="destructive"
                 onClick={() => setShowDeleteDialog(true)}
