@@ -13,6 +13,15 @@ import { toast } from "sonner";
 import { BookingModal } from "@/components/BookingModal";
 import { ShareDialog } from "@/components/ShareDialog";
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -37,10 +46,18 @@ export default function EventDetails() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [refundAmount, setRefundAmount] = useState(0);
   const [refundPercentage, setRefundPercentage] = useState(0);
+  const [showBookingDrawer, setShowBookingDrawer] = useState(false);
 
   useEffect(() => {
     fetchEventDetails();
   }, [eventId, user]);
+
+  useEffect(() => {
+    // Show drawer when user has a booking
+    if (userBooking) {
+      setShowBookingDrawer(true);
+    }
+  }, [userBooking]);
 
   const fetchEventDetails = async () => {
     if (!eventId) return;
@@ -417,38 +434,21 @@ export default function EventDetails() {
         )}
 
         {/* Booking CTA */}
-        <div className="sticky bottom-4 md:static md:bottom-auto">
-          {userBooking ? (
-            <Card className="bg-primary/10 border-primary">
-              <CardContent className="p-6 text-center">
-                <p className="font-semibold mb-2">You're all set! 🎉</p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Your booking confirmation has been sent to your email
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <Button variant="outline" onClick={() => navigate("/profile")}>
-                    View My Bookings
-                  </Button>
-                  <Button variant="destructive" onClick={openCancelDialog}>
-                    Cancel Booking
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : isEventPast ? (
+        <div>
+          {!userBooking && isEventPast ? (
             <Card className="border-muted">
               <CardContent className="p-6 text-center">
                 <p className="text-muted-foreground">This event has ended</p>
               </CardContent>
             </Card>
-          ) : isSlotsFull ? (
+          ) : !userBooking && isSlotsFull ? (
             <Card className="border-destructive">
               <CardContent className="p-6 text-center">
                 <p className="font-semibold text-destructive mb-2">Event Sold Out</p>
                 <p className="text-sm text-muted-foreground">All slots have been booked</p>
               </CardContent>
             </Card>
-          ) : (
+          ) : !userBooking ? (
             <Button 
               size="lg" 
               className="w-full shadow-lg"
@@ -467,7 +467,7 @@ export default function EventDetails() {
                 <>Book Free Slot</>
               )}
             </Button>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -549,6 +549,52 @@ export default function EventDetails() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Booking Success Drawer */}
+      <Drawer open={showBookingDrawer} onOpenChange={setShowBookingDrawer}>
+        <DrawerContent>
+          <DrawerHeader className="text-center">
+            <DrawerTitle className="text-2xl">You're all set! 🎉</DrawerTitle>
+            <DrawerDescription>
+              Your booking confirmation has been sent to your email
+            </DrawerDescription>
+          </DrawerHeader>
+          
+          {userBooking && (
+            <div className="px-4 pb-4">
+              <div className="p-4 bg-primary/10 rounded-lg mb-4">
+                <p className="text-sm text-muted-foreground mb-1">Ticket Code</p>
+                <p className="font-mono font-bold text-lg">{userBooking.ticket_code}</p>
+              </div>
+            </div>
+          )}
+          
+          <DrawerFooter>
+            <div className="flex gap-3 w-full">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => navigate("/profile")}
+              >
+                View My Bookings
+              </Button>
+              <Button 
+                variant="destructive" 
+                className="flex-1"
+                onClick={() => {
+                  setShowBookingDrawer(false);
+                  openCancelDialog();
+                }}
+              >
+                Cancel Booking
+              </Button>
+            </div>
+            <DrawerClose asChild>
+              <Button variant="ghost">Close</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
