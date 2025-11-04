@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle } from "lucide-react";
+import { reportSchema, type ReportFormData, USER_INCIDENT_LOCATIONS, COMMUNITY_OWNER_INCIDENT_LOCATIONS } from "@/lib/validations/report";
 
 interface ReportDialogProps {
   open: boolean;
@@ -43,24 +45,21 @@ export const ReportDialog = ({
   contextId,
   targetName,
 }: ReportDialogProps) => {
-  const [reason, setReason] = useState("");
-  const [message, setMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const reasons = targetType === "user" ? USER_REPORT_REASONS : COMMUNITY_OWNER_REPORT_REASONS;
+  const incidentLocations = targetType === "user" ? USER_INCIDENT_LOCATIONS : COMMUNITY_OWNER_INCIDENT_LOCATIONS;
 
-  const handleSubmit = async () => {
-    if (!reason) {
-      toast({
-        title: "Please select a reason",
-        variant: "destructive",
-      });
-      return;
-    }
+  const form = useForm<ReportFormData>({
+    resolver: zodResolver(reportSchema),
+    defaultValues: {
+      reason: "",
+      incident_location: "",
+      message: "",
+    },
+  });
 
-    setIsSubmitting(true);
-
+  const handleSubmit = async (data: ReportFormData) => {
     try {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -81,8 +80,9 @@ export const ReportDialog = ({
             reporter_id: user.id,
             target_user_id: targetUserId,
             target_type: targetType,
-            reason,
-            message: message.trim() || null,
+            reason: data.reason,
+            message: data.message,
+            incident_location: data.incident_location,
             context_type: contextType || null,
             context_id: contextId || null,
           },
@@ -111,8 +111,7 @@ export const ReportDialog = ({
           description: "Thanks for helping keep Showya safe. We'll review this shortly.",
         });
         onOpenChange(false);
-        setReason("");
-        setMessage("");
+        form.reset();
       }
     } catch (error: any) {
       console.error("Error submitting report:", error);
@@ -121,14 +120,12 @@ export const ReportDialog = ({
         description: error.message || "Please try again later",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-destructive" />
@@ -137,49 +134,102 @@ export const ReportDialog = ({
           <DialogDescription>
             {targetName && <span className="font-medium">Reporting: {targetName}</span>}
             <br />
-            Please help us understand the issue. All reports are reviewed by our moderation team.
+            Please provide detailed information about this incident. All fields are required and will be reviewed by our moderation team.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="reason">Reason for report *</Label>
-            <Select value={reason} onValueChange={setReason}>
-              <SelectTrigger id="reason">
-                <SelectValue placeholder="Select a reason" />
-              </SelectTrigger>
-              <SelectContent>
-                {reasons.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {r}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="message">Additional details (optional)</Label>
-            <Textarea
-              id="message"
-              placeholder="Provide any additional context that might help us understand the situation..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={4}
-              maxLength={500}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
+            <FormField
+              control={form.control}
+              name="reason"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reason for report *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a reason" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {reasons.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {r}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <p className="text-xs text-muted-foreground text-right">{message.length}/500</p>
-          </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting} variant="destructive">
-            {isSubmitting ? "Submitting..." : "Submit Report"}
-          </Button>
-        </DialogFooter>
+            <FormField
+              control={form.control}
+              name="incident_location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Where did this happen? *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select location" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {incidentLocations.map((location) => (
+                        <SelectItem key={location} value={location}>
+                          {location}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="message"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Detailed description *</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Please describe what happened in detail (minimum 50 characters)..."
+                      rows={5}
+                      maxLength={500}
+                      {...field}
+                    />
+                  </FormControl>
+                  <div className="flex justify-between items-center">
+                    <FormMessage />
+                    <p className="text-xs text-muted-foreground">{field.value?.length || 0}/500</p>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  form.reset();
+                  onOpenChange(false);
+                }} 
+                disabled={form.formState.isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={form.formState.isSubmitting} variant="destructive">
+                {form.formState.isSubmitting ? "Submitting..." : "Submit Report"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
