@@ -22,13 +22,13 @@ const EventCard = ({
   image,
 }: EventCardProps) => {
   return (
-    <Card className="min-w-[300px] md:min-w-[340px] overflow-hidden hover:shadow-glow transition-all duration-500 cursor-pointer group border-2 hover:border-primary/50">
+    <Card className="min-w-[300px] md:min-w-[340px] overflow-hidden cursor-pointer border-2">
       <div className="relative h-56 overflow-hidden bg-gradient-card">
         {image ? (
           <img 
             src={image} 
             alt={title} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+            className="w-full h-full object-cover" 
           />
         ) : (
           <div className="w-full h-full bg-gradient-card flex items-center justify-center">
@@ -42,7 +42,7 @@ const EventCard = ({
       </div>
       <CardContent className="p-5 space-y-4">
         <div>
-          <h3 className="font-bold text-xl line-clamp-2 group-hover:text-primary transition-colors mb-2">
+          <h3 className="font-bold text-xl line-clamp-2 mb-2">
             {title}
           </h3>
           <p className="text-sm text-muted-foreground font-semibold">{community}</p>
