@@ -198,21 +198,28 @@ export default function Profile() {
       
       {/* Mobile-only sub-header */}
       <div className="md:hidden bg-card border-b border-border sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            {userId && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(-1)}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            )}
-            <h1 className="text-lg font-semibold flex-1 text-center">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between gap-2">
+            {/* Left side - Back button or spacer */}
+            <div className="w-10 flex-shrink-0">
+              {userId && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(-1)}
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
+            
+            {/* Center - Title */}
+            <h1 className="text-lg font-semibold flex-1 text-center truncate">
               {isOwnProfile ? "My Profile" : displayName}
             </h1>
-            <div className="flex items-center gap-1">
+            
+            {/* Right side - Actions */}
+            <div className="flex items-center gap-1 flex-shrink-0">
               <ShareDialog
                 url={isOwnProfile ? "/profile" : `/profile/${userId}`}
                 title={`${displayName}'s Profile`}
