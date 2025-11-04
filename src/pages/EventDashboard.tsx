@@ -51,21 +51,31 @@ export default function EventDashboard() {
 
       setEvent(eventData);
 
-      // Fetch attendees with profile info
+      // Fetch attendees
       const { data: attendeesData, error: attendeesError } = await supabase
         .from("event_participants")
-        .select(`
-          *,
-          profiles:user_id (
-            name,
-            display_name,
-            profile_picture_url
-          )
-        `)
+        .select("*")
         .eq("event_id", eventId);
 
       if (attendeesError) throw attendeesError;
-      setAttendees(attendeesData || []);
+
+      // Fetch profiles for attendees
+      if (attendeesData && attendeesData.length > 0) {
+        const userIds = attendeesData.map(a => a.user_id);
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("user_id, name, display_name, profile_picture_url")
+          .in("user_id", userIds);
+
+        // Merge profile data with attendees
+        const attendeesWithProfiles = attendeesData.map(attendee => ({
+          ...attendee,
+          profiles: profilesData?.find(p => p.user_id === attendee.user_id)
+        }));
+        setAttendees(attendeesWithProfiles);
+      } else {
+        setAttendees([]);
+      }
     } catch (error: any) {
       console.error("Error fetching event data:", error);
       toast.error("Failed to load event dashboard");
