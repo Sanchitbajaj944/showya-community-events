@@ -438,11 +438,8 @@ function EventCard({ event, role, ticketCode }: EventCardProps) {
   const navigate = useNavigate();
   
   return (
-    <div 
-      className="p-4 rounded-lg border border-border bg-card hover:shadow-md transition-shadow cursor-pointer"
-      onClick={() => navigate(`/events/${event.id}`)}
-    >
-      <div className="space-y-2">
+    <div className="p-4 rounded-lg border border-border bg-card hover:shadow-md transition-shadow">
+      <div className="space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <h4 className="font-semibold truncate">{event.title}</h4>
@@ -469,6 +466,15 @@ function EventCard({ event, role, ticketCode }: EventCardProps) {
             Ticket: {ticketCode}
           </div>
         )}
+
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full"
+          onClick={() => navigate(`/events/${event.id}`)}
+        >
+          View Event Details
+        </Button>
       </div>
     </div>
   );
