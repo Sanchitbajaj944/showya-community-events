@@ -159,8 +159,13 @@ const Index = () => {
             <div className="relative">
               <div 
                 ref={scrollContainerRef}
-                className="flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory hide-scrollbar px-4 -mx-4"
-                style={{ scrollPaddingLeft: '1rem' }}
+                className="flex overflow-x-scroll gap-6 pb-6 snap-x snap-mandatory px-4 -mx-4"
+                style={{ 
+                  scrollPaddingLeft: '1rem',
+                  WebkitOverflowScrolling: 'touch',
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none'
+                }}
               >
                 {events.map((event) => (
                   <Link 
@@ -181,16 +186,18 @@ const Index = () => {
                   </Link>
                 ))}
               </div>
-              <div className="flex justify-center gap-2 mt-2">
-                {events.map((_, index) => (
-                  <div
-                    key={index}
-                    className={`h-2 w-2 rounded-full transition-all duration-300 ${
-                      index === activeEventIndex ? 'bg-primary w-6' : 'bg-primary/30'
-                    }`}
-                  />
-                ))}
-              </div>
+              {events.length > 1 && (
+                <div className="flex justify-center gap-2 mt-2">
+                  {events.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                        index === activeEventIndex ? 'bg-primary w-6' : 'bg-primary/30'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
           <div className="mt-8 sm:mt-10 md:mt-12 text-center">
@@ -325,15 +332,6 @@ const Index = () => {
 
       <BottomNav />
 
-      <style>{`
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
     </div>
   );
 };
