@@ -17,12 +17,7 @@ export const CommunityManagementCard = ({ community, onCommunityCreated }: Commu
   const getKycStatusBadge = (status: string) => {
     switch (status) {
       case 'APPROVED':
-        return (
-          <Badge variant="outline" className="border-green-500 text-green-500">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            KYC Approved
-          </Badge>
-        );
+        return null; // Don't show badge when approved
       case 'IN_PROGRESS':
         return (
           <Badge variant="outline" className="border-yellow-500 text-yellow-500">
