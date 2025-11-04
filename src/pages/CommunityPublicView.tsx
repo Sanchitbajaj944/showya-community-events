@@ -120,8 +120,8 @@ export default function CommunityPublicView() {
             
             <div className="space-y-3 sm:space-y-4">
               <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <h1 className="text-2xl sm:text-3xl font-bold mb-2">{community.name}</h1>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-2 break-words">{community.name}</h1>
                   {community.categories && community.categories.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">
                       {community.categories.map((cat: string) => (
@@ -154,19 +154,19 @@ export default function CommunityPublicView() {
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
                 <Button 
-                  className="flex-1 w-full" 
+                  className="w-full sm:flex-1" 
                   size="lg" 
                   onClick={handleJoin}
                   disabled={joining}
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
-                  <span className="text-sm sm:text-base">{joining ? "Joining..." : "Join Community"}</span>
+                  <span className="truncate">{joining ? "Joining..." : "Join Community"}</span>
                 </Button>
                 <ShareDialog
                   url={`/community/${communityId}/public`}
                   title={community.name}
                   description={community.description}
-                  triggerClassName="w-full sm:w-auto h-10"
+                  triggerClassName="w-full sm:w-auto"
                 />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
