@@ -469,7 +469,7 @@ function EventCard({ event, role, ticketCode }: EventCardProps) {
         <Button 
           variant="outline" 
           size="sm" 
-          className="w-full"
+          className="w-full hover:bg-background hover:text-foreground"
           onClick={() => navigate(`/events/${event.id}`)}
         >
           View Event Details
