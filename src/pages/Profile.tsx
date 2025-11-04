@@ -355,6 +355,7 @@ export default function Profile() {
         {/* Experience Tabs */}
         <Card>
           <CardContent className="pt-6">
+            <h2 className="text-2xl font-semibold mb-4">My Performances</h2>
             <Tabs defaultValue="upcoming" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="upcoming">
