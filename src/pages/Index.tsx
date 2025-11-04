@@ -196,9 +196,6 @@ const Index = () => {
       <section id="communities" className="py-12 sm:py-16 md:py-24 lg:py-32 bg-muted/30">
         <div className="container px-4 md:px-6">
           <div className="max-w-3xl mb-10 sm:mb-12 md:mb-16 space-y-3 sm:space-y-4 md:space-y-5">
-            <div className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-gradient-card border-2 border-secondary/20">
-              <span className="text-xs sm:text-sm font-bold text-secondary">Top Communities</span>
-            </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight">
               Communities <span className="text-gradient">you'll love</span>
             </h2>
