@@ -80,7 +80,7 @@ const Index = () => {
       }
 
       const { data: ownersData, error: ownersError } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("user_id, name, display_name, profile_picture_url")
         .in("user_id", ownerIds);
 

@@ -64,7 +64,7 @@ export default function EventDashboard() {
       if (attendeesData && attendeesData.length > 0) {
         const userIds = attendeesData.map(a => a.user_id);
         const { data: profilesData } = await supabase
-          .from("profiles")
+          .from("profiles_public")
           .select("user_id, name, display_name, profile_picture_url")
           .in("user_id", userIds);
 

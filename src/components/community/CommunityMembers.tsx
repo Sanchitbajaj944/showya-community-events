@@ -41,11 +41,11 @@ export const CommunityMembers = ({ community, userRole }: CommunityMembersProps)
       return;
     }
 
-    // Fetch profiles for member user_ids using profiles table (now has RLS)
+    // Fetch profiles for member user_ids using secure public view
     const userIds = membersData.map(m => m.user_id);
     
     const { data: profilesData, error: profilesError } = await supabase
-      .from("profiles")
+      .from("profiles_public")
       .select("user_id, display_name, name, profile_picture_url")
       .in("user_id", userIds);
 
