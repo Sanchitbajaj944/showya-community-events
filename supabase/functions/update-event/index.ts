@@ -1,10 +1,30 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.74.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const UpdateEventSchema = z.object({
+  eventId: z.string().uuid('Invalid event ID format'),
+  updates: z.object({
+    title: z.string().min(1).max(200).optional(),
+    description: z.string().max(5000).optional(),
+    poster_url: z.string().url().optional(),
+    category: z.string().max(50).optional(),
+    event_date: z.string().datetime().optional(),
+    duration: z.number().int().positive().max(480).optional(),
+    meeting_url: z.string().url().optional(),
+    location: z.string().max(200).optional(),
+    city: z.string().max(100).optional(),
+    performer_slots: z.number().int().min(0).max(100).optional(),
+    audience_enabled: z.boolean().optional(),
+    audience_slots: z.number().int().min(0).max(1000).optional()
+  }),
+  confirmDateChange: z.boolean().optional()
+});
 
 interface UpdateEventRequest {
   eventId: string;
@@ -48,7 +68,23 @@ serve(async (req: Request) => {
       throw new Error("Unauthorized");
     }
 
-    const { eventId, updates, confirmDateChange }: UpdateEventRequest = await req.json();
+    const requestBody = await req.json();
+    const validationResult = UpdateEventSchema.safeParse(requestBody);
+    
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input',
+          details: validationResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const { eventId, updates, confirmDateChange } = validationResult.data;
 
     // Get current event data with ownership check in single query
     const { data: event, error: eventError } = await supabase

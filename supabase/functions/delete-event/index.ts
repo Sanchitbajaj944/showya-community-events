@@ -1,10 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const DeleteEventSchema = z.object({
+  eventId: z.string().uuid('Invalid event ID format')
+});
 
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -29,11 +34,23 @@ serve(async (req: Request) => {
       throw new Error('Unauthorized');
     }
 
-    const { eventId } = await req.json();
-
-    if (!eventId) {
-      throw new Error('Event ID is required');
+    const requestBody = await req.json();
+    const validationResult = DeleteEventSchema.safeParse(requestBody);
+    
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input',
+          details: validationResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    const { eventId } = validationResult.data;
 
     // Fetch event details with ownership check in single query
     const { data: event, error: eventError } = await supabase

@@ -1,10 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const PaymentOrderSchema = z.object({
+  event_id: z.string().uuid('Invalid event ID format'),
+  amount: z.number().positive('Amount must be positive').max(1000000, 'Amount exceeds maximum')
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -25,7 +31,23 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { event_id, amount } = await req.json();
+    const requestBody = await req.json();
+    const validationResult = PaymentOrderSchema.safeParse(requestBody);
+    
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input',
+          details: validationResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { event_id, amount } = validationResult.data;
 
     // Verify event exists and is paid
     const { data: event, error: eventError } = await supabaseClient

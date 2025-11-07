@@ -1,10 +1,16 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.74.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const GrantAdminSchema = z.object({
+  targetUserEmail: z.string().email('Invalid email format').max(255, 'Email too long'),
+  role: z.enum(['admin', 'moderator']).default('admin')
+});
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -67,12 +73,24 @@ serve(async (req) => {
       throw new Error('Rate limit exceeded. Maximum 5 admin role grants per hour.');
     }
 
-    // Get the target user email from request body
-    const { targetUserEmail, role = 'admin' } = await req.json();
-
-    if (!targetUserEmail) {
-      throw new Error('Target user email is required');
+    // Get and validate the target user email from request body
+    const requestBody = await req.json();
+    const validationResult = GrantAdminSchema.safeParse(requestBody);
+    
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input',
+          details: validationResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    const { targetUserEmail, role } = validationResult.data;
 
     // Find the target user by email
     const { data: targetUsers, error: findError } = await supabase.auth.admin.listUsers();
