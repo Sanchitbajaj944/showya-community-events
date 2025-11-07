@@ -85,7 +85,7 @@ serve(async (req) => {
     const targetUser = targetUsers.users.find(u => u.email === targetUserEmail);
 
     if (!targetUser) {
-      throw new Error(`User with email ${targetUserEmail} not found`);
+      throw new Error('Unable to grant role');
     }
 
     console.log('Found target user:', targetUser.id);

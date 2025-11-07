@@ -35,20 +35,16 @@ serve(async (req: Request) => {
       throw new Error('Event ID is required');
     }
 
-    // Fetch event details
+    // Fetch event details with ownership check in single query
     const { data: event, error: eventError } = await supabase
       .from('events')
       .select('*')
       .eq('id', eventId)
+      .eq('created_by', user.id)
       .single();
 
     if (eventError || !event) {
-      throw new Error('Event not found');
-    }
-
-    // Check if user is the event creator
-    if (event.created_by !== user.id) {
-      throw new Error('Only event creator can delete this event');
+      throw new Error('Operation not permitted');
     }
 
     // Check if event already ended

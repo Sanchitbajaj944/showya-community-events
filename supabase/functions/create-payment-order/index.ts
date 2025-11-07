@@ -35,7 +35,7 @@ serve(async (req) => {
       .single();
 
     if (eventError || !event) {
-      throw new Error('Event not found');
+      throw new Error('Operation not permitted');
     }
 
     if (event.ticket_type !== 'paid') {
