@@ -54,6 +54,19 @@ serve(async (req) => {
 
     console.log('User is admin, proceeding with role grant');
 
+    // Rate limiting: Check recent admin grants (max 5 per hour)
+    const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
+    const { count: recentGrants } = await supabase
+      .from('admin_audit_log')
+      .select('id', { count: 'exact', head: true })
+      .eq('performed_by', user.id)
+      .gte('created_at', oneHourAgo);
+
+    if (recentGrants && recentGrants >= 5) {
+      console.log('Rate limit exceeded for user:', user.id);
+      throw new Error('Rate limit exceeded. Maximum 5 admin role grants per hour.');
+    }
+
     // Get the target user email from request body
     const { targetUserEmail, role = 'admin' } = await req.json();
 
@@ -112,6 +125,23 @@ serve(async (req) => {
     }
 
     console.log(`Successfully granted ${role} role to user:`, targetUser.id);
+
+    // Log admin role grant to audit trail
+    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const { error: auditError } = await supabase
+      .from('admin_audit_log')
+      .insert({
+        action: 'grant_admin_role',
+        performed_by: user.id,
+        target_user_id: targetUser.id,
+        role_granted: role,
+        ip_address: ipAddress,
+      });
+
+    if (auditError) {
+      console.error('Failed to log audit trail:', auditError);
+      // Continue anyway - audit failure shouldn't block the operation
+    }
 
     return new Response(
       JSON.stringify({ 

@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          performed_by: string
+          role_granted: string
+          target_user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          performed_by: string
+          role_granted: string
+          target_user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          performed_by?: string
+          role_granted?: string
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       communities: {
         Row: {
           banner_url: string | null
@@ -526,9 +556,6 @@ export type Database = {
       }
       razorpay_accounts: {
         Row: {
-          bank_account_number: string | null
-          bank_beneficiary_name: string | null
-          bank_ifsc: string | null
           bank_masked: string | null
           business_type: string | null
           community_id: string
@@ -548,9 +575,6 @@ export type Database = {
           tnc_accepted_at: string | null
         }
         Insert: {
-          bank_account_number?: string | null
-          bank_beneficiary_name?: string | null
-          bank_ifsc?: string | null
           bank_masked?: string | null
           business_type?: string | null
           community_id: string
@@ -570,9 +594,6 @@ export type Database = {
           tnc_accepted_at?: string | null
         }
         Update: {
-          bank_account_number?: string | null
-          bank_beneficiary_name?: string | null
-          bank_ifsc?: string | null
           bank_masked?: string | null
           business_type?: string | null
           community_id?: string

@@ -847,9 +847,8 @@ serve(async (req) => {
         product_id: productId,
         onboarding_url: null, // Embedded mode - no dashboard redirects
         kyc_status: finalStatus,
-        bank_account_number: maskedAccountNumber,
-        bank_ifsc: bankDetails.ifsc,
-        bank_beneficiary_name: bankDetails.beneficiaryName,
+        // Only store masked version for security - full details sent to Razorpay only
+        bank_masked: maskedAccountNumber,
         tnc_accepted: true,
         tnc_accepted_at: new Date().toISOString(),
         products_requested: true,
