@@ -1,10 +1,52 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schemas
+const BankDetailsSchema = z.object({
+  accountNumber: z.string().regex(/^\d{9,18}$/, 'Invalid account number').min(9).max(18),
+  ifsc: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC code').length(11),
+  beneficiaryName: z.string().min(3).max(100).regex(/^[a-zA-Z\s]+$/, 'Only letters allowed in name')
+});
+
+const DocumentSchema = z.object({
+  type: z.enum(['pan', 'address']),
+  base64: z.string().max(10 * 1024 * 1024, 'File too large'),
+  name: z.string().max(255)
+});
+
+const KycRequestSchema = z.object({
+  communityId: z.string().uuid(),
+  bankDetails: BankDetailsSchema.optional(),
+  documents: z.array(DocumentSchema).optional(),
+  checkOnly: z.boolean().optional()
+});
+
+// Error sanitization helper
+function sanitizeError(error: any, logId: string): string {
+  console.error(`[${logId}]`, error);
+  
+  const errorMap: Record<string, string> = {
+    'Unauthorized': 'Authentication required. Please sign in.',
+    'Community not found': 'Resource not found. Please check your permissions.',
+    'Profile not found': 'Please complete your profile before proceeding.',
+    'Razorpay': 'Payment service error. Please try again later.',
+    'credentials missing': 'Service configuration error. Please contact support.',
+  };
+  
+  for (const [key, message] of Object.entries(errorMap)) {
+    if (error.message?.includes(key)) {
+      return `${message} (Ref: ${logId.slice(0, 8)})`;
+    }
+  }
+  
+  return `An error occurred. Please try again. (Ref: ${logId.slice(0, 8)})`;
+}
 
 // Helper to extract valid public IPv4 for compliance
 const getValidIp = (req: Request, { allowFallback = true } = {}): string => {
@@ -65,7 +107,10 @@ serve(async (req) => {
 
     const clientIp = getValidIp(req);
 
-    const { communityId, documents, bankDetails, checkOnly } = await req.json();
+    // Parse and validate input
+    const body = await req.json();
+    const validated = KycRequestSchema.parse(body);
+    const { communityId, documents, bankDetails, checkOnly } = validated;
 
     // Verify community ownership
     const { data: community, error: communityError } = await supabaseClient
@@ -312,8 +357,6 @@ serve(async (req) => {
     if (!razorpayKeyId || !razorpayKeySecret) {
       throw new Error('Razorpay credentials missing. Please contact support.');
     }
-    
-    console.log('Using Razorpay Key ID:', razorpayKeyId.substring(0, 8) + '...');
     
     const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 

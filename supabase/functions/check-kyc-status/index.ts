@@ -6,6 +6,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Error sanitization
+function sanitizeError(error: any, logId: string): string {
+  console.error(`[${logId}]`, error);
+  
+  if (error.message?.includes('Unauthorized')) {
+    return `Authentication required. (Ref: ${logId.slice(0, 8)})`;
+  }
+  if (error.message?.includes('No community found')) {
+    return `No community found. (Ref: ${logId.slice(0, 8)})`;
+  }
+  if (error.message?.includes('Razorpay API')) {
+    return `Service temporarily unavailable. (Ref: ${logId.slice(0, 8)})`;
+  }
+  return `An error occurred. Please try again. (Ref: ${logId.slice(0, 8)})`;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -70,7 +86,7 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Razorpay API error:', response.status, errorText);
-      throw new Error(`Razorpay API error (${response.status}): ${errorText}`);
+      throw new Error('Razorpay API error');
     }
 
     const accountData = await response.json();
@@ -183,9 +199,11 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error:', error);
+    const logId = crypto.randomUUID();
+    const userMessage = sanitizeError(error, logId);
+    
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'An error occurred' }),
+      JSON.stringify({ error: userMessage }),
       { 
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

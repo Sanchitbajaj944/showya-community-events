@@ -1,9 +1,62 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schemas
+const AddressUpdateSchema = z.object({
+  street1: z.string().min(10).max(255),
+  street2: z.string().max(255).optional(),
+  city: z.string().min(3).max(100),
+  state: z.string().min(3).max(100),
+  postal_code: z.string().regex(/^\d{6}$/)
+});
+
+const StakeholderUpdateSchema = z.object({
+  pan: z.string().regex(/^[A-Z]{5}\d{4}[A-Z]$/).optional(),
+  name: z.string().min(3).max(100).optional(),
+  dob: z.string().optional(),
+  addresses: z.any().optional()
+});
+
+const BankUpdateSchema = z.object({
+  account_number: z.string().regex(/^\d{9,18}$/),
+  ifsc: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/),
+  beneficiary_name: z.string().min(3).max(100)
+});
+
+const DocumentUpdateSchema = z.object({
+  panCard: z.object({
+    base64: z.string().max(10 * 1024 * 1024),
+    name: z.string().max(255)
+  }).optional(),
+  addressProof: z.object({
+    base64: z.string().max(10 * 1024 * 1024),
+    name: z.string().max(255)
+  }).optional()
+});
+
+const UpdateKycSchema = z.object({
+  communityId: z.string().uuid(),
+  updateType: z.enum(['address', 'stakeholder', 'bank', 'documents']),
+  data: z.any()
+});
+
+// Error sanitization
+function sanitizeError(error: any, logId: string): string {
+  console.error(`[${logId}]`, error);
+  
+  if (error.message?.includes('not found') || error.message?.includes('access denied')) {
+    return `Resource not found. (Ref: ${logId.slice(0, 8)})`;
+  }
+  if (error.message?.includes('Failed to update')) {
+    return `Update failed. Please verify your information. (Ref: ${logId.slice(0, 8)})`;
+  }
+  return `An error occurred. Please try again. (Ref: ${logId.slice(0, 8)})`;
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -26,7 +79,26 @@ Deno.serve(async (req) => {
       throw new Error('Not authenticated');
     }
 
-    const { communityId, updateType, data } = await req.json();
+    // Parse and validate input
+    const body = await req.json();
+    const validated = UpdateKycSchema.parse(body);
+    let { communityId, updateType, data } = validated;
+    
+    // Validate the data field based on updateType
+    switch (updateType) {
+      case 'address':
+        data = AddressUpdateSchema.parse(data);
+        break;
+      case 'stakeholder':
+        data = StakeholderUpdateSchema.parse(data);
+        break;
+      case 'bank':
+        data = BankUpdateSchema.parse(data);
+        break;
+      case 'documents':
+        data = DocumentUpdateSchema.parse(data);
+        break;
+    }
 
     // Get community and verify ownership
     const { data: community, error: communityError } = await supabaseClient
@@ -330,11 +402,13 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in update-kyc:', error);
+    const logId = crypto.randomUUID();
+    const userMessage = error instanceof z.ZodError 
+      ? `Invalid input: ${error.errors[0].message}`
+      : sanitizeError(error, logId);
+    
     return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      }),
+      JSON.stringify({ error: userMessage }),
       {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
