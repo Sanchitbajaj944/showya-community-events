@@ -930,23 +930,13 @@ serve(async (req) => {
     );
 
   } catch (error: any) {
-    console.error('Error in start-kyc function:', error);
-    
-    // Try to parse structured error with field info
-    let errorObj = { error: 'Failed to start KYC process', field: null };
-    try {
-      const parsed = JSON.parse(error.message);
-      if (parsed.error) {
-        errorObj = parsed;
-      } else {
-        errorObj.error = error.message;
-      }
-    } catch {
-      errorObj.error = error.message || String(error);
-    }
+    const logId = crypto.randomUUID();
+    const userMessage = error instanceof z.ZodError 
+      ? `Invalid input: ${error.errors[0].message}`
+      : sanitizeError(error, logId);
     
     return new Response(
-      JSON.stringify(errorObj),
+      JSON.stringify({ error: userMessage }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
