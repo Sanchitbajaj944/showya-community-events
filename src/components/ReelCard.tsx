@@ -108,7 +108,7 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
   const performerName = performerData?.display_name || performerData?.name || "Unknown Performer";
 
   return (
-    <div className="relative h-full w-full bg-black">
+    <div className="relative h-full w-full bg-background">
       {/* Video Player */}
       <video
         ref={videoRef}

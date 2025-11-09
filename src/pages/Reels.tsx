@@ -91,13 +91,13 @@ export default function Reels() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-background">
       <Header />
       
       {/* Reels Container with Snap Scroll */}
       <div
         ref={containerRef}
-        className="overflow-y-scroll snap-y snap-mandatory scroll-smooth bg-black"
+        className="overflow-y-scroll snap-y snap-mandatory scroll-smooth bg-background"
         style={{ 
           height: "calc(100vh - 4rem)",
           scrollbarWidth: "none", 
