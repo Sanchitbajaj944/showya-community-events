@@ -125,6 +125,20 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
         <div className="flex items-end gap-4">
           {/* Left: User Info & Caption */}
           <div className="flex-1 space-y-3">
+            {/* Community Info First */}
+            <Link to={`/communities`} className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center border-2 border-white">
+                <span className="text-white font-bold text-sm">
+                  {reel.community_name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <p className="font-semibold text-white text-sm">{reel.community_name}</p>
+                <p className="text-xs text-white/80">Community</p>
+              </div>
+            </Link>
+
+            {/* Spotlight Performer */}
             <Link to={`/profile/${reel.user_id}`} className="flex items-center gap-3">
               <UserAvatar
                 name={performerName}
@@ -138,6 +152,7 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
               </div>
             </Link>
 
+            {/* Feature Text & Caption */}
             <div className="space-y-1">
               {reel.feature_text && (
                 <p className="text-white font-medium text-sm">{reel.feature_text}</p>
@@ -146,12 +161,6 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
                 <p className="text-white/90 text-sm line-clamp-2">{reel.caption}</p>
               )}
             </div>
-
-            <Link to={`/communities`}>
-              <Badge className="bg-primary/90 hover:bg-primary text-primary-foreground">
-                {reel.community_name}
-              </Badge>
-            </Link>
           </div>
 
           {/* Right: Action Buttons */}
