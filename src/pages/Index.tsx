@@ -217,10 +217,12 @@ const Index = () => {
             </div>
           )}
           <div className="mt-8 sm:mt-10 md:mt-12 text-center">
-            <Button size="lg" className="gap-2 w-full sm:w-auto">
-              Explore All Events
-              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
+            <Link to="/events">
+              <Button size="lg" className="gap-2 w-full sm:w-auto">
+                Explore All Events
+                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
