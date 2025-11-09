@@ -150,13 +150,13 @@ export function UploadReelDialog({
 
         if (insertError) throw insertError;
 
-        toast.success("Reel uploaded successfully!");
+        toast.success("ShowClip uploaded successfully!");
         onOpenChange(false);
         resetForm();
         if (onSuccess) onSuccess();
       } catch (error: any) {
         console.error("Error uploading reel:", error);
-        toast.error(error.message || "Failed to upload reel");
+        toast.error(error.message || "Failed to upload ShowClip");
       } finally {
         setLoading(false);
       }
@@ -174,7 +174,7 @@ export function UploadReelDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Upload Spotlight Reel</DialogTitle>
+          <DialogTitle>Upload Spotlight ShowClip</DialogTitle>
           <DialogDescription>
             Feature the best performance from your event. Max 120 seconds.
           </DialogDescription>
@@ -258,7 +258,7 @@ export function UploadReelDialog({
                   Uploading...
                 </>
               ) : (
-                "Upload Reel"
+                "Upload ShowClip"
               )}
             </Button>
           </div>

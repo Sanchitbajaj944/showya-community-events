@@ -95,7 +95,7 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
 
   const handleLike = async () => {
     if (!user) {
-      toast.error("Please sign in to like reels");
+      toast.error("Please sign in to like ShowClips");
       return;
     }
 
@@ -135,7 +135,7 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
       setLocalLikes(previousLikeCount);
       
       if (error.code === '23505') {
-        toast.error("You've already liked this reel");
+        toast.error("You've already liked this ShowClip");
       } else {
         toast.error("Failed to update like");
       }

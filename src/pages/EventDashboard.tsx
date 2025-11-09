@@ -370,12 +370,12 @@ export default function EventDashboard() {
             </CardContent>
           </Card>
 
-          {/* Spotlight Reel */}
+          {/* Spotlight ShowClip */}
           <Card className="lg:col-span-3">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Film className="h-5 w-5" />
-                Spotlight Reel
+                Spotlight ShowClip
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -384,7 +384,7 @@ export default function EventDashboard() {
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">
-                        You've uploaded a spotlight reel for this event
+                        You've uploaded a spotlight ShowClip for this event
                       </p>
                       <p className="text-sm font-medium">{existingReel.feature_text}</p>
                     </div>
@@ -394,7 +394,7 @@ export default function EventDashboard() {
                       onClick={() => navigate("/reels")}
                     >
                       <Eye className="h-4 w-4 mr-2" />
-                      View Reel
+                      View ShowClip
                     </Button>
                   </div>
                   {existingReel.video_url && (
@@ -413,9 +413,9 @@ export default function EventDashboard() {
                     <Film className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <div className="space-y-2">
-                    <h3 className="font-semibold">No Spotlight Reel Yet</h3>
+                    <h3 className="font-semibold">No Spotlight ShowClip Yet</h3>
                     <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                      Feature the best performance from your event. Upload a spotlight reel to showcase your star performer!
+                      Feature the best performance from your event. Upload a spotlight ShowClip to showcase your star performer!
                     </p>
                   </div>
                   <Button
@@ -423,11 +423,11 @@ export default function EventDashboard() {
                     disabled={attendees.filter(a => a.role === 'performer').length === 0}
                   >
                     <Film className="h-4 w-4 mr-2" />
-                    Upload Spotlight Reel
+                    Upload Spotlight ShowClip
                   </Button>
                   {attendees.filter(a => a.role === 'performer').length === 0 && (
                     <p className="text-xs text-muted-foreground">
-                      You need performers signed up to upload a reel
+                      You need performers signed up to upload a ShowClip
                     </p>
                   )}
                 </div>

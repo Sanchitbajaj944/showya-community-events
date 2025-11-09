@@ -79,9 +79,9 @@ export default function Reels() {
         <Header />
         <div className="flex items-center justify-center" style={{ height: "calc(100vh - 4rem)" }}>
           <div className="text-center px-4">
-            <p className="text-xl text-muted-foreground mb-2">No reels yet</p>
+            <p className="text-xl text-muted-foreground mb-2">No ShowClips yet</p>
             <p className="text-sm text-muted-foreground mb-4">
-              Be the first to upload a spotlight reel!
+              Be the first to upload a spotlight ShowClip!
             </p>
           </div>
         </div>

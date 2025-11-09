@@ -88,7 +88,7 @@ const Header = () => {
             Events
           </Link>
           <Link to="/reels" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-            Reels
+            ShowClips
           </Link>
           <Link to="/communities" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
             Communities
@@ -181,7 +181,7 @@ const Header = () => {
               className="block text-base font-medium text-foreground hover:text-primary transition-colors py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Reels
+              ShowClips
             </Link>
             <Link
               to="/communities"
