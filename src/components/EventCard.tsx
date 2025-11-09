@@ -37,9 +37,6 @@ const EventCard = ({
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <Badge className="absolute top-4 left-4 bg-gradient-hero text-white border-0 shadow-lg font-semibold">
-          {category}
-        </Badge>
       </div>
       <CardContent className="p-5 space-y-3 flex-1 flex flex-col">
         <div className="flex-shrink-0">
