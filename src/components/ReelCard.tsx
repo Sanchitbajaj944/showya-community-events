@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ReelCardProps {
   reel: {
@@ -34,10 +35,14 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
     profile_picture_url: string | null;
   } | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchPerformerData();
-  }, [reel.user_id]);
+    if (user) {
+      checkIfLiked();
+    }
+  }, [reel.user_id, user]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -61,6 +66,19 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
     }
   }, [isActive]);
 
+  const checkIfLiked = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("spotlight_likes")
+      .select("id")
+      .eq("spotlight_id", reel.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    
+    setIsLiked(!!data);
+  };
+
   const fetchPerformerData = async () => {
     try {
       const { data } = await supabase
@@ -76,18 +94,51 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
   };
 
   const handleLike = async () => {
+    if (!user) {
+      toast.error("Please sign in to like reels");
+      return;
+    }
+
     const newLikeState = !isLiked;
+    const previousLikeState = isLiked;
+    const previousLikeCount = localLikes;
+
+    // Optimistic update
     setIsLiked(newLikeState);
-    setLocalLikes(prev => newLikeState ? prev + 1 : prev - 1);
+    setLocalLikes(prev => newLikeState ? prev + 1 : Math.max(0, prev - 1));
 
-    const { error } = await supabase
-      .from("spotlights")
-      .update({ like_count: newLikeState ? reel.like_count + 1 : reel.like_count - 1 })
-      .eq("id", reel.id);
-
-    if (error) {
-      setIsLiked(!newLikeState);
-      setLocalLikes(prev => newLikeState ? prev - 1 : prev + 1);
+    try {
+      if (newLikeState) {
+        // Add like
+        const { error } = await supabase
+          .from("spotlight_likes")
+          .insert({ spotlight_id: reel.id, user_id: user.id });
+        
+        if (error) throw error;
+      } else {
+        // Remove like
+        const { error } = await supabase
+          .from("spotlight_likes")
+          .delete()
+          .eq("spotlight_id", reel.id)
+          .eq("user_id", user.id);
+        
+        if (error) throw error;
+      }
+      
+      // Refresh the reel data to get accurate count
+      if (onUpdate) onUpdate();
+    } catch (error: any) {
+      console.error("Error toggling like:", error);
+      // Revert on error
+      setIsLiked(previousLikeState);
+      setLocalLikes(previousLikeCount);
+      
+      if (error.code === '23505') {
+        toast.error("You've already liked this reel");
+      } else {
+        toast.error("Failed to update like");
+      }
     }
   };
 

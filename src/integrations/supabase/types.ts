@@ -670,6 +670,35 @@ export type Database = {
         }
         Relationships: []
       }
+      spotlight_likes: {
+        Row: {
+          created_at: string
+          id: string
+          spotlight_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          spotlight_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          spotlight_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spotlight_likes_spotlight_id_fkey"
+            columns: ["spotlight_id"]
+            isOneToOne: false
+            referencedRelation: "spotlights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       spotlights: {
         Row: {
           caption: string | null
