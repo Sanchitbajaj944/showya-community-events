@@ -13,12 +13,21 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast } from "date-fns";
 import heroImage from "@/assets/hero-image.jpg";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [communities, setCommunities] = useState<any[]>([]);
   const [activeEventIndex, setActiveEventIndex] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   useEffect(() => {
     fetchUpcomingEvents();
@@ -142,15 +151,52 @@ const Index = () => {
               Join Showya to discover amazing events, connect with vibrant communities, and showcase your talent as a performer or host.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Link to="/auth/signup">
-                <Button size="lg" variant="default" className="text-base w-full sm:w-auto">
-                  Create Your Community
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Button size="lg" variant="outline" className="text-base w-full sm:w-auto">
-                Join as Performer
-              </Button>
+              {user ? (
+                <>
+                  <Button 
+                    size="lg" 
+                    variant="default" 
+                    className="text-base w-full sm:w-auto"
+                    onClick={() => scrollToSection('events')}
+                  >
+                    View Events
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="text-base w-full sm:w-auto"
+                    onClick={() => scrollToSection('communities')}
+                  >
+                    View Communities
+                  </Button>
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="text-base w-full sm:w-auto"
+                    onClick={() => scrollToSection('why-showya')}
+                  >
+                    Why Showya
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/auth/signup">
+                    <Button size="lg" variant="default" className="text-base w-full sm:w-auto">
+                      Create Your Community
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="text-base w-full sm:w-auto"
+                    onClick={() => scrollToSection('why-showya')}
+                  >
+                    Why Showya
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -328,7 +374,7 @@ const Index = () => {
       </section>
 
       {/* Why Showya Section */}
-      <section className="py-12 sm:py-16 md:py-24 lg:py-32 relative overflow-hidden">
+      <section id="why-showya" className="py-12 sm:py-16 md:py-24 lg:py-32 relative overflow-hidden">
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary rounded-full blur-3xl" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary rounded-full blur-3xl" />
@@ -358,12 +404,39 @@ const Index = () => {
               Start hosting events or discover your tribe today. No downloads needed.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Button size="lg" variant="default" className="text-base w-full sm:w-auto">
-                Create Your Community
-              </Button>
-              <Button size="lg" variant="outline" className="text-base w-full sm:w-auto">
-                Explore Events
-              </Button>
+              {user ? (
+                <>
+                  <Button 
+                    size="lg" 
+                    variant="default" 
+                    className="text-base w-full sm:w-auto"
+                    onClick={() => scrollToSection('communities')}
+                  >
+                    View Communities
+                  </Button>
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="text-base w-full sm:w-auto"
+                    onClick={() => scrollToSection('events')}
+                  >
+                    View Events
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/auth/signup">
+                    <Button size="lg" variant="default" className="text-base w-full sm:w-auto">
+                      Create Your Community
+                    </Button>
+                  </Link>
+                  <Link to="/events">
+                    <Button size="lg" variant="outline" className="text-base w-full sm:w-auto">
+                      Explore Events
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
