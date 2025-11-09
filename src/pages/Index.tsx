@@ -191,6 +191,14 @@ const Index = () => {
                     size="lg" 
                     variant="outline" 
                     className="text-base w-full sm:w-auto"
+                    onClick={() => scrollToSection('events')}
+                  >
+                    View Events
+                  </Button>
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="text-base w-full sm:w-auto"
                     onClick={() => scrollToSection('why-showya')}
                   >
                     Why Showya
