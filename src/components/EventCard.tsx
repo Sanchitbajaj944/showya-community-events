@@ -22,8 +22,8 @@ const EventCard = ({
   image,
 }: EventCardProps) => {
   return (
-    <Card className="min-w-[300px] md:min-w-[340px] overflow-hidden cursor-pointer border-2">
-      <div className="relative h-56 overflow-hidden bg-gradient-card">
+    <Card className="w-full max-w-[340px] h-[440px] overflow-hidden cursor-pointer border-2 flex flex-col">
+      <div className="relative h-48 flex-shrink-0 overflow-hidden bg-gradient-card">
         {image ? (
           <img 
             src={image} 
@@ -40,14 +40,14 @@ const EventCard = ({
           {category}
         </Badge>
       </div>
-      <CardContent className="p-5 space-y-4">
-        <div>
-          <h3 className="font-bold text-xl line-clamp-2 mb-2">
+      <CardContent className="p-5 space-y-3 flex-1 flex flex-col">
+        <div className="flex-shrink-0">
+          <h3 className="font-bold text-lg line-clamp-2 mb-1.5">
             {title}
           </h3>
-          <p className="text-sm text-muted-foreground font-semibold">{community}</p>
+          <p className="text-sm text-muted-foreground font-semibold line-clamp-1">{community}</p>
         </div>
-        <div className="space-y-2.5 text-sm">
+        <div className="space-y-2 text-sm flex-1">
           <div className="flex items-center gap-3 text-muted-foreground">
             <Calendar className="h-4 w-4 text-primary" />
             <span>{date}</span>
