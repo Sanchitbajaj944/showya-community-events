@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Users, Mic, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
@@ -243,39 +244,44 @@ const Index = () => {
             ) : (
               communities.map((community) => (
                 <Link key={community.id} to={`/community/${community.id}/public`}>
-                  <div className="group rounded-xl border border-border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-[420px] w-full">
+                  <Card className="group overflow-hidden hover:shadow-glow transition-all duration-300 cursor-pointer border-2 hover:border-primary/30 h-full flex flex-col">
                     {/* Banner Image */}
-                    <div className="relative h-40 flex-shrink-0 overflow-hidden bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20">
+                    <div className="relative h-48 flex-shrink-0 overflow-hidden bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20">
                       {community.banner_url ? (
                         <img 
                           src={community.banner_url} 
                           alt={community.name} 
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Users className="h-12 w-12 sm:h-16 sm:w-16 text-primary/40" />
+                          <Users className="h-16 w-16 text-primary/30" />
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     </div>
 
                     {/* Community Info */}
-                    <div className="p-5 space-y-2 flex-1 flex flex-col">
-                      <div className="flex-shrink-0">
-                        <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors line-clamp-1">
+                    <CardContent className="p-5 space-y-3 flex-1 flex flex-col">
+                      <div>
+                        <h3 className="font-bold text-lg mb-2 line-clamp-1 group-hover:text-gradient transition-all">
                           {community.name}
                         </h3>
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {community.categories?.map((cat: string) => (
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {community.categories?.slice(0, 3).map((cat: string) => (
                             <Badge key={cat} variant="secondary" className="text-xs">
                               {cat}
                             </Badge>
                           ))}
+                          {community.categories && community.categories.length > 3 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{community.categories.length - 3}
+                            </Badge>
+                          )}
                         </div>
                         {community.owner && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
                               {community.owner.profile_picture_url ? (
                                 <img 
                                   src={community.owner.profile_picture_url} 
@@ -286,7 +292,7 @@ const Index = () => {
                                 <Users className="h-3 w-3 text-primary" />
                               )}
                             </div>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-muted-foreground truncate">
                               by {community.owner.display_name || community.owner.name}
                             </span>
                           </div>
@@ -294,7 +300,7 @@ const Index = () => {
                       </div>
 
                       {community.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-3 flex-1">
+                        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                           {community.description}
                         </p>
                       )}
@@ -302,8 +308,8 @@ const Index = () => {
                       <Button className="w-full mt-auto">
                         View Community
                       </Button>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 </Link>
               ))
             )}
