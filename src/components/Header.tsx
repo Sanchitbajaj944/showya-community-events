@@ -87,6 +87,9 @@ const Header = () => {
           <Link to="/events" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
             Events
           </Link>
+          <Link to="/reels" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+            Reels
+          </Link>
           <Link to="/communities" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
             Communities
           </Link>
@@ -172,6 +175,13 @@ const Header = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               Events
+            </Link>
+            <Link
+              to="/reels"
+              className="block text-base font-medium text-foreground hover:text-primary transition-colors py-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Reels
             </Link>
             <Link
               to="/communities"

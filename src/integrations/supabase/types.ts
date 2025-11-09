@@ -672,34 +672,46 @@ export type Database = {
       }
       spotlights: {
         Row: {
+          caption: string | null
           community_name: string
           created_at: string | null
           event_id: string | null
           feature_text: string
           id: string
+          like_count: number | null
           user_id: string
+          video_url: string | null
+          view_count: number | null
         }
         Insert: {
+          caption?: string | null
           community_name: string
           created_at?: string | null
           event_id?: string | null
           feature_text: string
           id?: string
+          like_count?: number | null
           user_id: string
+          video_url?: string | null
+          view_count?: number | null
         }
         Update: {
+          caption?: string | null
           community_name?: string
           created_at?: string | null
           event_id?: string | null
           feature_text?: string
           id?: string
+          like_count?: number | null
           user_id?: string
+          video_url?: string | null
+          view_count?: number | null
         }
         Relationships: [
           {
             foreignKeyName: "spotlights_event_id_fkey"
             columns: ["event_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "events"
             referencedColumns: ["id"]
           },

@@ -12,7 +12,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, isPast, differenceInHours } from "date-fns";
-import { Calendar, Clock, MapPin, Users, Edit, Trash2, Link as LinkIcon, IndianRupee, AlertTriangle, MoreVertical, UserX, Flag, Eye } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Edit, Trash2, Link as LinkIcon, IndianRupee, AlertTriangle, MoreVertical, UserX, Flag, Eye, Film } from "lucide-react";
+import { UploadReelDialog } from "@/components/UploadReelDialog";
 
 export default function EventDashboard() {
   const { eventId } = useParams();
@@ -23,6 +24,8 @@ export default function EventDashboard() {
   const [attendees, setAttendees] = useState<any[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showUploadReelDialog, setShowUploadReelDialog] = useState(false);
+  const [existingReel, setExistingReel] = useState<any>(null);
 
   useEffect(() => {
     if (user && eventId) {
@@ -76,6 +79,17 @@ export default function EventDashboard() {
         setAttendees(attendeesWithProfiles);
       } else {
         setAttendees([]);
+      }
+
+      // Check for existing reel
+      const { data: reelData } = await supabase
+        .from("spotlights")
+        .select("*")
+        .eq("event_id", eventId)
+        .maybeSingle();
+
+      if (reelData) {
+        setExistingReel(reelData);
       }
     } catch (error: any) {
       console.error("Error fetching event data:", error);
@@ -355,6 +369,71 @@ export default function EventDashboard() {
               )}
             </CardContent>
           </Card>
+
+          {/* Spotlight Reel */}
+          <Card className="lg:col-span-3">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Film className="h-5 w-5" />
+                Spotlight Reel
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {existingReel ? (
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">
+                        You've uploaded a spotlight reel for this event
+                      </p>
+                      <p className="text-sm font-medium">{existingReel.feature_text}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate("/reels")}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Reel
+                    </Button>
+                  </div>
+                  {existingReel.video_url && (
+                    <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+                      <video
+                        src={existingReel.video_url}
+                        controls
+                        className="w-full h-full"
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 space-y-4">
+                  <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                    <Film className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">No Spotlight Reel Yet</h3>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                      Feature the best performance from your event. Upload a spotlight reel to showcase your star performer!
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setShowUploadReelDialog(true)}
+                    disabled={attendees.filter(a => a.role === 'performer').length === 0}
+                  >
+                    <Film className="h-4 w-4 mr-2" />
+                    Upload Spotlight Reel
+                  </Button>
+                  {attendees.filter(a => a.role === 'performer').length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      You need performers signed up to upload a reel
+                    </p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Attendees List */}
@@ -476,6 +555,16 @@ export default function EventDashboard() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Upload Reel Dialog */}
+        <UploadReelDialog
+          open={showUploadReelDialog}
+          onOpenChange={setShowUploadReelDialog}
+          eventId={event.id}
+          communityId={event.community_id}
+          communityName={event.community_name}
+          onSuccess={fetchEventData}
+        />
       </main>
       <BottomNav />
     </div>
