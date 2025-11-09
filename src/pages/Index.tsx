@@ -315,10 +315,12 @@ const Index = () => {
             )}
           </div>
           <div className="mt-10 sm:mt-12 md:mt-16 text-center">
-            <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto">
-              Discover More Communities
-              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
+            <Link to="/communities">
+              <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto">
+                Discover More Communities
+                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
