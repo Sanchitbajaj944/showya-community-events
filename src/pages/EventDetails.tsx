@@ -54,13 +54,6 @@ export default function EventDetails() {
     fetchEventDetails();
   }, [eventId, user]);
 
-  useEffect(() => {
-    // Show drawer when user has a booking
-    if (userBooking) {
-      setShowBookingDrawer(true);
-    }
-  }, [userBooking]);
-
   const fetchEventDetails = async () => {
     if (!eventId) return;
 
