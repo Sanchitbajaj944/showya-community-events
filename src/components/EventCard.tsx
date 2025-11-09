@@ -1,6 +1,7 @@
 import { Calendar, MapPin, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface EventCardProps {
   title: string;
@@ -61,6 +62,9 @@ const EventCard = ({
             <span className="font-semibold">{attendees} attending</span>
           </div>
         </div>
+        <Button className="w-full mt-auto">
+          View Event
+        </Button>
       </CardContent>
     </Card>
   );
