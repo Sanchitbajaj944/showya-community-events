@@ -456,6 +456,7 @@ export type Database = {
           pan: string | null
           phone: string | null
           postal_code: string | null
+          preferred_language: string | null
           profile_picture_url: string | null
           skills: string[] | null
           state: string | null
@@ -475,6 +476,7 @@ export type Database = {
           pan?: string | null
           phone?: string | null
           postal_code?: string | null
+          preferred_language?: string | null
           profile_picture_url?: string | null
           skills?: string[] | null
           state?: string | null
@@ -494,6 +496,7 @@ export type Database = {
           pan?: string | null
           phone?: string | null
           postal_code?: string | null
+          preferred_language?: string | null
           profile_picture_url?: string | null
           skills?: string[] | null
           state?: string | null

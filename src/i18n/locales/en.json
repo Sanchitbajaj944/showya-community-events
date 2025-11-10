@@ -1,0 +1,139 @@
+{
+  "common": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "search": "Search",
+    "filter": "Filter",
+    "close": "Close"
+  },
+  "nav": {
+    "home": "Home",
+    "events": "Events",
+    "communities": "Communities",
+    "showclips": "ShowClips",
+    "profile": "Profile",
+    "admin": "Admin"
+  },
+  "hero": {
+    "title": "Discover Indian Creative Communities & Events",
+    "subtitle": "Connect with like-minded creatives, join events, and build your community",
+    "createCommunity": "Create Your Community",
+    "viewCommunities": "View Communities",
+    "viewEvents": "View Events",
+    "whyShowya": "Why Showya"
+  },
+  "auth": {
+    "signInTitle": "Welcome back",
+    "signInSubtitle": "Sign in to your account",
+    "signUpTitle": "Create account",
+    "signUpSubtitle": "Get started with your account",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "skills": "Skills",
+    "language": "Preferred Language",
+    "languageHelper": "Choose your preferred language for the app",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?",
+    "forgotPassword": "Forgot password?",
+    "creatingAccount": "Creating account...",
+    "signingIn": "Signing in...",
+    "accountCreated": "Account created successfully!",
+    "signInSuccess": "Signed in successfully!",
+    "signOutSuccess": "Signed out successfully",
+    "accountExists": "An account with this email already exists. Try signing in.",
+    "invalidCredentials": "Invalid email or password",
+    "passwordRequirement": "Use at least 8 characters.",
+    "somethingWrong": "Something went wrong. Please try again."
+  },
+  "profile": {
+    "editProfile": "Edit Profile",
+    "displayName": "Display Name",
+    "bio": "Bio",
+    "bioMax": "Bio (max 100 characters)",
+    "city": "City / Location",
+    "skills": "Skills",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "profileUpdated": "Profile updated successfully!",
+    "failedToUpdate": "Failed to update profile",
+    "changeProfilePicture": "Tap to change profile picture (max 5MB)",
+    "uploading": "Uploading...",
+    "profilePictureUpdated": "Profile picture updated!",
+    "dangerZone": "Danger Zone",
+    "dangerZoneDescription": "Once you delete your account, there is no going back. This will permanently delete your profile, communities, and all associated data.",
+    "deleteAccount": "Delete Account",
+    "deleting": "Deleting...",
+    "confirmDelete": "Are you absolutely sure?",
+    "deleteWarning": "This action cannot be undone. This will permanently delete your account and remove all your data from our servers, including:",
+    "deleteItems": {
+      "profile": "Your profile information",
+      "communities": "Communities you own",
+      "events": "Event participations",
+      "data": "All associated data"
+    },
+    "accountDeleted": "Account deleted successfully",
+    "failedToDelete": "Failed to delete account"
+  },
+  "settings": {
+    "languagePreference": "Language Preference",
+    "selectLanguage": "Select your preferred language"
+  },
+  "events": {
+    "title": "Upcoming Events",
+    "viewEvent": "View Event",
+    "createEvent": "Create Event",
+    "eventTitle": "Event Title",
+    "community": "Community",
+    "date": "Date",
+    "location": "Location",
+    "attendees": "Attendees",
+    "category": "Category"
+  },
+  "communities": {
+    "title": "Communities",
+    "createCommunity": "Create Community",
+    "followCommunity": "Follow Community",
+    "members": "members",
+    "upcomingEvents": "upcoming events"
+  },
+  "footer": {
+    "tagline": "Join events and build your community",
+    "aboutUs": "About Us",
+    "aboutDescription": "Showya connects Indian creatives through communities and events.",
+    "quickLinks": "Quick Links",
+    "legal": "Legal",
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy",
+    "contactUs": "Contact Us",
+    "allRightsReserved": "All rights reserved."
+  },
+  "whyShowya": {
+    "title": "Why Showya?",
+    "subtitle": "Everything you need to build and grow your creative community"
+  },
+  "features": {
+    "spotlightVideos": "Spotlight Videos",
+    "spotlightDescription": "Share your creative work with short vertical videos",
+    "events": "Event Management",
+    "eventsDescription": "Create and manage events with integrated ticketing",
+    "communities": "Private Communities",
+    "communitiesDescription": "Build your own space with discussion boards and member management",
+    "monetization": "Monetization",
+    "monetizationDescription": "Earn through event tickets, memberships, and showcasing your work"
+  },
+  "cta": {
+    "readyToStart": "Ready to start your journey?",
+    "joinToday": "Join thousands of creatives building their communities today",
+    "exploreEvents": "Explore Events"
+  }
+}
