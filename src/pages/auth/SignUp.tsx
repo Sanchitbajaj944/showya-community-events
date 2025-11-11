@@ -8,11 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SkillsSelect } from "@/components/SkillsSelect";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 export default function SignUp() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const { t, i18n } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -30,6 +33,7 @@ export default function SignUp() {
     try {
       setIsLoading(true);
       const redirectUrl = `${window.location.origin}/`;
+      const currentLanguage = i18n.language;
 
       const { error } = await supabase.auth.signUp({
         email: data.email,
@@ -39,29 +43,30 @@ export default function SignUp() {
           data: {
             name: data.name,
             skills: data.skills,
+            preferred_language: currentLanguage,
           },
         },
       });
 
       if (error) {
         if (error.message.includes("already registered")) {
-          toast.error("An account with this email already exists. Try signing in.");
+          toast.error(t('auth.accountExists'));
         } else if (error.message.includes("Password")) {
-          toast.error("Use at least 8 characters.");
+          toast.error(t('auth.passwordRequirement'));
         } else {
-          toast.error("Something went wrong. Please try again.");
+          toast.error(t('auth.somethingWrong'));
         }
         return;
       }
 
-      toast.success("Account created successfully!");
+      toast.success(t('auth.accountCreated'));
       
       // Redirect to home or postAuthRedirect
       const postAuthRedirect = sessionStorage.getItem("postAuthRedirect");
       sessionStorage.removeItem("postAuthRedirect");
       navigate(postAuthRedirect || "/");
     } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      toast.error(t('auth.somethingWrong'));
     } finally {
       setIsLoading(false);
     }
@@ -71,17 +76,17 @@ export default function SignUp() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold">Create account</h1>
-          <p className="text-muted-foreground mt-2">Get started with your account</p>
+          <h1 className="text-3xl font-bold">{t('auth.signUpTitle')}</h1>
+          <p className="text-muted-foreground mt-2">{t('auth.signUpSubtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">{t('auth.name')}</Label>
             <Input
               id="name"
               type="text"
-              placeholder="Enter your name"
+              placeholder={t('auth.name')}
               {...register("name")}
               disabled={isLoading}
             />
@@ -91,11 +96,11 @@ export default function SignUp() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('auth.email')}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="Enter your email"
+              placeholder={t('auth.email')}
               {...register("email")}
               disabled={isLoading}
             />
@@ -105,11 +110,11 @@ export default function SignUp() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('auth.password')}</Label>
             <Input
               id="password"
               type="password"
-              placeholder="Enter your password"
+              placeholder={t('auth.password')}
               {...register("password")}
               disabled={isLoading}
             />
@@ -119,7 +124,7 @@ export default function SignUp() {
           </div>
 
           <div className="space-y-2">
-            <Label>Skills</Label>
+            <Label>{t('auth.skills')}</Label>
             <Controller
               name="skills"
               control={control}
@@ -136,19 +141,21 @@ export default function SignUp() {
             )}
           </div>
 
+          <LanguageSelector disabled={isLoading} />
+
           <Button
             type="submit"
             className="w-full"
             disabled={isLoading || !isValid}
           >
-            {isLoading ? "Creating account..." : "Create account"}
+            {isLoading ? t('auth.creatingAccount') : t('auth.signUpTitle')}
           </Button>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
+          {t('auth.alreadyHaveAccount')}{" "}
           <Link to="/auth/signin" className="text-primary hover:underline font-medium">
-            Sign in
+            {t('common.signIn')}
           </Link>
         </p>
       </div>

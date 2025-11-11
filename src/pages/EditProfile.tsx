@@ -11,9 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/UserAvatar";
 import { SkillsSelect } from "@/components/SkillsSelect";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import Header from "@/components/Header";
 import { ArrowLeft, Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +40,7 @@ type EditProfileFormData = z.infer<typeof editProfileSchema>;
 export default function EditProfile() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
@@ -176,16 +179,17 @@ export default function EditProfile() {
           bio: data.bio || null,
           city: data.city || null,
           skills: data.skills,
+          preferred_language: i18n.language,
         })
         .eq("user_id", user.id);
 
       if (error) throw error;
 
-      toast.success("Profile updated successfully!");
+      toast.success(t('profile.profileUpdated'));
       navigate("/profile");
     } catch (error: any) {
       console.error("Error updating profile:", error);
-      toast.error("Failed to update profile");
+      toast.error(t('profile.failedToUpdate'));
     } finally {
       setLoading(false);
     }
@@ -335,7 +339,7 @@ export default function EditProfile() {
 
           {/* Skills */}
           <div className="space-y-2">
-            <Label>Skills *</Label>
+            <Label>{t('profile.skills')} *</Label>
             <Controller
               name="skills"
               control={control}
@@ -353,6 +357,9 @@ export default function EditProfile() {
               </p>
             )}
           </div>
+
+          {/* Language Preference */}
+          <LanguageSelector disabled={loading} />
 
           {/* Submit Button */}
           <div className="pt-4">

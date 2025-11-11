@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import i18n from "@/i18n/config";
 
 interface AuthContextType {
   user: User | null;
@@ -19,17 +20,45 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Sync language preference from database
+        if (session?.user) {
+          const { data } = await supabase
+            .from("profiles")
+            .select("preferred_language")
+            .eq("user_id", session.user.id)
+            .single();
+          
+          if (data?.preferred_language) {
+            i18n.changeLanguage(data.preferred_language);
+          }
+        }
+        
         setLoading(false);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Sync language preference from database
+      if (session?.user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("preferred_language")
+          .eq("user_id", session.user.id)
+          .single();
+        
+        if (data?.preferred_language) {
+          i18n.changeLanguage(data.preferred_language);
+        }
+      }
+      
       setLoading(false);
     });
 

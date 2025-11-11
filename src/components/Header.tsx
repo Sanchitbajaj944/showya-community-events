@@ -1,29 +1,48 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, User, Shield } from "lucide-react";
+import { Menu, X, LogOut, User, Shield, Languages } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { UserAvatar } from "./UserAvatar";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "./ui/dropdown-menu";
+import { SUPPORTED_LANGUAGES } from "@/i18n/config";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [profileData, setProfileData] = useState<{
     display_name?: string;
     name?: string;
     profile_picture_url?: string;
   } | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  const handleLanguageChange = async (langCode: string) => {
+    i18n.changeLanguage(langCode);
+    
+    // Update in database if user is logged in
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ preferred_language: langCode })
+        .eq("user_id", user.id);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -82,16 +101,16 @@ const Header = () => {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
           <Link to="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-            Home
+            {t('nav.home')}
           </Link>
           <Link to="/events" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-            Events
+            {t('nav.events')}
           </Link>
           <Link to="/reels" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-            ShowClips
+            {t('nav.showclips')}
           </Link>
           <Link to="/communities" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-            Communities
+            {t('nav.communities')}
           </Link>
         </nav>
 
@@ -117,31 +136,71 @@ const Header = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
                     <User className="h-4 w-4 mr-2" />
-                    My Profile
+                    {t('nav.profile')}
                   </DropdownMenuItem>
                   {isAdmin && (
                     <DropdownMenuItem onClick={() => navigate("/admin")} className="cursor-pointer">
                       <Shield className="h-4 w-4 mr-2" />
-                      Admin Dashboard
+                      {t('nav.admin')}
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Languages className="h-4 w-4 mr-2" />
+                      {t('settings.languagePreference')}
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {SUPPORTED_LANGUAGES.map((lang) => (
+                        <DropdownMenuItem
+                          key={lang.code}
+                          onClick={() => handleLanguageChange(lang.code)}
+                          className="cursor-pointer"
+                        >
+                          {lang.nativeName}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={signOut} className="cursor-pointer">
                     <LogOut className="h-4 w-4 mr-2" />
-                    Sign out
+                    {t('common.signOut')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
             <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <Languages className="h-4 w-4 mr-2" />
+                    {SUPPORTED_LANGUAGES.find(l => l.code === i18n.language)?.nativeName}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>{t('settings.languagePreference')}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <DropdownMenuItem
+                      key={lang.code}
+                      onClick={() => handleLanguageChange(lang.code)}
+                      className="cursor-pointer"
+                    >
+                      {lang.nativeName}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Link to="/auth/signin">
                 <Button variant="ghost" size="sm">
-                  Sign in
+                  {t('common.signIn')}
                 </Button>
               </Link>
               <Link to="/auth/signup">
                 <Button size="sm">
-                  Get Started
+                  {t('common.signUp')}
                 </Button>
               </Link>
             </>
