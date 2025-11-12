@@ -14,8 +14,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, isPast } from "date-fns";
 import heroImage from "@/assets/hero-image.jpg";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const Index = () => {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<any[]>([]);
   const [communities, setCommunities] = useState<any[]>([]);
   const [activeEventIndex, setActiveEventIndex] = useState(0);
@@ -116,18 +118,18 @@ const Index = () => {
   const features = [
     {
       icon: Users,
-      title: "Build Communities",
-      description: "Start and manage creative communities effortlessly.",
+      title: t('home.buildCommunities'),
+      description: t('home.buildCommunitiesDescription'),
     },
     {
       icon: Mic,
-      title: "Host or Perform",
-      description: "Whether you organize or perform, find your space.",
+      title: t('home.hostOrPerform'),
+      description: t('home.hostOrPerformDescription'),
     },
     {
       icon: Heart,
-      title: "Discover Your Tribe",
-      description: "Join creative groups that match your passion.",
+      title: t('home.discoverYourTribe'),
+      description: t('home.discoverYourTribeDescription'),
     },
   ];
 
