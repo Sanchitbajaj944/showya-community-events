@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ShareDialog } from "@/components/ShareDialog";
 import { ReportDialog } from "@/components/ReportDialog";
+import { useTranslation } from "react-i18next";
 
 interface Profile {
   id: string;
@@ -49,6 +50,7 @@ interface Spotlight {
 }
 
 export default function Profile() {
+  const { t } = useTranslation();
   const { userId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -173,7 +175,7 @@ export default function Profile() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
-          <p className="text-muted-foreground">Loading profile...</p>
+          <p className="text-muted-foreground">{t('profilePage.loading')}</p>
         </div>
       </div>
     );
@@ -183,8 +185,8 @@ export default function Profile() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center space-y-4">
-          <p className="text-lg">Profile not found</p>
-          <Button onClick={() => navigate("/")}>Go Home</Button>
+          <p className="text-lg">{t('profilePage.profileNotFound')}</p>
+          <Button onClick={() => navigate("/")}>{t('profilePage.goHome')}</Button>
         </div>
       </div>
     );
@@ -215,7 +217,7 @@ export default function Profile() {
             
             {/* Center - Title */}
             <h1 className="text-lg font-semibold flex-1 text-center truncate">
-              {isOwnProfile ? "My Profile" : displayName}
+              {isOwnProfile ? t('profilePage.myProfile') : displayName}
             </h1>
             
             {/* Right side - Actions */}
@@ -278,7 +280,7 @@ export default function Profile() {
                     onClick={() => navigate("/profile/edit")}
                   >
                     <Edit className="h-4 w-4 mr-2" />
-                    Edit Profile
+                    {t('profilePage.editProfile')}
                   </Button>
                 )}
               </div>
@@ -318,11 +320,11 @@ export default function Profile() {
               <div className="pt-4 border-t border-border w-full animate-fade-in">
                 {performanceCount > 0 ? (
                   <p className="text-sm text-muted-foreground font-medium">
-                    Performed in <span className="text-foreground font-semibold">{performanceCount}</span> {performanceCount === 1 ? 'event' : 'events'}
+                    {t('profilePage.performedIn')} <span className="text-foreground font-semibold">{performanceCount}</span> {performanceCount === 1 ? t('profilePage.event') : t('profilePage.events')}
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    no performances yet
+                    {t('profilePage.noPerformances')}
                   </p>
                 )}
               </div>
@@ -336,7 +338,7 @@ export default function Profile() {
             <CardContent className="pt-6 space-y-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Star className="h-5 w-5 text-primary fill-primary" />
-                Spotlights & Features
+                {t('profilePage.spotlights')}
               </h3>
               <div className="space-y-3">
                 {spotlights.map((spotlight) => (
@@ -345,7 +347,7 @@ export default function Profile() {
                     className="p-4 rounded-lg bg-muted/50 border border-border"
                   >
                     <p className="font-medium text-sm text-primary mb-1">
-                      Featured by {spotlight.community_name}
+                      {t('profilePage.featuredBy')} {spotlight.community_name}
                     </p>
                     <p className="text-sm">{spotlight.feature_text}</p>
                   </div>
@@ -358,7 +360,7 @@ export default function Profile() {
         {/* Community Management - Only for own profile */}
         {isOwnProfile && (
           <div>
-            <h2 className="text-2xl font-semibold mb-4">My Community</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t('profilePage.myCommunity')}</h2>
             <CommunityManagementCard 
               community={userCommunity} 
               onCommunityCreated={fetchProfileData}
@@ -369,14 +371,14 @@ export default function Profile() {
         {/* Experience Tabs */}
         <Card>
           <CardContent className="pt-6">
-            <h2 className="text-2xl font-semibold mb-4">My Performances</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t('profilePage.myPerformances')}</h2>
             <Tabs defaultValue="upcoming" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="upcoming">
-                  Upcoming ({upcomingEvents.length})
+                  {t('profilePage.upcoming')} ({upcomingEvents.length})
                 </TabsTrigger>
                 <TabsTrigger value="past">
-                  Past ({pastEvents.length})
+                  {t('profilePage.past')} ({pastEvents.length})
                 </TabsTrigger>
               </TabsList>
 
@@ -384,14 +386,14 @@ export default function Profile() {
                 {upcomingEvents.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>No upcoming events yet!</p>
+                    <p>{t('profilePage.noUpcomingEvents')}</p>
                   </div>
                 ) : (
                   upcomingEvents.map((participation) => (
                     <EventCard
                       key={participation.id}
                       event={participation.event}
-                      role={participation.role === "performer" ? "Performer" : "Audience"}
+                      role={participation.role === "performer" ? t('profilePage.performer') : t('profilePage.audience')}
                       ticketCode={participation.ticket_code}
                       isOwnProfile={isOwnProfile}
                     />
@@ -403,14 +405,14 @@ export default function Profile() {
                 {pastEvents.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Your event history will appear here!</p>
+                    <p>{t('profilePage.eventHistory')}</p>
                   </div>
                 ) : (
                   pastEvents.map((participation) => (
                     <EventCard
                       key={participation.id}
                       event={participation.event}
-                      role={participation.role === "performer" ? "Performer" : "Audience"}
+                      role={participation.role === "performer" ? t('profilePage.performer') : t('profilePage.audience')}
                       ticketCode={participation.ticket_code}
                       isOwnProfile={isOwnProfile}
                     />
@@ -453,6 +455,7 @@ interface EventCardProps {
 }
 
 function EventCard({ event, role, ticketCode, isOwnProfile }: EventCardProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   
   return (
@@ -480,7 +483,7 @@ function EventCard({ event, role, ticketCode, isOwnProfile }: EventCardProps) {
 
         {ticketCode && isOwnProfile && (
           <div className="mt-2 p-2 bg-muted rounded text-xs font-mono text-center">
-            Ticket: {ticketCode}
+            {t('profilePage.ticket')}: {ticketCode}
           </div>
         )}
 
@@ -490,7 +493,7 @@ function EventCard({ event, role, ticketCode, isOwnProfile }: EventCardProps) {
           className="w-full hover:bg-background hover:text-foreground"
           onClick={() => navigate(`/events/${event.id}`)}
         >
-          View Event Details
+          {t('profilePage.viewEventDetails')}
         </Button>
       </div>
     </div>

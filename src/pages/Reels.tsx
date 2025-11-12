@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { ReelCard } from "@/components/ReelCard";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 interface Reel {
   id: string;
@@ -20,6 +21,7 @@ interface Reel {
 }
 
 export default function Reels() {
+  const { t } = useTranslation();
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -79,9 +81,9 @@ export default function Reels() {
         <Header />
         <div className="flex items-center justify-center" style={{ height: "calc(100vh - 4rem)" }}>
           <div className="text-center px-4">
-            <p className="text-xl text-muted-foreground mb-2">No ShowClips yet</p>
+            <p className="text-xl text-muted-foreground mb-2">{t('reelsPage.noShowClips')}</p>
             <p className="text-sm text-muted-foreground mb-4">
-              Be the first to upload a spotlight ShowClip!
+              {t('reelsPage.beFirst')}
             </p>
           </div>
         </div>

@@ -142,15 +142,15 @@ const Index = () => {
         <div className="container px-4 md:px-6">
           <div className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8">
             <div className="inline-block px-5 py-2 rounded-full bg-primary/10 border border-primary/20">
-              <span className="text-sm font-semibold text-primary">🇮🇳 India's Largest Online Open Mic Platform</span>
+              <span className="text-sm font-semibold text-primary">{t('home.badge')}</span>
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight">
-              Discover Events.
+              {t('home.heroTitle')}
               <br />
-              <span className="text-gradient">Build Communities.</span>
+              <span className="text-gradient">{t('home.heroTitleGradient')}</span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-              Join Showya to discover amazing events, connect with vibrant communities, and showcase your talent as a performer or host.
+              {t('home.heroSubtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               {user ? (
@@ -161,7 +161,7 @@ const Index = () => {
                     className="text-base w-full sm:w-auto"
                     onClick={() => scrollToSection('events')}
                   >
-                    View Events
+                    {t('home.viewEvents')}
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                   <Button 
@@ -170,7 +170,7 @@ const Index = () => {
                     className="text-base w-full sm:w-auto"
                     onClick={() => scrollToSection('communities')}
                   >
-                    View Communities
+                    {t('home.viewCommunities')}
                   </Button>
                   <Button 
                     size="lg" 
@@ -178,14 +178,14 @@ const Index = () => {
                     className="text-base w-full sm:w-auto"
                     onClick={() => scrollToSection('why-showya')}
                   >
-                    Why Showya
+                    {t('home.whyShowya')}
                   </Button>
                 </>
               ) : (
                 <>
                   <Link to="/auth/signup">
                     <Button size="lg" variant="default" className="text-base w-full sm:w-auto">
-                      Create Your Community
+                      {t('home.createYourCommunity')}
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
@@ -195,7 +195,7 @@ const Index = () => {
                     className="text-base w-full sm:w-auto"
                     onClick={() => scrollToSection('events')}
                   >
-                    View Events
+                    {t('home.viewEvents')}
                   </Button>
                   <Button 
                     size="lg" 
@@ -203,7 +203,7 @@ const Index = () => {
                     className="text-base w-full sm:w-auto"
                     onClick={() => scrollToSection('why-showya')}
                   >
-                    Why Showya
+                    {t('home.whyShowya')}
                   </Button>
                 </>
               )}
@@ -217,15 +217,15 @@ const Index = () => {
         <div className="container px-4 md:px-6">
           <div className="max-w-3xl mb-10 sm:mb-12 md:mb-16 space-y-3 sm:space-y-4 md:space-y-5">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight">
-              What's happening <span className="text-gradient">near you</span>
+              {t('home.whatsHappening')} <span className="text-gradient">{t('home.whatsHappeningGradient')}</span>
             </h2>
             <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed">
-              Browse open mics, art jams, and creative meetups hosted by passionate communities.
+              {t('home.whatsHappeningDescription')}
             </p>
           </div>
           {events.length === 0 ? (
             <div className="w-full text-center py-8 text-muted-foreground">
-              <p>No upcoming events yet. Create a community to host the first one!</p>
+              <p>{t('home.noUpcomingEvents')}</p>
             </div>
           ) : (
             <div className="relative">
@@ -275,7 +275,7 @@ const Index = () => {
           <div className="mt-8 sm:mt-10 md:mt-12 text-center">
             <Link to="/events">
               <Button size="lg" className="gap-2 w-full sm:w-auto">
-                Explore All Events
+                {t('home.exploreAllEvents')}
                 <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
@@ -288,16 +288,16 @@ const Index = () => {
         <div className="container px-4 md:px-6">
           <div className="max-w-3xl mb-10 sm:mb-12 md:mb-16 space-y-3 sm:space-y-4 md:space-y-5">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight">
-              Communities <span className="text-gradient">you'll love</span>
+              {t('home.communitiesYouLove')} <span className="text-gradient">{t('home.communitiesYouLoveGradient')}</span>
             </h2>
             <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed">
-              Connect with passionate groups hosting amazing creative experiences across India.
+              {t('home.communitiesDescription')}
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             {communities.length === 0 ? (
               <div className="col-span-full text-center py-8 text-muted-foreground">
-                <p>No communities yet. Be the first to create one!</p>
+                <p>{t('home.noCommunities')}</p>
               </div>
             ) : (
               communities.map((community) => (
@@ -364,7 +364,7 @@ const Index = () => {
                       )}
 
                       <Button className="w-full mt-auto">
-                        View Community
+                        {t('home.viewCommunity')}
                       </Button>
                     </CardContent>
                   </Card>
@@ -375,7 +375,7 @@ const Index = () => {
           <div className="mt-10 sm:mt-12 md:mt-16 text-center">
             <Link to="/communities">
               <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto">
-                Discover More Communities
+                {t('home.discoverMoreCommunities')}
                 <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
@@ -392,7 +392,7 @@ const Index = () => {
         <div className="container relative px-4 md:px-6">
           <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-12 md:mb-16 space-y-3 sm:space-y-4 md:space-y-5">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight">
-              Made for <span className="text-gradient">creators</span>, by creators
+              {t('home.madeForCreators')} <span className="text-gradient">{t('home.madeForCreatorsGradient')}</span>, {t('home.madeForCreatorsSubtitle')}
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 max-w-6xl mx-auto">
@@ -408,10 +408,10 @@ const Index = () => {
         <div className="container px-4 md:px-6">
           <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
-              Ready to join India's <span className="text-gradient">creative movement?</span>
+              {t('home.readyToJoin')} <span className="text-gradient">{t('home.readyToJoinGradient')}</span>
             </h2>
             <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Start hosting events or discover your tribe today. No downloads needed.
+              {t('home.readyToJoinDescription')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               {user ? (
@@ -422,7 +422,7 @@ const Index = () => {
                     className="text-base w-full sm:w-auto"
                     onClick={() => scrollToSection('communities')}
                   >
-                    View Communities
+                    {t('home.viewCommunities')}
                   </Button>
                   <Button 
                     size="lg" 
@@ -430,19 +430,19 @@ const Index = () => {
                     className="text-base w-full sm:w-auto"
                     onClick={() => scrollToSection('events')}
                   >
-                    View Events
+                    {t('home.viewEvents')}
                   </Button>
                 </>
               ) : (
                 <>
                   <Link to="/auth/signup">
                     <Button size="lg" variant="default" className="text-base w-full sm:w-auto">
-                      Create Your Community
+                      {t('home.getStarted')}
                     </Button>
                   </Link>
                   <Link to="/events">
                     <Button size="lg" variant="outline" className="text-base w-full sm:w-auto">
-                      Explore Events
+                      {t('home.browseEvents')}
                     </Button>
                   </Link>
                 </>

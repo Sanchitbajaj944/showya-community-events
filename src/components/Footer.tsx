@@ -1,7 +1,10 @@
 import { Instagram, Twitter, Youtube } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { useTranslation } from "react-i18next";
 
 const Footer = () => {
+  const { t } = useTranslation();
+  
   return (
     <footer className="border-t bg-muted/30">
       <div className="container px-4 py-12 md:px-6 md:py-16">
@@ -13,45 +16,45 @@ const Footer = () => {
               <span className="text-2xl font-bold text-gradient">Showya</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              India's premier platform for creative communities and open mic events.
+              {t('footer.brand')}
             </p>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h3 className="font-bold text-base">Explore</h3>
+            <h3 className="font-bold text-base">{t('footer.explore')}</h3>
             <nav className="flex flex-col space-y-3">
               <a href="#events" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Events
+                {t('footer.events')}
               </a>
               <a href="#communities" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Communities
+                {t('footer.communities')}
               </a>
               <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Host an Event
+                {t('footer.hostEvent')}
               </a>
             </nav>
           </div>
 
           {/* Company */}
           <div className="space-y-4">
-            <h3 className="font-bold text-base">Company</h3>
+            <h3 className="font-bold text-base">{t('footer.company')}</h3>
             <nav className="flex flex-col space-y-3">
               <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                About
+                {t('footer.about')}
               </a>
               <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Contact
+                {t('footer.contact')}
               </a>
               <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Careers
+                {t('footer.careers')}
               </a>
             </nav>
           </div>
 
           {/* Social */}
           <div className="space-y-4">
-            <h3 className="font-bold text-base">Connect</h3>
+            <h3 className="font-bold text-base">{t('footer.connect')}</h3>
             <div className="flex space-x-4">
               <a
                 href="#"
@@ -79,17 +82,17 @@ const Footer = () => {
         <div className="mt-12 pt-8 border-t">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © 2025 Showya. All rights reserved.
+              {t('footer.copyright')}
             </p>
             <nav className="flex space-x-6">
               <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Privacy
+                {t('footer.privacy')}
               </a>
               <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Terms
+                {t('footer.terms')}
               </a>
               <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Cookies
+                {t('footer.cookies')}
               </a>
             </nav>
           </div>

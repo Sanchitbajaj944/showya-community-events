@@ -220,5 +220,26 @@
     "audience": "Audience",
     "ticket": "Ticket",
     "viewEventDetails": "View Event Details"
+  },
+  "reelsPage": {
+    "loading": "Loading...",
+    "noShowClips": "No ShowClips yet",
+    "beFirst": "Be the first to upload a spotlight ShowClip!"
+  },
+  "footer": {
+    "brand": "India's premier platform for creative communities and open mic events.",
+    "explore": "Explore",
+    "events": "Events",
+    "communities": "Communities",
+    "hostEvent": "Host an Event",
+    "company": "Company",
+    "about": "About",
+    "contact": "Contact",
+    "careers": "Careers",
+    "connect": "Connect",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "cookies": "Cookies",
+    "copyright": "© 2025 Showya. All rights reserved."
   }
 }
