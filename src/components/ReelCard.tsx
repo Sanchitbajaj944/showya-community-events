@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/UserAvatar";
-import { Heart, Volume2, VolumeX, Share2, MoreVertical } from "lucide-react";
+import { Heart, Volume2, VolumeX, Share2, MoreVertical, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
   const [communityId, setCommunityId] = useState<string | null>(null);
   const [communityBanner, setCommunityBanner] = useState<string | null>(null);
   const [isMember, setIsMember] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [performerData, setPerformerData] = useState<{
     name: string;
     display_name: string | null;
@@ -52,9 +53,18 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
     const video = videoRef.current;
     if (!video) return;
 
+    const handleWaiting = () => setIsLoading(true);
+    const handleCanPlay = () => setIsLoading(false);
+    const handlePlaying = () => setIsLoading(false);
+
+    video.addEventListener('waiting', handleWaiting);
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('playing', handlePlaying);
+
     if (isActive) {
       // Reset to beginning and play
       video.currentTime = 0;
+      setIsLoading(true);
       video.play().catch(() => {});
       // Track view on first play
       if (!hasViewed) {
@@ -73,7 +83,14 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
       video.currentTime = 0;
       video.muted = true;
       setIsMuted(true);
+      setIsLoading(true);
     }
+
+    return () => {
+      video.removeEventListener('waiting', handleWaiting);
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('playing', handlePlaying);
+    };
   }, [isActive]);
 
   const checkIfLiked = async () => {
@@ -209,6 +226,13 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
         playsInline
         onClick={() => videoRef.current?.paused ? videoRef.current?.play() : videoRef.current?.pause()}
       />
+
+      {/* Loading Indicator */}
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/20 backdrop-blur-sm">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      )}
 
       {/* Bottom Info Overlay */}
       <div className="absolute bottom-0 left-0 right-0 p-4 pb-20 md:pb-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
