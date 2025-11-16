@@ -167,43 +167,46 @@ export default function CommunityMemberView() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" className="w-full sm:w-auto">
-                      <LogOut className="h-4 w-4 mr-2" />
-                      <span className="text-sm sm:text-base">Leave Community</span>
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Leave Community?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to leave this community? You'll need to rejoin to access events and chat.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleLeave}>
-                        Leave
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-                <ShareDialog
-                  url={`/community/${communityId}/member`}
-                  title={community.name}
-                  description={community.description}
-                  triggerClassName="w-full sm:w-auto h-10"
-                />
-                <Button 
-                  variant="outline" 
-                  onClick={() => setReportDialogOpen(true)} 
-                  className="w-full sm:w-auto"
-                >
-                  <Flag className="h-4 w-4 mr-2" />
-                  <span className="text-sm sm:text-base">Report</span>
-                </Button>
+              <div className="pt-4 border-t">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <ShareDialog
+                    url={`/community/${communityId}/member`}
+                    title={community.name}
+                    description={community.description}
+                    triggerClassName="w-full h-11"
+                  />
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="lg" className="w-full h-11 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-colors">
+                        <LogOut className="h-4 w-4 mr-2" />
+                        <span>Leave</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Leave Community?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to leave this community? You'll need to rejoin to access events and chat.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleLeave} className="bg-destructive hover:bg-destructive/90">
+                          Leave
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    onClick={() => setReportDialogOpen(true)} 
+                    className="w-full h-11 hover:bg-muted/50 transition-colors"
+                  >
+                    <Flag className="h-4 w-4 mr-2" />
+                    <span>Report</span>
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>
