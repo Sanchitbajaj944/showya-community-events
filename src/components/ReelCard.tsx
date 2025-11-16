@@ -53,6 +53,8 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
     if (!video) return;
 
     if (isActive) {
+      // Reset to beginning and play
+      video.currentTime = 0;
       video.play().catch(() => {});
       // Track view on first play
       if (!hasViewed) {
@@ -66,7 +68,11 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
           });
       }
     } else {
+      // Stop, mute, and reset when scrolling away
       video.pause();
+      video.currentTime = 0;
+      video.muted = true;
+      setIsMuted(true);
     }
   }, [isActive]);
 
