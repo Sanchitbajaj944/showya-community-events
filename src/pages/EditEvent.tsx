@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import Header from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Calendar, Clock, MapPin, Users, Link as LinkIcon, Image, AlertTriangle, Trash2 } from "lucide-react";
+import { CropImageDialog } from "@/components/CropImageDialog";
 import { format } from "date-fns";
 import {
   AlertDialog,
@@ -54,6 +55,8 @@ export default function EditEvent() {
     audience_slots: 0,
   });
   const [uploading, setUploading] = useState(false);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string>("");
 
   useEffect(() => {
     fetchEventData();
@@ -66,29 +69,41 @@ export default function EditEvent() {
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file');
+      e.target.value = ''; // Reset input
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size must be less than 5MB');
+    // Validate file size (max 10MB before optimization)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image size must be less than 10MB');
+      e.target.value = ''; // Reset input
       return;
     }
 
+    // Create object URL for crop dialog
+    const imageUrl = URL.createObjectURL(file);
+    setImageToCrop(imageUrl);
+    setCropDialogOpen(true);
+    
+    // Reset file input
+    e.target.value = '';
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
     try {
       setUploading(true);
 
       // Generate unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${eventId}-${Date.now()}.${fileExt}`;
+      const fileName = `${eventId}-${Date.now()}.jpg`;
       const filePath = `${fileName}`;
 
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('event-posters')
-        .upload(filePath, file, {
+        .upload(filePath, croppedBlob, {
           cacheControl: '3600',
-          upsert: true
+          upsert: true,
+          contentType: 'image/jpeg'
         });
 
       if (uploadError) throw uploadError;
@@ -106,6 +121,11 @@ export default function EditEvent() {
       toast.error('Failed to upload poster');
     } finally {
       setUploading(false);
+      // Clean up object URL
+      if (imageToCrop) {
+        URL.revokeObjectURL(imageToCrop);
+        setImageToCrop('');
+      }
     }
   };
 
@@ -427,24 +447,42 @@ export default function EditEvent() {
               </Label>
               <div className="space-y-3 mt-1">
                 {formData.poster_url && (
-                  <div className="relative w-full h-48 rounded-lg overflow-hidden border">
+                  <div className="relative w-full h-48 rounded-lg overflow-hidden border group">
                     <img 
                       src={formData.poster_url} 
                       alt="Event poster" 
                       className="w-full h-full object-cover"
                     />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => setFormData({ ...formData, poster_url: "" })}
+                      disabled={isFieldDisabled("poster_url")}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Remove
+                    </Button>
                   </div>
                 )}
-                <Input
-                  id="poster"
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePosterUpload}
-                  disabled={isFieldDisabled("poster_url") || uploading}
-                  className="cursor-pointer"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="poster"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePosterUpload}
+                    disabled={isFieldDisabled("poster_url") || uploading}
+                    className="cursor-pointer flex-1"
+                  />
+                </div>
                 {uploading && (
-                  <p className="text-xs text-muted-foreground">Uploading poster...</p>
+                  <p className="text-xs text-muted-foreground">Processing and uploading poster...</p>
+                )}
+                {!formData.poster_url && !uploading && (
+                  <p className="text-xs text-muted-foreground">
+                    Upload an image. You'll be able to crop and optimize it before saving.
+                  </p>
                 )}
               </div>
             </div>
@@ -665,6 +703,15 @@ export default function EditEvent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Crop Image Dialog */}
+      <CropImageDialog
+        open={cropDialogOpen}
+        onOpenChange={setCropDialogOpen}
+        imageSrc={imageToCrop}
+        onCropComplete={handleCropComplete}
+        aspectRatio={16 / 9}
+      />
     </div>
   );
 }
