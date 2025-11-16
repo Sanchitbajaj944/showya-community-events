@@ -17,41 +17,42 @@ The notification system provides comprehensive in-app and email notifications ac
 ## Notification Matrix
 
 ### 📅 Event-Related Notifications
-| Trigger | Audience | Delivery | Implementation |
-|---------|----------|----------|----------------|
-| New Event Created | Community followers | In-app (optional) | Manual via useNotifications |
-| Event Registration | Performer, Community Owner | In-app + Email | `handle-event-registration` edge function |
-| Event Edited | All attendees + followers | In-app + Email | `update-event` edge function |
-| Meeting Link Changed | All attendees | In-app + Email | `update-event` edge function |
-| Event Cancelled | All attendees | In-app + Email + Refund | Manual trigger required |
-| Event Deleted | All attendees | In-app + Email + Refund | `delete-event` edge function |
-| Slot Count Increased | Community followers | In-app | Database trigger |
-| 1hr Reminder | All attendees | In-app + Email | Scheduled job (to be implemented) |
+| Trigger | Audience | Delivery | Implementation | Status |
+|---------|----------|----------|----------------|--------|
+| New Event Created | Community followers | In-app (optional), Email (optional) | Manual via useNotifications | ⚠️ Optional |
+| Event Registration | Performer, Community Owner | In-app + Email | `handle-event-registration` edge function | ✅ Implemented |
+| Event Edited (time, title, price) | All attendees + followers | In-app + Email | `update-event` edge function | ✅ Implemented |
+| Meeting Link Changed | All attendees | In-app + Email | `update-event` edge function (auto-detected) | ✅ Implemented |
+| Event Cancelled | All attendees | In-app + Email + Refund Info | `cancel-event` edge function | ✅ Implemented |
+| Event Deleted (with signups) | All attendees | In-app + Email + Refund Info | `delete-event` edge function | ✅ Implemented |
+| Slot Count Increased | Community followers | In-app | Database trigger `notify_slot_increase` | ✅ Implemented |
+| 1hr Reminder Before Event | All attendees | In-app + Email | Requires cron job/scheduler | ⏳ Pending |
 
 ### 📹 Reels-Related Notifications
-| Trigger | Audience | Delivery | Implementation |
-|---------|----------|----------|----------------|
-| Reel Uploaded | Community owner | In-app | Database trigger |
-| Reel Liked | Community owner | In-app | Can be added via manual trigger |
+| Trigger | Audience | Delivery | Implementation | Status |
+|---------|----------|----------|----------------|--------|
+| Reel Uploaded | All performers | In-app + Email | Database trigger `notify_reel_upload` | ✅ Implemented |
+| Reel Liked | Community owner | In-app | Database trigger `notify_reel_like` | ✅ Implemented |
 
 ### 🧾 Payment & Refund Notifications
-| Trigger | Audience | Delivery | Implementation |
-|---------|----------|----------|----------------|
-| Booking Confirmed | Attendee | In-app + Email | `create-payment-order` edge function |
-| Auto Refund | Affected users | In-app + Email | Razorpay webhook |
-| Manual Refund | Attendee | Email | Admin action |
+| Trigger | Audience | Delivery | Implementation | Status |
+|---------|----------|----------|----------------|--------|
+| Booking Confirmed | Attendee | In-app + Email | `create-payment-order` edge function | ✅ Implemented |
+| Auto Refund Triggered | Affected users | In-app + Email | Triggered by cancellation/deletion | ✅ Implemented |
+| Manual Refund by Host/Admin | Attendee | Email | Admin dashboard action | ⏳ Pending |
 
 ### 🛡 Report System Notifications
-| Trigger | Audience | Delivery | Implementation |
-|---------|----------|----------|----------------|
-| Report Submitted | Admin + Host | In-app | Database trigger |
-| Report Status Updated | Reporter | In-app | Database trigger |
+| Trigger | Audience | Delivery | Implementation | Status |
+|---------|----------|----------|----------------|--------|
+| Report Submitted | Admin + Community Host | In-app, Email (optional) | Database trigger `notify_report_submission` | ✅ Implemented |
+| Report Status Updated | Reporter | In-app | Database trigger `notify_report_status_update` | ✅ Implemented |
+| User Reported | Admin only | Dashboard only | No user-facing alert (prevent retaliation) | ✅ Implemented |
 
 ### 🧑‍🤝‍🧑 Community & Messaging
-| Trigger | Audience | Delivery | Implementation |
-|---------|----------|----------|----------------|
-| New Chat Message | Target users | In-app | Real-time via Supabase |
-| New Member Joined | Community Owner | In-app | Database trigger |
+| Trigger | Audience | Delivery | Implementation | Status |
+|---------|----------|----------|----------------|--------|
+| New Chat Message | All community members | In-app + Email | Database trigger `notify_new_chat_message` | ✅ Implemented |
+| New Member Joined Community | Community Owner | In-app | Database trigger `notify_community_owner_new_member` | ✅ Implemented |
 
 ## Database Tables
 
