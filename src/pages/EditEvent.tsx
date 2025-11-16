@@ -447,7 +447,7 @@ export default function EditEvent() {
               </Label>
               <div className="space-y-3 mt-1">
                 {formData.poster_url && (
-                  <div className="relative w-full h-48 rounded-lg overflow-hidden border group">
+                  <div className="relative w-full h-48 rounded-lg overflow-hidden border">
                     <img 
                       src={formData.poster_url} 
                       alt="Event poster" 
@@ -457,7 +457,7 @@ export default function EditEvent() {
                       type="button"
                       variant="destructive"
                       size="sm"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 shadow-lg"
                       onClick={() => setFormData({ ...formData, poster_url: "" })}
                       disabled={isFieldDisabled("poster_url")}
                     >
