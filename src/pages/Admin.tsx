@@ -54,6 +54,8 @@ export default function Admin() {
   const [grantingAdmin, setGrantingAdmin] = useState(false);
   const [communities, setCommunities] = useState<Community[]>([]);
   const [updatingFees, setUpdatingFees] = useState<Set<string>>(new Set());
+  const [bulkFeeValue, setBulkFeeValue] = useState<string>("5");
+  const [updatingAllFees, setUpdatingAllFees] = useState(false);
 
   useEffect(() => {
     checkAdminStatus();
@@ -220,6 +222,36 @@ export default function Admin() {
         next.delete(communityId);
         return next;
       });
+    }
+  };
+
+  const updateAllPlatformFees = async () => {
+    const newFee = parseFloat(bulkFeeValue);
+    
+    if (isNaN(newFee) || newFee < 0 || newFee > 100) {
+      toast.error("Platform fee must be between 0% and 100%");
+      return;
+    }
+
+    try {
+      setUpdatingAllFees(true);
+
+      const { error } = await supabase
+        .from("communities")
+        .update({ platform_fee_percentage: newFee });
+
+      if (error) throw error;
+
+      setCommunities(prev =>
+        prev.map(c => ({ ...c, platform_fee_percentage: newFee }))
+      );
+
+      toast.success(`Updated platform fee to ${newFee}% for all communities`);
+    } catch (error: any) {
+      console.error("Error updating all platform fees:", error);
+      toast.error("Failed to update platform fees");
+    } finally {
+      setUpdatingAllFees(false);
     }
   };
 
@@ -468,6 +500,34 @@ export default function Admin() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Manage platform fee percentages for each community. Changes apply to future transactions only.
                 </p>
+
+                {/* Bulk Update */}
+                <div className="mb-6 p-4 border rounded-lg bg-muted/30">
+                  <h4 className="font-medium mb-3">Set Fee for All Communities</h4>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={bulkFeeValue}
+                      onChange={(e) => setBulkFeeValue(e.target.value)}
+                      className="w-32 text-center"
+                      disabled={updatingAllFees}
+                    />
+                    <span className="text-sm font-medium">%</span>
+                    <Button 
+                      onClick={updateAllPlatformFees}
+                      disabled={updatingAllFees || communities.length === 0}
+                      className="ml-2"
+                    >
+                      {updatingAllFees ? "Updating..." : "Apply to All"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    This will update the platform fee for all {communities.length} communities at once.
+                  </p>
+                </div>
                 <div className="space-y-3">
                   {communities.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
