@@ -9,8 +9,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import imageCompression from "browser-image-compression";
 
@@ -37,10 +35,12 @@ export function CropImageDialog({
     y: 5,
   });
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
-  const [quality, setQuality] = useState(80);
-  const [maxWidth, setMaxWidth] = useState(1920);
   const imgRef = useRef<HTMLImageElement>(null);
   const [processing, setProcessing] = useState(false);
+
+  // Fixed quality and size settings
+  const quality = 85;
+  const maxWidth = 1920;
 
   useEffect(() => {
     if (open) {
@@ -52,8 +52,6 @@ export function CropImageDialog({
         x: 5,
         y: 5,
       });
-      setQuality(80);
-      setMaxWidth(1920);
     }
   }, [open]);
 
@@ -155,10 +153,10 @@ export function CropImageDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Crop & Optimize Poster</DialogTitle>
+          <DialogTitle>Crop Poster</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Crop Area */}
           <div className="flex justify-center bg-muted rounded-lg p-4">
             <ReactCrop
@@ -166,60 +164,22 @@ export function CropImageDialog({
               onChange={(c) => setCrop(c)}
               onComplete={(c) => setCompletedCrop(c)}
               aspect={aspectRatio}
-              className="max-h-[50vh]"
+              className="max-h-[60vh]"
             >
               <img
                 ref={imgRef}
                 src={imageSrc}
                 alt="Crop preview"
                 className="max-w-full"
-                style={{ maxHeight: "50vh" }}
+                style={{ maxHeight: "60vh" }}
               />
             </ReactCrop>
           </div>
 
-          {/* Quality Controls */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Image Quality: {quality}%</Label>
-                <span className="text-xs text-muted-foreground">
-                  Higher = Better quality, larger file
-                </span>
-              </div>
-              <Slider
-                value={[quality]}
-                onValueChange={(value) => setQuality(value[0])}
-                min={60}
-                max={100}
-                step={5}
-                className="w-full"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Max Width: {maxWidth}px</Label>
-                <span className="text-xs text-muted-foreground">
-                  Larger images will be resized
-                </span>
-              </div>
-              <Slider
-                value={[maxWidth]}
-                onValueChange={(value) => setMaxWidth(value[0])}
-                min={800}
-                max={2400}
-                step={200}
-                className="w-full"
-              />
-            </div>
-          </div>
-
           {/* Info */}
-          <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+          <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground text-center">
             <p>
-              💡 Tip: Drag the corners to adjust the crop area. Lower quality
-              and smaller dimensions reduce file size.
+              💡 Drag the corners to adjust the crop area
             </p>
           </div>
         </div>
