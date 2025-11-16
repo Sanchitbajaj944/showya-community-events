@@ -49,6 +49,7 @@ export default function EventDetails() {
   const [refundPercentage, setRefundPercentage] = useState(0);
   const [showBookingDrawer, setShowBookingDrawer] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [spotlight, setSpotlight] = useState<any>(null);
 
   useEffect(() => {
     fetchEventDetails();
@@ -108,6 +109,15 @@ export default function EventDetails() {
       const totalSlots = eventData.performer_slots + (eventData.audience_enabled ? eventData.audience_slots : 0);
       const bookedSlots = participants?.length || 0;
       setAvailableSlots(totalSlots - bookedSlots);
+
+      // Fetch spotlight video if event has passed
+      const { data: spotlightData } = await supabase
+        .from("spotlights")
+        .select("*")
+        .eq("event_id", eventId)
+        .maybeSingle();
+      
+      setSpotlight(spotlightData);
 
     } catch (error: any) {
       console.error("Error fetching event:", error);
@@ -419,6 +429,50 @@ export default function EventDetails() {
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">About This Event</h2>
               <p className="text-muted-foreground whitespace-pre-wrap">{event.description}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Spotlight Video Section - Show for past events especially */}
+        {isEventPast && (
+          <Card className="mb-8">
+            <CardContent className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Event Highlights</h2>
+              {spotlight?.video_url ? (
+                <div className="space-y-4">
+                  <div className="aspect-[9/16] max-w-md mx-auto rounded-lg overflow-hidden bg-black">
+                    <video
+                      src={spotlight.video_url}
+                      controls
+                      className="w-full h-full object-contain"
+                      playsInline
+                    />
+                  </div>
+                  {spotlight.caption && (
+                    <p className="text-sm text-muted-foreground text-center">{spotlight.caption}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground text-center">Featured in ShowClips</p>
+                </div>
+              ) : (
+                <div className="text-center py-12 px-4">
+                  <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                    <svg className="w-10 h-10 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">No Highlight Video Yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {isEventCreator 
+                      ? "Upload a highlight video from your community dashboard to showcase this event"
+                      : "The community owner hasn't uploaded a highlight video for this event yet"}
+                  </p>
+                  {isEventCreator && (
+                    <Button variant="outline" onClick={() => navigate(`/community/${event.community_id}`)}>
+                      Go to Dashboard
+                    </Button>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
