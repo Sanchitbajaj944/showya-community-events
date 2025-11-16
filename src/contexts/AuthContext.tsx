@@ -20,24 +20,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        // Only synchronous state updates here
         setSession(session);
         setUser(session?.user ?? null);
-        
-        // Sync language preference from database
-        if (session?.user) {
-          const { data } = await supabase
-            .from("profiles")
-            .select("preferred_language")
-            .eq("user_id", session.user.id)
-            .single();
-          
-          if (data?.preferred_language) {
-            i18n.changeLanguage(data.preferred_language);
-          }
-        }
-        
         setLoading(false);
+        
+        // Defer Supabase calls with setTimeout to avoid deadlock
+        if (session?.user) {
+          setTimeout(async () => {
+            const { data } = await supabase
+              .from("profiles")
+              .select("preferred_language")
+              .eq("user_id", session.user.id)
+              .maybeSingle();
+            
+            if (data?.preferred_language) {
+              i18n.changeLanguage(data.preferred_language);
+            }
+          }, 0);
+        }
       }
     );
 
@@ -45,6 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
       
       // Sync language preference from database
       if (session?.user) {
@@ -52,14 +55,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .from("profiles")
           .select("preferred_language")
           .eq("user_id", session.user.id)
-          .single();
+          .maybeSingle();
         
         if (data?.preferred_language) {
           i18n.changeLanguage(data.preferred_language);
         }
       }
-      
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
