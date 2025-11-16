@@ -24,6 +24,7 @@ import EventDetails from "./pages/EventDetails";
 import EditEvent from "./pages/EditEvent";
 import EventDashboard from "./pages/EventDashboard";
 import Admin from "./pages/Admin";
+import Notifications from "./pages/Notifications";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import RefundPolicy from "./pages/RefundPolicy";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/profile/edit" element={<EditProfile />} />
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/terms" element={<TermsAndConditions />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />

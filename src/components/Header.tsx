@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { UserAvatar } from "./UserAvatar";
 import { useTranslation } from "react-i18next";
+import { NotificationCenter } from "./NotificationCenter";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -119,6 +120,7 @@ const Header = () => {
         <div className="hidden md:flex items-center space-x-3">
           {user ? (
             <>
+              <NotificationCenter />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="focus:outline-none">

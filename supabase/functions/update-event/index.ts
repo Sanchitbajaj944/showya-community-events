@@ -258,6 +258,40 @@ serve(async (req: Request) => {
       // Insert notifications
       if (notifications.length > 0) {
         await supabase.from("event_notifications").insert(notifications);
+        
+        // Also create general notifications and send emails
+        const generalNotifications = notifications.map(n => ({
+          user_id: n.user_id,
+          title: 'Event Updated',
+          message: n.message,
+          type: 'info',
+          category: 'event',
+          related_id: eventId,
+          action_url: `/events/${eventId}`,
+        }));
+
+        await supabase.from('notifications').insert(generalNotifications);
+
+        // Send email notifications
+        const baseUrl = Deno.env.get('SUPABASE_URL')?.replace('/rest/v1', '').replace('https://', 'https://') || 'https://showya.app';
+        
+        for (const notification of notifications) {
+          try {
+            await supabase.functions.invoke('send-notification-email', {
+              body: {
+                user_id: notification.user_id,
+                title: 'Event Updated',
+                message: notification.message,
+                action_url: `${baseUrl}/events/${eventId}`,
+              },
+            });
+          } catch (emailError) {
+            console.error('Error sending email to user:', notification.user_id, emailError);
+            // Continue with other notifications even if one fails
+          }
+        }
+        
+        console.log(`Sent ${notifications.length} notifications with emails`);
       }
     }
 
