@@ -198,62 +198,62 @@ export function ReelCard({
         </div>}
 
       {/* Bottom Info Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 pb-20 md:pb-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-        <div className="flex items-end gap-4">
+      <div className="absolute bottom-0 left-0 right-0 p-3 pb-20 md:pb-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+        <div className="flex items-end gap-3">
           {/* Left: User Info & Caption */}
-          <div className="flex-1 space-y-3">
+          <div className="flex-1 space-y-2">
             {/* Community Info First */}
-            <Link to={communityId ? isMember ? `/community/${communityId}` : `/community/${communityId}/public` : `/communities`} className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-primary flex items-center justify-center border-2 border-white">
-                {communityBanner ? <img src={communityBanner} alt={reel.community_name} className="w-full h-full object-cover" /> : <span className="text-white font-bold text-sm">
+            <Link to={communityId ? isMember ? `/community/${communityId}` : `/community/${communityId}/public` : `/communities`} className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-primary flex items-center justify-center border border-white">
+                {communityBanner ? <img src={communityBanner} alt={reel.community_name} className="w-full h-full object-cover" /> : <span className="text-white font-bold text-xs">
                     {reel.community_name.charAt(0).toUpperCase()}
                   </span>}
               </div>
               <div>
-                <p className="font-semibold text-white text-sm">{reel.community_name}</p>
-                <p className="text-xs text-white/80">Community</p>
+                <p className="font-semibold text-white text-xs">{reel.community_name}</p>
+                <p className="text-[10px] text-white/80">Community</p>
               </div>
             </Link>
 
             {/* Spotlight Performer */}
-            <Link to={`/profile/${reel.user_id}`} className="flex items-center gap-3">
-              <UserAvatar name={performerName} src={performerData?.profile_picture_url} size="md" className="border-2 border-white" />
+            <Link to={`/profile/${reel.user_id}`} className="flex items-center gap-2">
+              <UserAvatar name={performerName} src={performerData?.profile_picture_url} size="sm" className="border border-white" />
               <div>
-                <p className="font-semibold text-white text-sm">@{performerName}</p>
-                <p className="text-xs text-white/80">Spotlight Performer</p>
+                <p className="font-semibold text-white text-xs">@{performerName}</p>
+                <p className="text-[10px] text-white/80">Spotlight Performer</p>
               </div>
             </Link>
 
             {/* Feature Text & Caption */}
-            <div className="space-y-1">
-              {reel.feature_text && <p className="text-white font-medium text-sm">{reel.feature_text}</p>}
-              {reel.caption && <p className="text-white/90 text-sm line-clamp-2">{reel.caption}</p>}
+            <div className="space-y-0.5">
+              {reel.feature_text && <p className="text-white font-medium text-xs">{reel.feature_text}</p>}
+              {reel.caption && <p className="text-white/90 text-xs line-clamp-2">{reel.caption}</p>}
             </div>
           </div>
 
           {/* Right: Action Buttons */}
-          <div className="flex flex-col gap-6 items-center">
-            <button onClick={handleLike} className="flex flex-col items-center gap-1">
-              <div className={`p-3 rounded-full transition-all ${isLiked ? 'bg-primary' : 'bg-white/20 backdrop-blur-sm'}`}>
-                <Heart className={`h-6 w-6 ${isLiked ? 'text-white fill-current' : 'text-white'}`} />
+          <div className="flex flex-col gap-4 items-center">
+            <button onClick={handleLike} className="flex flex-col items-center gap-0.5">
+              <div className={`p-2 rounded-full transition-all ${isLiked ? 'bg-primary' : 'bg-white/20 backdrop-blur-sm'}`}>
+                <Heart className={`h-5 w-5 ${isLiked ? 'text-white fill-current' : 'text-white'}`} />
               </div>
-              <span className="text-white text-xs font-medium">{localLikes}</span>
+              <span className="text-white text-[10px] font-medium">{localLikes}</span>
             </button>
 
-            <button onClick={handleShare} className="flex flex-col items-center gap-1">
-              <div className="p-3 rounded-full bg-white/20 backdrop-blur-sm">
-                <Share2 className="h-6 w-6 text-white" />
+            <button onClick={handleShare} className="flex flex-col items-center gap-0.5">
+              <div className="p-2 rounded-full bg-white/20 backdrop-blur-sm">
+                <Share2 className="h-5 w-5 text-white" />
               </div>
-              <span className="text-white text-xs font-medium">Share</span>
+              <span className="text-white text-[10px] font-medium">Share</span>
             </button>
 
-            <button onClick={() => setIsMuted(!isMuted)} className="flex flex-col items-center gap-1">
-              <div className="p-3 rounded-full bg-white/20 backdrop-blur-sm">
-                {isMuted ? <VolumeX className="h-6 w-6 text-white" /> : <Volume2 className="h-6 w-6 text-white" />}
+            <button onClick={() => setIsMuted(!isMuted)} className="flex flex-col items-center gap-0.5">
+              <div className="p-2 rounded-full bg-white/20 backdrop-blur-sm">
+                {isMuted ? <VolumeX className="h-5 w-5 text-white" /> : <Volume2 className="h-5 w-5 text-white" />}
               </div>
             </button>
 
-            <button className="flex flex-col items-center gap-1">
+            <button className="flex flex-col items-center gap-0.5">
               
             </button>
           </div>
