@@ -24,14 +24,6 @@ const Index = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
-  // Debug Supabase connection
-  useEffect(() => {
-    console.log("Index: Component mounted");
-    console.log("Index: Supabase URL:", import.meta.env.VITE_SUPABASE_URL);
-    console.log("Index: Supabase Key exists:", !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-    console.log("Index: User logged in:", !!user);
-  }, [user]);
-
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -60,46 +52,31 @@ const Index = () => {
 
   const fetchUpcomingEvents = async () => {
     try {
-      console.log("EVENTS QUERY STARTED (CLIENT)");
-      
       const { data, error } = await supabase
         .from("events")
         .select("*")
         .order("event_date", { ascending: true })
         .limit(8);
 
-      console.log("EVENTS QUERY RESULT", { data, error });
-      
-      if (error) {
-        console.error("Index: Supabase error:", error);
-        throw error;
-      }
+      if (error) throw error;
       
       // Filter only upcoming events
       const upcoming = (data || []).filter(event => !isPast(new Date(event.event_date)));
       setEvents(upcoming.slice(0, 4)); // Show max 4 on homepage
     } catch (error) {
-      console.error("Index: Error fetching events:", error);
-      setEvents([]);
+      console.error("Error fetching events:", error);
     }
   };
 
   const fetchCommunities = async () => {
     try {
-      console.log("COMMUNITIES QUERY STARTED (CLIENT)");
-      
       const { data: communitiesData, error: communitiesError } = await supabase
         .from("communities")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(6);
 
-      console.log("COMMUNITIES QUERY RESULT", { data: communitiesData, error: communitiesError });
-      
-      if (communitiesError) {
-        console.error("Index: Supabase communities error:", communitiesError);
-        throw communitiesError;
-      }
+      if (communitiesError) throw communitiesError;
 
       if (!communitiesData || communitiesData.length === 0) {
         setCommunities([]);
@@ -120,7 +97,7 @@ const Index = () => {
         .in("user_id", ownerIds);
 
       if (ownersError) {
-        console.error("Index: Error fetching owners:", ownersError);
+        console.error("Error fetching owners:", ownersError);
         setCommunities(communitiesData.map(c => ({ ...c, owner: null })));
         return;
       }
@@ -131,10 +108,10 @@ const Index = () => {
         owner: ownersData?.find(owner => owner.user_id === community.owner_id) || null
       }));
 
+      console.log("Communities with owners:", communitiesWithOwners);
       setCommunities(communitiesWithOwners);
     } catch (error) {
-      console.error("Index: Error fetching communities:", error);
-      setCommunities([]);
+      console.error("Error fetching communities:", error);
     }
   };
 
@@ -160,50 +137,80 @@ const Index = () => {
     <div className="min-h-screen">
       <Header />
 
-      {/* Hero Section - Only show for non-logged-in users */}
-      {!user && (
-        <section className="relative overflow-hidden py-16 sm:py-20 md:py-28 bg-background">
-          <div className="container px-4 md:px-6">
-            <div className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8">
-              <div className="inline-block px-5 py-2 rounded-full bg-primary/10 border border-primary/20">
-                <span className="text-sm font-semibold text-primary">{t('home.badge')}</span>
-              </div>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight">
-                {t('home.heroTitle')}
-                <br />
-                <span className="text-gradient">{t('home.heroTitleGradient')}</span>
-              </h1>
-              <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-                {t('home.heroSubtitle')}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                <Link to="/auth/signup">
-                  <Button size="lg" variant="default" className="text-base w-full sm:w-auto">
-                    {t('home.createYourCommunity')}
+      {/* Hero Section */}
+      <section className="relative overflow-hidden py-16 sm:py-20 md:py-28 bg-background">
+        <div className="container px-4 md:px-6">
+          <div className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8">
+            <div className="inline-block px-5 py-2 rounded-full bg-primary/10 border border-primary/20">
+              <span className="text-sm font-semibold text-primary">{t('home.badge')}</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight">
+              {t('home.heroTitle')}
+              <br />
+              <span className="text-gradient">{t('home.heroTitleGradient')}</span>
+            </h1>
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
+              {t('home.heroSubtitle')}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+              {user ? (
+                <>
+                  <Button 
+                    size="lg" 
+                    variant="default" 
+                    className="text-base w-full sm:w-auto"
+                    onClick={() => scrollToSection('events')}
+                  >
+                    {t('home.viewEvents')}
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
-                </Link>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="text-base w-full sm:w-auto"
-                  onClick={() => scrollToSection('events')}
-                >
-                  {t('home.viewEvents')}
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="text-base w-full sm:w-auto"
-                  onClick={() => scrollToSection('why-showya')}
-                >
-                  {t('home.whyShowya')}
-                </Button>
-              </div>
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="text-base w-full sm:w-auto"
+                    onClick={() => scrollToSection('communities')}
+                  >
+                    {t('home.viewCommunities')}
+                  </Button>
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="text-base w-full sm:w-auto"
+                    onClick={() => scrollToSection('why-showya')}
+                  >
+                    {t('home.whyShowya')}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/auth/signup">
+                    <Button size="lg" variant="default" className="text-base w-full sm:w-auto">
+                      {t('home.createYourCommunity')}
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="text-base w-full sm:w-auto"
+                    onClick={() => scrollToSection('events')}
+                  >
+                    {t('home.viewEvents')}
+                  </Button>
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="text-base w-full sm:w-auto"
+                    onClick={() => scrollToSection('why-showya')}
+                  >
+                    {t('home.whyShowya')}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* Upcoming Events Section */}
       <section id="events" className="py-12 sm:py-16 md:py-24 lg:py-32">

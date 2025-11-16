@@ -59,18 +59,16 @@ export default function EventDetails() {
 
     try {
       setLoading(true);
-      console.log("EVENT DETAILS QUERY STARTED (CLIENT)", { eventId });
 
       // Fetch user's booking first if logged in
       if (user) {
-        const { data: bookingData, error: bookingError } = await supabase
+        const { data: bookingData } = await supabase
           .from("event_participants")
           .select("*")
           .eq("event_id", eventId)
           .eq("user_id", user.id)
           .maybeSingle();
         
-        console.log("EVENT BOOKING QUERY RESULT", { data: bookingData, error: bookingError });
         setUserBooking(bookingData);
       }
 
@@ -81,8 +79,6 @@ export default function EventDetails() {
           _user_id: user?.id || null
         })
         .maybeSingle();
-
-      console.log("EVENT DETAILS QUERY RESULT", { data: eventData, error: eventError });
 
       if (eventError) throw eventError;
       setEvent(eventData);

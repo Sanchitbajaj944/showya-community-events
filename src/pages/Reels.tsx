@@ -48,21 +48,16 @@ export default function Reels() {
 
   const fetchReels = async () => {
     try {
-      console.log("REELS QUERY STARTED (CLIENT)");
-      
       const { data, error } = await supabase
         .from("spotlights")
         .select("*")
         .not("video_url", "is", null)
         .order("created_at", { ascending: false });
 
-      console.log("REELS QUERY RESULT", { data, error });
-
       if (error) throw error;
       setReels(data || []);
     } catch (error) {
       console.error("Error fetching reels:", error);
-      setReels([]);
     } finally {
       setLoading(false);
     }
@@ -80,7 +75,7 @@ export default function Reels() {
     );
   }
 
-  if (!loading && reels.length === 0) {
+  if (reels.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
