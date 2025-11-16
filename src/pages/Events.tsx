@@ -22,16 +22,20 @@ export default function Events() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
+      console.log("Starting to fetch events...");
       const { data, error } = await supabase
         .from("events")
         .select("*")
         .order("event_date", { ascending: true });
 
+      console.log("Events fetch result:", { data, error });
       if (error) throw error;
       setEvents(data || []);
+      console.log("Events set successfully:", data?.length || 0);
     } catch (error) {
       console.error("Error fetching events:", error);
     } finally {
+      console.log("Setting loading to false");
       setLoading(false);
     }
   };
