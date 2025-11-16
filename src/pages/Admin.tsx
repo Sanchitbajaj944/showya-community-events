@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, CheckCircle, Clock, Flag, Shield, User, Users, UserPlus } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Flag, Shield, User, Users, UserPlus, DollarSign, Percent } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -30,6 +30,14 @@ interface Report {
   created_at: string;
 }
 
+interface Community {
+  id: string;
+  name: string;
+  platform_fee_percentage: number;
+  kyc_status: string;
+  owner_id: string;
+}
+
 export default function Admin() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -44,6 +52,8 @@ export default function Admin() {
   });
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [grantingAdmin, setGrantingAdmin] = useState(false);
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [updatingFees, setUpdatingFees] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     checkAdminStatus();
@@ -78,6 +88,7 @@ export default function Admin() {
 
       setIsAdmin(true);
       fetchReports();
+      fetchCommunities();
     } catch (error: any) {
       console.error("Error checking admin status:", error);
       toast.error("Failed to verify admin access");
@@ -160,6 +171,58 @@ export default function Admin() {
     }
   };
 
+  const fetchCommunities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("communities")
+        .select("id, name, platform_fee_percentage, kyc_status, owner_id")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setCommunities(data || []);
+    } catch (error: any) {
+      console.error("Error fetching communities:", error);
+      toast.error("Failed to load communities");
+    }
+  };
+
+  const updatePlatformFee = async (communityId: string, newFee: number) => {
+    if (newFee < 0 || newFee > 100) {
+      toast.error("Platform fee must be between 0% and 100%");
+      return;
+    }
+
+    try {
+      setUpdatingFees(prev => new Set(prev).add(communityId));
+
+      const { error } = await supabase
+        .from("communities")
+        .update({ platform_fee_percentage: newFee })
+        .eq("id", communityId);
+
+      if (error) throw error;
+
+      setCommunities(prev =>
+        prev.map(c =>
+          c.id === communityId
+            ? { ...c, platform_fee_percentage: newFee }
+            : c
+        )
+      );
+
+      toast.success("Platform fee updated successfully");
+    } catch (error: any) {
+      console.error("Error updating platform fee:", error);
+      toast.error("Failed to update platform fee");
+    } finally {
+      setUpdatingFees(prev => {
+        const next = new Set(prev);
+        next.delete(communityId);
+        return next;
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -189,7 +252,7 @@ export default function Admin() {
           <Shield className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage user reports and moderation</p>
+            <p className="text-muted-foreground">Manage platform settings, reports and users</p>
           </div>
         </div>
 
@@ -252,36 +315,82 @@ export default function Admin() {
           </Card>
         </div>
 
-        {/* Grant Admin Access */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5" />
-              Grant Admin Access
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleGrantAdmin} className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="Enter user email address"
-                value={newAdminEmail}
-                onChange={(e) => setNewAdminEmail(e.target.value)}
-                className="flex-1"
-                disabled={grantingAdmin}
-              />
-              <Button type="submit" disabled={grantingAdmin}>
-                {grantingAdmin ? "Granting..." : "Grant Admin"}
-              </Button>
-            </form>
-            <p className="text-xs text-muted-foreground mt-2">
-              Enter the email address of a registered user to grant them admin privileges.
-            </p>
-          </CardContent>
-        </Card>
+        {/* Main Tabs */}
+        <Tabs defaultValue="reports" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="reports">
+              <Flag className="h-4 w-4 mr-2" />
+              Reports
+            </TabsTrigger>
+            <TabsTrigger value="platform">
+              <DollarSign className="h-4 w-4 mr-2" />
+              Platform Settings
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Reports Tabs */}
-        <Tabs defaultValue="pending" className="space-y-4">
+          {/* Reports Tab */}
+          <TabsContent value="reports" className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-lg bg-orange-500/10">
+                      <Clock className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Pending</p>
+                      <p className="text-2xl font-bold">{stats.pending}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-lg bg-blue-500/10">
+                      <AlertCircle className="h-6 w-6 text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Reviewed</p>
+                      <p className="text-2xl font-bold">{stats.reviewed}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-lg bg-green-500/10">
+                      <CheckCircle className="h-6 w-6 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Resolved</p>
+                      <p className="text-2xl font-bold">{stats.resolved}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-lg bg-primary/10">
+                      <Flag className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Reports</p>
+                      <p className="text-2xl font-bold">{stats.total}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Reports Sub-tabs */}
+            <Tabs defaultValue="pending" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="pending">
               Pending ({pendingReports.length})
@@ -313,6 +422,99 @@ export default function Admin() {
               reports={resolvedReports} 
               onUpdateStatus={updateReportStatus}
             />
+          </TabsContent>
+            </Tabs>
+          </TabsContent>
+
+          {/* Platform Settings Tab */}
+          <TabsContent value="platform" className="space-y-6">
+            {/* Grant Admin Access */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserPlus className="h-5 w-5" />
+                  Grant Admin Access
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleGrantAdmin} className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="Enter user email address"
+                    value={newAdminEmail}
+                    onChange={(e) => setNewAdminEmail(e.target.value)}
+                    className="flex-1"
+                    disabled={grantingAdmin}
+                  />
+                  <Button type="submit" disabled={grantingAdmin}>
+                    {grantingAdmin ? "Granting..." : "Grant Admin"}
+                  </Button>
+                </form>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Enter the email address of a registered user to grant them admin privileges.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Platform Fees */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Percent className="h-5 w-5" />
+                  Platform Commission Rates
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Manage platform fee percentages for each community. Changes apply to future transactions only.
+                </p>
+                <div className="space-y-3">
+                  {communities.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>No communities found</p>
+                    </div>
+                  ) : (
+                    communities.map((community) => (
+                      <div
+                        key={community.id}
+                        className="flex items-center justify-between p-4 border rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium">{community.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {community.kyc_status}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              ID: {community.id.slice(0, 8)}...
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            value={community.platform_fee_percentage}
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value);
+                              if (!isNaN(value)) {
+                                updatePlatformFee(community.id, value);
+                              }
+                            }}
+                            className="w-24 text-center"
+                            disabled={updatingFees.has(community.id)}
+                          />
+                          <span className="text-sm font-medium">%</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
