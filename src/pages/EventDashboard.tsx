@@ -241,7 +241,7 @@ export default function EventDashboard() {
             </CardHeader>
             <CardContent className="space-y-6">
               {event.poster_url && (
-                <div className="w-full h-64 rounded-lg overflow-hidden">
+                <div className="w-full aspect-[16/9] rounded-lg overflow-hidden">
                   <img src={event.poster_url} alt={event.title} className="w-full h-full object-cover" />
                 </div>
               )}

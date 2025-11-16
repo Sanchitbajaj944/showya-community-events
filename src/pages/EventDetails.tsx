@@ -218,7 +218,7 @@ export default function EventDetails() {
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-4xl">
         {/* Event Banner */}
         {event.poster_url && (
-          <div className="aspect-video sm:aspect-[21/9] rounded-lg sm:rounded-2xl overflow-hidden mb-6 sm:mb-8 shadow-lg">
+          <div className="aspect-[16/9] rounded-lg sm:rounded-2xl overflow-hidden mb-6 sm:mb-8 shadow-lg">
             <img 
               src={event.poster_url} 
               alt={event.title}
