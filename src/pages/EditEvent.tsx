@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import Header from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Calendar, Clock, MapPin, Users, Link as LinkIcon, Image, AlertTriangle, Trash2 } from "lucide-react";
-import { CropImageDialog } from "@/components/CropImageDialog";
+import imageCompression from "browser-image-compression";
 import { format } from "date-fns";
 import {
   AlertDialog,
@@ -55,8 +55,6 @@ export default function EditEvent() {
     audience_slots: 0,
   });
   const [uploading, setUploading] = useState(false);
-  const [cropDialogOpen, setCropDialogOpen] = useState(false);
-  const [imageToCrop, setImageToCrop] = useState<string>("");
 
   useEffect(() => {
     fetchEventData();
@@ -69,29 +67,30 @@ export default function EditEvent() {
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file');
-      e.target.value = ''; // Reset input
+      e.target.value = '';
       return;
     }
 
     // Validate file size (max 10MB before optimization)
     if (file.size > 10 * 1024 * 1024) {
       toast.error('Image size must be less than 10MB');
-      e.target.value = ''; // Reset input
+      e.target.value = '';
       return;
     }
 
-    // Create object URL for crop dialog
-    const imageUrl = URL.createObjectURL(file);
-    setImageToCrop(imageUrl);
-    setCropDialogOpen(true);
-    
-    // Reset file input
-    e.target.value = '';
-  };
-
-  const handleCropComplete = async (croppedBlob: Blob) => {
     try {
       setUploading(true);
+
+      // Compress and optimize the image
+      const options = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        initialQuality: 0.85,
+      };
+
+      const compressedFile = await imageCompression(file, options);
+      const finalSize = (compressedFile.size / 1024).toFixed(2);
 
       // Generate unique filename
       const fileName = `${eventId}-${Date.now()}.jpg`;
@@ -100,7 +99,7 @@ export default function EditEvent() {
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('event-posters')
-        .upload(filePath, croppedBlob, {
+        .upload(filePath, compressedFile, {
           cacheControl: '3600',
           upsert: true,
           contentType: 'image/jpeg'
@@ -115,17 +114,13 @@ export default function EditEvent() {
 
       // Update form data
       setFormData({ ...formData, poster_url: publicUrl });
-      toast.success('Poster uploaded successfully');
+      toast.success(`Poster uploaded (${finalSize} KB)`);
     } catch (error: any) {
       console.error('Error uploading poster:', error);
       toast.error('Failed to upload poster');
     } finally {
       setUploading(false);
-      // Clean up object URL
-      if (imageToCrop) {
-        URL.revokeObjectURL(imageToCrop);
-        setImageToCrop('');
-      }
+      e.target.value = '';
     }
   };
 
@@ -477,11 +472,11 @@ export default function EditEvent() {
                   )}
                 </div>
                 {uploading && (
-                  <p className="text-xs text-muted-foreground">Processing and uploading poster...</p>
+                  <p className="text-xs text-muted-foreground">Optimizing and uploading poster...</p>
                 )}
                 {!formData.poster_url && !uploading && (
                   <p className="text-xs text-muted-foreground">
-                    Upload an image. You'll be able to crop and optimize it before saving.
+                    Upload an image. It will be automatically optimized for best quality and file size.
                   </p>
                 )}
               </div>
@@ -703,15 +698,6 @@ export default function EditEvent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Crop Image Dialog */}
-      <CropImageDialog
-        open={cropDialogOpen}
-        onOpenChange={setCropDialogOpen}
-        imageSrc={imageToCrop}
-        onCropComplete={handleCropComplete}
-        aspectRatio={16 / 9}
-      />
     </div>
   );
 }
