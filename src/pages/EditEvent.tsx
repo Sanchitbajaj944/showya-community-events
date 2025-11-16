@@ -46,8 +46,6 @@ export default function EditEvent() {
     description: "",
     event_date: "",
     duration: 60,
-    location: "",
-    city: "",
     category: "",
     poster_url: "",
     meeting_url: "",
@@ -55,10 +53,61 @@ export default function EditEvent() {
     audience_enabled: false,
     audience_slots: 0,
   });
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchEventData();
   }, [eventId, user]);
+
+  const handlePosterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${eventId}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('event-posters')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('event-posters')
+        .getPublicUrl(filePath);
+
+      // Update form data
+      setFormData({ ...formData, poster_url: publicUrl });
+      toast.success('Poster uploaded successfully');
+    } catch (error: any) {
+      console.error('Error uploading poster:', error);
+      toast.error('Failed to upload poster');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const fetchEventData = async () => {
     if (!eventId || !user) return;
@@ -107,8 +156,6 @@ export default function EditEvent() {
         description: eventData.description || "",
         event_date: eventData.event_date ? format(new Date(eventData.event_date), "yyyy-MM-dd'T'HH:mm") : "",
         duration: eventData.duration || 60,
-        location: eventData.location || "",
-        city: eventData.city || "",
         category: eventData.category || "",
         poster_url: eventData.poster_url || "",
         meeting_url: eventData.meeting_url || "",
@@ -148,8 +195,6 @@ export default function EditEvent() {
         description: formData.description,
         event_date: newDate,
         duration: formData.duration,
-        location: formData.location,
-        city: formData.city,
         category: formData.category,
         poster_url: formData.poster_url,
         meeting_url: formData.meeting_url,
@@ -361,35 +406,6 @@ export default function EditEvent() {
               />
             </div>
 
-            {/* Location */}
-            <div>
-              <Label htmlFor="location" className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Location
-              </Label>
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                disabled={isFieldDisabled("location")}
-                placeholder="Event venue or address"
-                className="mt-1"
-              />
-            </div>
-
-            {/* City */}
-            <div>
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                disabled={isFieldDisabled("city")}
-                placeholder="City name"
-                className="mt-1"
-              />
-            </div>
-
             {/* Category */}
             <div>
               <Label htmlFor="category">Category</Label>
@@ -403,20 +419,34 @@ export default function EditEvent() {
               />
             </div>
 
-            {/* Poster URL */}
+            {/* Event Poster Upload */}
             <div>
-              <Label htmlFor="poster_url" className="flex items-center gap-2">
+              <Label htmlFor="poster" className="flex items-center gap-2">
                 <Image className="h-4 w-4" />
-                Event Poster URL
+                Event Poster
               </Label>
-              <Input
-                id="poster_url"
-                value={formData.poster_url}
-                onChange={(e) => setFormData({ ...formData, poster_url: e.target.value })}
-                disabled={isFieldDisabled("poster_url")}
-                placeholder="https://..."
-                className="mt-1"
-              />
+              <div className="space-y-3 mt-1">
+                {formData.poster_url && (
+                  <div className="relative w-full h-48 rounded-lg overflow-hidden border">
+                    <img 
+                      src={formData.poster_url} 
+                      alt="Event poster" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <Input
+                  id="poster"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePosterUpload}
+                  disabled={isFieldDisabled("poster_url") || uploading}
+                  className="cursor-pointer"
+                />
+                {uploading && (
+                  <p className="text-xs text-muted-foreground">Uploading poster...</p>
+                )}
+              </div>
             </div>
 
             {/* Meeting URL */}
