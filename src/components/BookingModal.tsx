@@ -146,6 +146,15 @@ export function BookingModal({
 
       if (error) throw error;
 
+      // Send registration notifications
+      await supabase.functions.invoke('handle-event-registration', {
+        body: {
+          event_id: event.id,
+          user_id: user?.id,
+          role: role
+        }
+      });
+
       setBookingId(ticketCode);
       setBookingSuccess(true);
       toast.success("Booking confirmed! 🎉");
@@ -207,6 +216,15 @@ export function BookingModal({
               });
 
             if (bookingError) throw bookingError;
+
+            // Send registration notifications
+            await supabase.functions.invoke('handle-event-registration', {
+              body: {
+                event_id: event.id,
+                user_id: user?.id,
+                role: role
+              }
+            });
 
             setBookingId(ticketCode);
             setBookingSuccess(true);
