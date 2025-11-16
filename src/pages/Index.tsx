@@ -60,19 +60,16 @@ const Index = () => {
 
   const fetchUpcomingEvents = async () => {
     try {
-      console.log("Index: Starting to fetch upcoming events...");
-      console.log("Index: Supabase client exists:", !!supabase);
+      console.log("EVENTS QUERY STARTED (CLIENT)");
       
-      const promise = supabase
+      const { data, error } = await supabase
         .from("events")
         .select("*")
         .order("event_date", { ascending: true })
         .limit(8);
-      
-      console.log("Index: Query created, waiting for response...");
-      const { data, error } = await promise;
 
-      console.log("Index: Events fetch result:", { data, error, dataLength: data?.length });
+      console.log("EVENTS QUERY RESULT", { data, error });
+      
       if (error) {
         console.error("Index: Supabase error:", error);
         throw error;
@@ -80,9 +77,7 @@ const Index = () => {
       
       // Filter only upcoming events
       const upcoming = (data || []).filter(event => !isPast(new Date(event.event_date)));
-      console.log("Index: Filtered upcoming events:", upcoming.length);
       setEvents(upcoming.slice(0, 4)); // Show max 4 on homepage
-      console.log("Index: Upcoming events set successfully");
     } catch (error) {
       console.error("Index: Error fetching events:", error);
       setEvents([]);
@@ -91,23 +86,15 @@ const Index = () => {
 
   const fetchCommunities = async () => {
     try {
-      console.log("Index: Starting to fetch communities...");
-      console.log("Index: Supabase client exists:", !!supabase);
+      console.log("COMMUNITIES QUERY STARTED (CLIENT)");
       
-      const promise = supabase
+      const { data: communitiesData, error: communitiesError } = await supabase
         .from("communities")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(6);
-        
-      console.log("Index: Communities query created, waiting for response...");
-      const { data: communitiesData, error: communitiesError } = await promise;
 
-      console.log("Index: Communities fetch result:", { 
-        communitiesData, 
-        communitiesError,
-        dataLength: communitiesData?.length 
-      });
+      console.log("COMMUNITIES QUERY RESULT", { data: communitiesData, error: communitiesError });
       
       if (communitiesError) {
         console.error("Index: Supabase communities error:", communitiesError);
@@ -115,18 +102,14 @@ const Index = () => {
       }
 
       if (!communitiesData || communitiesData.length === 0) {
-        console.log("Index: No communities found in database");
         setCommunities([]);
         return;
       }
 
-      console.log("Index: Found", communitiesData.length, "communities");
       // Fetch owner details for each community
       const ownerIds = [...new Set(communitiesData.map(c => c.owner_id).filter(Boolean))];
-      console.log("Index: Owner IDs to fetch:", ownerIds);
       
       if (ownerIds.length === 0) {
-        console.log("Index: No owner IDs, setting communities without owners");
         setCommunities(communitiesData.map(c => ({ ...c, owner: null })));
         return;
       }
@@ -136,7 +119,6 @@ const Index = () => {
         .select("user_id, name, display_name, profile_picture_url")
         .in("user_id", ownerIds);
 
-      console.log("Index: Owners fetch result:", { ownersData, ownersError });
       if (ownersError) {
         console.error("Index: Error fetching owners:", ownersError);
         setCommunities(communitiesData.map(c => ({ ...c, owner: null })));
@@ -149,7 +131,6 @@ const Index = () => {
         owner: ownersData?.find(owner => owner.user_id === community.owner_id) || null
       }));
 
-      console.log("Index: Communities with owners set:", communitiesWithOwners.length);
       setCommunities(communitiesWithOwners);
     } catch (error) {
       console.error("Index: Error fetching communities:", error);
