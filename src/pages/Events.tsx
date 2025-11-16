@@ -22,32 +22,24 @@ export default function Events() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      console.log("Events: Starting to fetch events...");
-      console.log("Events: Supabase client exists:", !!supabase);
+      console.log("EVENTS QUERY STARTED (CLIENT)");
       
       const { data, error } = await supabase
         .from("events")
         .select("*")
         .order("event_date", { ascending: true });
 
-      console.log("Events: Fetch completed", { 
-        hasData: !!data, 
-        dataLength: data?.length,
-        hasError: !!error,
-        error 
-      });
+      console.log("EVENTS QUERY RESULT", { data, error });
       
       if (error) {
         console.error("Events: Supabase error:", error);
         throw error;
       }
       setEvents(data || []);
-      console.log("Events: State updated with", data?.length || 0, "events");
     } catch (error) {
       console.error("Events: Error fetching events:", error);
       setEvents([]);
     } finally {
-      console.log("Events: Setting loading to false");
       setLoading(false);
     }
   };
@@ -140,13 +132,10 @@ export default function Events() {
         ) : events.length === 0 ? (
           <div className="text-center p-12 rounded-xl border-2 border-dashed border-border">
             <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">No events yet</h3>
+            <h3 className="text-lg font-semibold mb-2">Failed to load events</h3>
             <p className="text-muted-foreground mb-4">
-              Be the first to create an event in your community!
+              Please check the browser console for details. The Supabase connection may not be initialized properly.
             </p>
-            <Link to="/communities">
-              <Button variant="outline">Explore Communities</Button>
-            </Link>
           </div>
         ) : (
           <Tabs defaultValue="upcoming" className="space-y-4 sm:space-y-6">
