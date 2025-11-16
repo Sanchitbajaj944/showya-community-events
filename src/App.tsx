@@ -24,6 +24,7 @@ import EventDetails from "./pages/EventDetails";
 import EditEvent from "./pages/EditEvent";
 import EventDashboard from "./pages/EventDashboard";
 import Admin from "./pages/Admin";
+import DebugSupabase from "./pages/DebugSupabase";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/profile/edit" element={<EditProfile />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/debug-supabase" element={<DebugSupabase />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
