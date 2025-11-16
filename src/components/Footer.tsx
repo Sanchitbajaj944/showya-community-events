@@ -91,6 +91,9 @@ const Footer = () => {
               <a href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 {t('footer.terms')}
               </a>
+              <a href="/refund-policy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Refund Policy
+              </a>
               <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 {t('footer.cookies')}
               </a>
