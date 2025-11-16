@@ -29,6 +29,7 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
   const [hasViewed, setHasViewed] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [localLikes, setLocalLikes] = useState(reel.like_count);
+  const [communityId, setCommunityId] = useState<string | null>(null);
   const [performerData, setPerformerData] = useState<{
     name: string;
     display_name: string | null;
@@ -38,11 +39,12 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
   const { user } = useAuth();
 
   useEffect(() => {
+    fetchCommunityId();
     fetchPerformerData();
     if (user) {
       checkIfLiked();
     }
-  }, [reel.user_id, user]);
+  }, [reel.user_id, reel.community_name, user]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -77,6 +79,20 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
       .maybeSingle();
     
     setIsLiked(!!data);
+  };
+
+  const fetchCommunityId = async () => {
+    try {
+      const { data } = await supabase
+        .from("communities")
+        .select("id")
+        .eq("name", reel.community_name)
+        .maybeSingle();
+      
+      if (data) setCommunityId(data.id);
+    } catch (error) {
+      console.error("Error fetching community ID:", error);
+    }
   };
 
   const fetchPerformerData = async () => {
@@ -177,7 +193,10 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
           {/* Left: User Info & Caption */}
           <div className="flex-1 space-y-3">
             {/* Community Info First */}
-            <Link to={`/communities`} className="flex items-center gap-3">
+            <Link 
+              to={communityId ? `/community/${communityId}/public` : `/communities`} 
+              className="flex items-center gap-3"
+            >
               <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center border-2 border-white">
                 <span className="text-white font-bold text-sm">
                   {reel.community_name.charAt(0).toUpperCase()}
