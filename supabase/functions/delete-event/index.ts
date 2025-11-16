@@ -102,20 +102,33 @@ serve(async (req: Request) => {
 
       // Create notifications for all participants
       const notifications = participants.map((participant: any) => ({
-        event_id: eventId,
         user_id: participant.user_id,
-        notification_type: 'event_cancelled',
-        message: `The event "${event.title}" has been cancelled. ${event.ticket_type === 'paid' ? 'Full refund will be processed.' : ''}`,
-        is_read: false
+        title: 'Event Deleted',
+        message: `The event "${event.title}" has been deleted. ${event.ticket_type === 'paid' ? 'You will receive a full refund within 5-7 business days.' : ''}`,
+        type: 'warning',
+        category: 'event',
+        related_id: eventId,
       }));
 
       const { error: notificationError } = await supabase
-        .from('event_notifications')
+        .from('notifications')
         .insert(notifications);
 
       if (notificationError) {
         console.error('Failed to create notifications:', notificationError);
       }
+
+      // Send emails to all attendees
+      const emailPromises = participants.map((p: any) =>
+        supabase.functions.invoke('send-notification-email', {
+          body: {
+            user_id: p.user_id,
+            title: 'Event Deleted - Refund Initiated',
+            message: `The event "${event.title}" has been deleted by the organizer. ${event.ticket_type === 'paid' ? 'Your refund has been initiated and will be processed within 5-7 business days.' : ''}`,
+          },
+        })
+      );
+      await Promise.allSettled(emailPromises);
 
       // If it's a paid event, initiate refunds
       if (event.ticket_type === 'paid') {
