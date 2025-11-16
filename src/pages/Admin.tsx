@@ -236,9 +236,11 @@ export default function Admin() {
     try {
       setUpdatingAllFees(true);
 
+      // Update all communities by using a WHERE clause that matches all records
       const { error } = await supabase
         .from("communities")
-        .update({ platform_fee_percentage: newFee });
+        .update({ platform_fee_percentage: newFee })
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Matches all records
 
       if (error) throw error;
 
