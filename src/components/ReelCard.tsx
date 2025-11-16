@@ -30,6 +30,7 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [localLikes, setLocalLikes] = useState(reel.like_count);
   const [communityId, setCommunityId] = useState<string | null>(null);
+  const [communityBanner, setCommunityBanner] = useState<string | null>(null);
   const [performerData, setPerformerData] = useState<{
     name: string;
     display_name: string | null;
@@ -85,11 +86,14 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
     try {
       const { data } = await supabase
         .from("communities")
-        .select("id")
+        .select("id, banner_url")
         .eq("name", reel.community_name)
         .maybeSingle();
       
-      if (data) setCommunityId(data.id);
+      if (data) {
+        setCommunityId(data.id);
+        setCommunityBanner(data.banner_url);
+      }
     } catch (error) {
       console.error("Error fetching community ID:", error);
     }
@@ -197,10 +201,18 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
               to={communityId ? `/community/${communityId}/public` : `/communities`} 
               className="flex items-center gap-3"
             >
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center border-2 border-white">
-                <span className="text-white font-bold text-sm">
-                  {reel.community_name.charAt(0).toUpperCase()}
-                </span>
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-primary flex items-center justify-center border-2 border-white">
+                {communityBanner ? (
+                  <img 
+                    src={communityBanner} 
+                    alt={reel.community_name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-white font-bold text-sm">
+                    {reel.community_name.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
               <div>
                 <p className="font-semibold text-white text-sm">{reel.community_name}</p>
