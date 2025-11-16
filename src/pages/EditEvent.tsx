@@ -470,7 +470,6 @@ export default function EditEvent() {
                       variant="destructive"
                       size="default"
                       onClick={() => setFormData({ ...formData, poster_url: "" })}
-                      disabled={isFieldDisabled("poster_url")}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Remove
