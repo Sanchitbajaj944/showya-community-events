@@ -54,6 +54,7 @@ export type Database = {
           kyc_status: Database["public"]["Enums"]["kyc_status"]
           name: string
           owner_id: string
+          platform_fee_percentage: number
           updated_at: string
         }
         Insert: {
@@ -65,6 +66,7 @@ export type Database = {
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           name: string
           owner_id: string
+          platform_fee_percentage?: number
           updated_at?: string
         }
         Update: {
@@ -76,6 +78,7 @@ export type Database = {
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           name?: string
           owner_id?: string
+          platform_fee_percentage?: number
           updated_at?: string
         }
         Relationships: []

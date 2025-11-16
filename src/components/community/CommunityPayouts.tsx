@@ -822,10 +822,10 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
               <p className="font-medium">Platform Fee</p>
               <p className="text-sm text-muted-foreground">Per ticket sale</p>
             </div>
-            <Badge variant="outline" className="text-lg">5%</Badge>
+            <Badge variant="outline" className="text-lg">{community.platform_fee_percentage}%</Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-4">
-            Showya retains 5% commission on each ticket sale. Remaining 95% is transferred to your account.
+            Showya retains {community.platform_fee_percentage}% commission on each ticket sale. Remaining {(100 - community.platform_fee_percentage).toFixed(1)}% is transferred to your account.
           </p>
         </CardContent>
       </Card>
