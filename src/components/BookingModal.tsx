@@ -158,7 +158,12 @@ export function BookingModal({
       setBookingId(ticketCode);
       setBookingSuccess(true);
       toast.success("Booking confirmed! 🎉");
-      onBookingComplete();
+      
+      // Refresh and close immediately after short delay
+      setTimeout(() => {
+        onOpenChange(false);
+        onBookingComplete();
+      }, 1500);
 
     } catch (error: any) {
       console.error("Booking error:", error);
@@ -229,7 +234,12 @@ export function BookingModal({
             setBookingId(ticketCode);
             setBookingSuccess(true);
             toast.success("Payment successful! Booking confirmed 🎉");
-            onBookingComplete();
+            
+            // Refresh and close immediately after short delay
+            setTimeout(() => {
+              onOpenChange(false);
+              onBookingComplete();
+            }, 1500);
 
           } catch (error: any) {
             console.error("Post-payment error:", error);
