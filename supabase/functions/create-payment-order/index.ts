@@ -64,6 +64,13 @@ serve(async (req) => {
       throw new Error('This event has free tickets');
     }
 
+    // Get community details with platform fee
+    const { data: community } = await supabaseClient
+      .from('communities')
+      .select('platform_fee_percentage')
+      .eq('id', event.community_id)
+      .single();
+
     // Get community Razorpay account
     const { data: razorpayAccount } = await supabaseClient
       .from('razorpay_accounts')
@@ -96,11 +103,12 @@ serve(async (req) => {
         },
         transfers: [{
           account: razorpayAccount.razorpay_account_id,
-          amount: Math.round(amount * 100 * 0.95), // 95% to community, 5% platform fee
+          amount: Math.round(amount * 100 * (1 - (community?.platform_fee_percentage || 5) / 100)), // Dynamic platform fee
           currency: 'INR',
           notes: {
             event_id,
-            community_id: event.community_id
+            community_id: event.community_id,
+            platform_fee_percentage: community?.platform_fee_percentage || 5
           }
         }]
       })
