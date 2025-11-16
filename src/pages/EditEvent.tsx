@@ -453,17 +453,6 @@ export default function EditEvent() {
                       alt="Event poster" 
                       className="w-full h-full object-cover"
                     />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2 shadow-lg"
-                      onClick={() => setFormData({ ...formData, poster_url: "" })}
-                      disabled={isFieldDisabled("poster_url")}
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Remove
-                    </Button>
                   </div>
                 )}
                 <div className="flex gap-2">
@@ -475,6 +464,18 @@ export default function EditEvent() {
                     disabled={isFieldDisabled("poster_url") || uploading}
                     className="cursor-pointer flex-1"
                   />
+                  {formData.poster_url && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="default"
+                      onClick={() => setFormData({ ...formData, poster_url: "" })}
+                      disabled={isFieldDisabled("poster_url")}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Remove
+                    </Button>
+                  )}
                 </div>
                 {uploading && (
                   <p className="text-xs text-muted-foreground">Processing and uploading poster...</p>
