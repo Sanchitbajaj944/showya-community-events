@@ -1,7 +1,7 @@
 # Notification System Documentation
 
 ## Overview
-The notification system provides in-app notifications, email notifications, and real-time updates across the application.
+The notification system provides comprehensive in-app and email notifications across all user interactions in Showya.
 
 ## Features
 - ✅ In-app notifications with bell icon
@@ -11,6 +11,47 @@ The notification system provides in-app notifications, email notifications, and 
 - ✅ Mark as read functionality
 - ✅ Mobile-responsive notification center
 - ✅ Dedicated notifications page
+- ✅ Automated triggers for all key events
+- ✅ Context-aware notification routing
+
+## Notification Matrix
+
+### 📅 Event-Related Notifications
+| Trigger | Audience | Delivery | Implementation |
+|---------|----------|----------|----------------|
+| New Event Created | Community followers | In-app (optional) | Manual via useNotifications |
+| Event Registration | Performer, Community Owner | In-app + Email | `handle-event-registration` edge function |
+| Event Edited | All attendees + followers | In-app + Email | `update-event` edge function |
+| Meeting Link Changed | All attendees | In-app + Email | `update-event` edge function |
+| Event Cancelled | All attendees | In-app + Email + Refund | Manual trigger required |
+| Event Deleted | All attendees | In-app + Email + Refund | `delete-event` edge function |
+| Slot Count Increased | Community followers | In-app | Database trigger |
+| 1hr Reminder | All attendees | In-app + Email | Scheduled job (to be implemented) |
+
+### 📹 Reels-Related Notifications
+| Trigger | Audience | Delivery | Implementation |
+|---------|----------|----------|----------------|
+| Reel Uploaded | Community owner | In-app | Database trigger |
+| Reel Liked | Community owner | In-app | Can be added via manual trigger |
+
+### 🧾 Payment & Refund Notifications
+| Trigger | Audience | Delivery | Implementation |
+|---------|----------|----------|----------------|
+| Booking Confirmed | Attendee | In-app + Email | `create-payment-order` edge function |
+| Auto Refund | Affected users | In-app + Email | Razorpay webhook |
+| Manual Refund | Attendee | Email | Admin action |
+
+### 🛡 Report System Notifications
+| Trigger | Audience | Delivery | Implementation |
+|---------|----------|----------|----------------|
+| Report Submitted | Admin + Host | In-app | Database trigger |
+| Report Status Updated | Reporter | In-app | Database trigger |
+
+### 🧑‍🤝‍🧑 Community & Messaging
+| Trigger | Audience | Delivery | Implementation |
+|---------|----------|----------|----------------|
+| New Chat Message | Target users | In-app | Real-time via Supabase |
+| New Member Joined | Community Owner | In-app | Database trigger |
 
 ## Database Tables
 
