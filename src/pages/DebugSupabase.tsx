@@ -56,6 +56,9 @@ export default function DebugSupabase() {
   };
 
   const runTestQuery = async () => {
+    console.log("CLIENT QUERY STARTED");
+    console.log("Running from browser - check Network tab for: https://loitjamnkuvgcpovfkpf.supabase.co/rest/v1/events");
+    
     setLoading(true);
     setTestResult(null);
 
@@ -63,27 +66,25 @@ export default function DebugSupabase() {
     setAbortController(controller);
 
     try {
-      console.log("=== DEBUG: Starting test query ===");
-      console.log("Supabase client:", supabase);
-      console.log("Opening Network tab - you should see a request to:", envVars.url);
+      console.log("Supabase client exists:", !!supabase);
+      console.log("About to call supabase.from('events').select('id').limit(1)");
       
       const startTime = performance.now();
       
-      // Simple count query
-      const { data, error, count } = await supabase
+      // Exact query as requested
+      const { data, error } = await supabase
         .from("events")
-        .select("id", { count: "exact", head: false })
+        .select("id")
         .limit(1)
         .abortSignal(controller.signal);
 
       const endTime = performance.now();
       const duration = endTime - startTime;
 
-      console.log("=== DEBUG: Query completed ===");
+      console.log("CLIENT QUERY COMPLETED");
       console.log("Duration:", duration, "ms");
-      console.log("Data:", data);
-      console.log("Error:", error);
-      console.log("Count:", count);
+      console.log("Data received:", data);
+      console.log("Error received:", error);
 
       setTestResult({
         success: !error,
@@ -94,12 +95,11 @@ export default function DebugSupabase() {
           hint: error.hint,
           code: error.code,
         } : null,
-        count,
         duration: Math.round(duration),
       });
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        console.log("=== DEBUG: Query cancelled ===");
+        console.log("CLIENT QUERY CANCELLED");
         setTestResult({
           success: false,
           error: {
@@ -107,7 +107,7 @@ export default function DebugSupabase() {
           },
         });
       } else {
-        console.error("=== DEBUG: Query exception ===", err);
+        console.error("CLIENT QUERY EXCEPTION:", err);
         setTestResult({
           success: false,
           error: {
@@ -247,10 +247,16 @@ export default function DebugSupabase() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                This will run: <code className="bg-muted px-1 rounded">SELECT id FROM events LIMIT 1</code>
+                This will run: <code className="bg-muted px-1 rounded">await supabase.from("events").select("id").limit(1)</code>
               </p>
               <p className="text-sm text-muted-foreground font-semibold">
-                ⚠️ Before clicking: Open your browser's Network tab (F12 → Network) to see if requests are sent
+                ⚠️ IMPORTANT: Open Network tab (F12 → Network) BEFORE clicking to see the HTTP request to:
+              </p>
+              <code className="block text-xs bg-muted p-2 rounded mt-1">
+                https://loitjamnkuvgcpovfkpf.supabase.co/rest/v1/events
+              </code>
+              <p className="text-sm text-muted-foreground">
+                Console will log "CLIENT QUERY STARTED" when clicked
               </p>
             </div>
 
@@ -290,12 +296,6 @@ export default function DebugSupabase() {
                 {testResult.duration && (
                   <div className="text-sm">
                     <span className="font-semibold">Response Time:</span> {testResult.duration}ms
-                  </div>
-                )}
-
-                {testResult.count !== null && testResult.count !== undefined && (
-                  <div className="text-sm">
-                    <span className="font-semibold">Total Events in DB:</span> {testResult.count}
                   </div>
                 )}
 
