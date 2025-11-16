@@ -79,8 +79,10 @@ export default function Reels() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center" style={{ height: "calc(100vh - 4rem)" }}>
+        <div className="hidden md:block">
+          <Header />
+        </div>
+        <div className="flex items-center justify-center h-screen md:h-[calc(100vh-4rem)]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
         <BottomNav />
@@ -91,8 +93,10 @@ export default function Reels() {
   if (reels.length === 0) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center" style={{ height: "calc(100vh - 4rem)" }}>
+        <div className="hidden md:block">
+          <Header />
+        </div>
+        <div className="flex items-center justify-center h-screen md:h-[calc(100vh-4rem)]">
           <div className="text-center px-4">
             <p className="text-xl text-muted-foreground mb-2">{t('reelsPage.noShowClips')}</p>
             <p className="text-sm text-muted-foreground mb-4">
@@ -107,14 +111,15 @@ export default function Reels() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <div className="hidden md:block">
+        <Header />
+      </div>
       
       {/* Reels Container with Snap Scroll */}
       <div
         ref={containerRef}
-        className="overflow-y-scroll snap-y snap-mandatory scroll-smooth bg-background"
+        className="overflow-y-scroll snap-y snap-mandatory scroll-smooth bg-background h-screen md:h-[calc(100vh-4rem)]"
         style={{ 
-          height: "calc(100vh - 4rem)",
           scrollbarWidth: "none", 
           msOverflowStyle: "none" 
         }}
@@ -128,8 +133,7 @@ export default function Reels() {
           <div
             key={reel.id}
             ref={(el) => (reelRefs.current[index] = el)}
-            className="snap-start snap-always"
-            style={{ height: "calc(100vh - 4rem)" }}
+            className="snap-start snap-always h-screen md:h-[calc(100vh-4rem)]"
           >
             <ReelCard
               reel={reel}
