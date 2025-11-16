@@ -306,9 +306,12 @@ export default function CommunityMemberView() {
 
 const MemberEventsView = ({ communityId, ownerId }: { communityId: string; ownerId: string }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const isOwner = user?.id === ownerId;
+
+  console.log('MemberEventsView - User ID:', user?.id, 'Owner ID:', ownerId, 'Is Owner:', isOwner);
 
   useEffect(() => {
     fetchEvents();
@@ -381,7 +384,11 @@ const MemberEventsView = ({ communityId, ownerId }: { communityId: string; owner
               {event.description}
             </p>
           )}
-          <Button className="w-full mt-2" variant={isOwner ? "outline" : "default"}>
+          <Button 
+            className="w-full mt-2" 
+            variant={isOwner ? "outline" : "default"}
+            onClick={() => navigate(`/events/${event.id}`)}
+          >
             {isOwner ? 'View Event' : event.ticket_type === 'paid' ? `Book Ticket • ₹${event.performer_ticket_price}` : 'View Details'}
           </Button>
         </div>
