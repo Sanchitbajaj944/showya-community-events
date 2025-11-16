@@ -59,7 +59,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email using Resend
     const emailResponse = await resend.emails.send({
-      from: "Showya <notifications@resend.dev>", // Update with your verified domain
+      from: "Showya <notifications@showya.in>",
       to: [user.email],
       subject: title,
       html: `
