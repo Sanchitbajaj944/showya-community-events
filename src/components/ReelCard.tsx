@@ -25,7 +25,7 @@ interface ReelCardProps {
 }
 
 export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [hasViewed, setHasViewed] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [localLikes, setLocalLikes] = useState(reel.like_count);
@@ -64,6 +64,8 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
     if (isActive) {
       // Reset to beginning and play
       video.currentTime = 0;
+      video.muted = false;
+      setIsMuted(false);
       setIsLoading(true);
       video.play().catch(() => {});
       // Track view on first play
