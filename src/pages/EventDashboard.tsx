@@ -420,16 +420,10 @@ export default function EventDashboard() {
                   </div>
                   <Button
                     onClick={() => setShowUploadReelDialog(true)}
-                    disabled={attendees.filter(a => a.role === 'performer').length === 0}
                   >
                     <Film className="h-4 w-4 mr-2" />
                     Upload Spotlight ShowClip
                   </Button>
-                  {attendees.filter(a => a.role === 'performer').length === 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      You need performers signed up to upload a ShowClip
-                    </p>
-                  )}
                 </div>
               )}
             </CardContent>
