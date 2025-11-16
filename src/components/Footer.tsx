@@ -88,7 +88,7 @@ const Footer = () => {
               <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 {t('footer.privacy')}
               </a>
-              <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 {t('footer.terms')}
               </a>
               <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
