@@ -48,7 +48,7 @@ export const CommunityEvents = ({ community, userRole }: CommunityEventsProps) =
     <Card key={event.id} className="hover:shadow-lg transition-shadow">
       <CardContent className="p-4">
         {event.poster_url && (
-          <div className="w-full h-48 rounded-lg overflow-hidden mb-4">
+          <div className="w-full aspect-[16/9] rounded-lg overflow-hidden mb-4">
             <img 
               src={event.poster_url} 
               alt={event.title}

@@ -24,7 +24,7 @@ const EventCard = ({
 }: EventCardProps) => {
   return (
     <Card className="w-full max-w-[340px] h-[440px] overflow-hidden cursor-pointer border-2 flex flex-col">
-      <div className="relative h-48 flex-shrink-0 overflow-hidden bg-gradient-card">
+      <div className="relative aspect-[16/9] flex-shrink-0 overflow-hidden bg-gradient-card">
         {image ? (
           <img 
             src={image} 

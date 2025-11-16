@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Upload, Ticket, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import imageCompression from "browser-image-compression";
 
 type PromoCode = {
   code: string;
@@ -77,19 +78,42 @@ export default function CreateEvent() {
     }
   };
 
-  const handlePosterUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePosterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size must be less than 5MB");
-        return;
-      }
-      setPosterFile(file);
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image size must be less than 10MB");
+      return;
+    }
+
+    try {
+      // Compress and optimize the image
+      const options = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        initialQuality: 0.85,
+      };
+
+      const compressedFile = await imageCompression(file, options);
+      const finalSize = (compressedFile.size / 1024).toFixed(2);
+      toast.success(`Image optimized (${finalSize} KB)`);
+
+      setPosterFile(compressedFile);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPosterPreview(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressedFile);
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      toast.error('Failed to process image');
     }
   };
 
@@ -361,6 +385,9 @@ export default function CreateEvent() {
                     )}
                   </div>
                   {!posterFile && <p className="text-xs text-destructive">Required</p>}
+                  <p className="text-xs text-muted-foreground">
+                    Recommended: 16:9 aspect ratio (e.g., 1920x1080px). Image will be automatically optimized.
+                  </p>
                 </div>
 
                 <div className="flex gap-3 pt-4">
@@ -565,7 +592,9 @@ export default function CreateEvent() {
               <div className="space-y-6">
                 <div className="space-y-4">
                   {posterPreview && (
-                    <img src={posterPreview} alt="Event poster" className="w-full h-64 object-cover rounded-lg" />
+                    <div className="w-full aspect-[16/9] overflow-hidden rounded-lg">
+                      <img src={posterPreview} alt="Event poster" className="w-full h-full object-cover" />
+                    </div>
                   )}
 
                   <div>

@@ -442,7 +442,7 @@ export default function EditEvent() {
               </Label>
               <div className="space-y-3 mt-1">
                 {formData.poster_url && (
-                  <div className="relative w-full h-48 rounded-lg overflow-hidden border">
+                  <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden border">
                     <img 
                       src={formData.poster_url} 
                       alt="Event poster" 
@@ -476,7 +476,7 @@ export default function EditEvent() {
                 )}
                 {!formData.poster_url && !uploading && (
                   <p className="text-xs text-muted-foreground">
-                    Upload an image. It will be automatically optimized for best quality and file size.
+                    Recommended: 16:9 aspect ratio (e.g., 1920x1080px). Image will be automatically optimized.
                   </p>
                 )}
               </div>

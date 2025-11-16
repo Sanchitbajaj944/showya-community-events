@@ -45,7 +45,7 @@ export default function Events() {
       to={`/events/${event.id}`}
       className="group rounded-xl border border-border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 block"
     >
-      <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center overflow-hidden">
+      <div className="aspect-[16/9] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center overflow-hidden">
         {event.poster_url ? (
           <img 
             src={event.poster_url} 
