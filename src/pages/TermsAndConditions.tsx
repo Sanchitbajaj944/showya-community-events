@@ -22,7 +22,7 @@ const TermsAndConditions = () => {
               Terms & Conditions
             </h1>
             <p className="text-muted-foreground">
-              Effective Date: January 1, 2025 | Last Updated: January 1, 2025
+              Effective Date: November 16, 2025 | Last Updated: November 16, 2025
             </p>
           </div>
 
