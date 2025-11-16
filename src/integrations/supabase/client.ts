@@ -6,24 +6,32 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 // Critical debugging - log what we're initializing with
-console.log("🔍 SUPABASE CLIENT INIT - URL:", SUPABASE_URL);
-console.log("🔍 SUPABASE CLIENT INIT - KEY:", SUPABASE_PUBLISHABLE_KEY ? `${SUPABASE_PUBLISHABLE_KEY.substring(0, 20)}...` : "UNDEFINED");
-console.log("🔍 SUPABASE CLIENT INIT - URL is defined:", !!SUPABASE_URL);
-console.log("🔍 SUPABASE CLIENT INIT - KEY is defined:", !!SUPABASE_PUBLISHABLE_KEY);
+console.log("SUPABASE CLIENT INIT", { 
+  supabaseUrl: SUPABASE_URL, 
+  keySet: !!SUPABASE_PUBLISHABLE_KEY 
+});
 
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  console.error("❌ CRITICAL: Supabase client cannot initialize - missing environment variables!");
-  console.error("❌ This will create a broken client that won't make HTTP requests");
-  console.error("❌ The dev server needs to restart to load .env variables");
+  const errorMsg = "❌ CRITICAL: Supabase URL or key missing at init. Cannot create Supabase client.";
+  console.error(errorMsg);
+  console.error("URL:", SUPABASE_URL);
+  console.error("Key exists:", !!SUPABASE_PUBLISHABLE_KEY);
+  throw new Error(errorMsg);
 }
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
+export const supabase = createClient<Database>(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    }
   }
-});
+);
+
+console.log("✅ Supabase client created successfully");

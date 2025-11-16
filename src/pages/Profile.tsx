@@ -79,6 +79,7 @@ export default function Profile() {
 
     try {
       setLoading(true);
+      console.log("PROFILE QUERY STARTED (CLIENT)", { targetUserId, isOwnProfile });
 
       // Fetch profile - use full profiles table for own profile, public view for others
       let profileData, profileError;
@@ -100,6 +101,8 @@ export default function Profile() {
         profileData = result.data;
         profileError = result.error;
       }
+
+      console.log("PROFILE QUERY RESULT", { data: profileData, error: profileError });
 
       if (profileError) throw profileError;
       setProfile(profileData);
