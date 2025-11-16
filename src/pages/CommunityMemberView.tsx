@@ -244,7 +244,7 @@ export default function CommunityMemberView() {
           </TabsContent>
 
           <TabsContent value="events">
-            <MemberEventsView communityId={communityId!} />
+            <MemberEventsView communityId={communityId!} ownerId={community.owner_id} />
           </TabsContent>
 
           <TabsContent value="members">
@@ -301,9 +301,11 @@ export default function CommunityMemberView() {
   );
 }
 
-const MemberEventsView = ({ communityId }: { communityId: string }) => {
+const MemberEventsView = ({ communityId, ownerId }: { communityId: string; ownerId: string }) => {
+  const { user } = useAuth();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const isOwner = user?.id === ownerId;
 
   useEffect(() => {
     fetchEvents();
@@ -376,8 +378,8 @@ const MemberEventsView = ({ communityId }: { communityId: string }) => {
               {event.description}
             </p>
           )}
-          <Button className="w-full mt-2">
-            {event.ticket_type === 'paid' ? `Book Ticket • ₹${event.performer_ticket_price}` : 'View Details'}
+          <Button className="w-full mt-2" variant={isOwner ? "outline" : "default"}>
+            {isOwner ? 'View Event' : event.ticket_type === 'paid' ? `Book Ticket • ₹${event.performer_ticket_price}` : 'View Details'}
           </Button>
         </div>
       </CardContent>
