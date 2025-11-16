@@ -52,11 +52,17 @@ const Index = () => {
 
   const fetchUpcomingEvents = async () => {
     try {
+      console.log('🏠 Index: Fetching upcoming events...');
+      console.log('🏠 Index: Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+      console.log('🏠 Index: Supabase Key present:', !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+      
       const { data, error } = await supabase
         .from("events")
         .select("*")
         .order("event_date", { ascending: true })
         .limit(8);
+
+      console.log('🏠 Index: Events response:', { data: data?.length, error });
 
       if (error) throw error;
       
@@ -64,17 +70,21 @@ const Index = () => {
       const upcoming = (data || []).filter(event => !isPast(new Date(event.event_date)));
       setEvents(upcoming.slice(0, 4)); // Show max 4 on homepage
     } catch (error) {
-      console.error("Error fetching events:", error);
+      console.error("❌ Index: Error fetching events:", error);
     }
   };
 
   const fetchCommunities = async () => {
     try {
+      console.log('🏠 Index: Fetching communities...');
+      
       const { data: communitiesData, error: communitiesError } = await supabase
         .from("communities")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(6);
+
+      console.log('🏠 Index: Communities response:', { data: communitiesData?.length, error: communitiesError });
 
       if (communitiesError) throw communitiesError;
 

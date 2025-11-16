@@ -22,15 +22,21 @@ export default function Events() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
+      console.log('🔵 Events: Starting Supabase fetch...');
+      console.log('🔵 Events: Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+      console.log('🔵 Events: Supabase Key present:', !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+      
       const { data, error } = await supabase
         .from("events")
         .select("*")
         .order("event_date", { ascending: true });
 
+      console.log('🔵 Events: Supabase response:', { data: data?.length, error });
+      
       if (error) throw error;
       setEvents(data || []);
     } catch (error) {
-      console.error("Error fetching events:", error);
+      console.error("❌ Error fetching events:", error);
     } finally {
       setLoading(false);
     }
