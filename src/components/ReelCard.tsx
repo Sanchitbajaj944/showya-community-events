@@ -31,6 +31,7 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
   const [localLikes, setLocalLikes] = useState(reel.like_count);
   const [communityId, setCommunityId] = useState<string | null>(null);
   const [communityBanner, setCommunityBanner] = useState<string | null>(null);
+  const [isMember, setIsMember] = useState(false);
   const [performerData, setPerformerData] = useState<{
     name: string;
     display_name: string | null;
@@ -93,6 +94,18 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
       if (data) {
         setCommunityId(data.id);
         setCommunityBanner(data.banner_url);
+        
+        // Check if user is a member
+        if (user) {
+          const { data: memberData } = await supabase
+            .from("community_members")
+            .select("id")
+            .eq("community_id", data.id)
+            .eq("user_id", user.id)
+            .maybeSingle();
+          
+          setIsMember(!!memberData);
+        }
       }
     } catch (error) {
       console.error("Error fetching community ID:", error);
@@ -198,7 +211,7 @@ export function ReelCard({ reel, onUpdate, isActive }: ReelCardProps) {
           <div className="flex-1 space-y-3">
             {/* Community Info First */}
             <Link 
-              to={communityId ? `/community/${communityId}/public` : `/communities`} 
+              to={communityId ? (isMember ? `/community/${communityId}` : `/community/${communityId}/public`) : `/communities`} 
               className="flex items-center gap-3"
             >
               <div className="w-10 h-10 rounded-full overflow-hidden bg-primary flex items-center justify-center border-2 border-white">
