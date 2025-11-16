@@ -26,25 +26,38 @@ export default function Reels() {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const reelRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     fetchReels();
   }, []);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const scrollTop = container.scrollTop;
-      const viewHeight = container.clientHeight;
-      const newIndex = Math.round(scrollTop / viewHeight);
-      setCurrentIndex(newIndex);
+    const options = {
+      root: containerRef.current,
+      rootMargin: '0px',
+      threshold: 0.5, // Trigger when 50% of the reel is visible
     };
 
-    container.addEventListener("scroll", handleScroll);
-    return () => container.removeEventListener("scroll", handleScroll);
-  }, []);
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const index = reelRefs.current.findIndex((ref) => ref === entry.target);
+          if (index !== -1) {
+            setCurrentIndex(index);
+          }
+        }
+      });
+    }, options);
+
+    reelRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [reels]);
 
   const fetchReels = async () => {
     try {
@@ -114,6 +127,7 @@ export default function Reels() {
         {reels.map((reel, index) => (
           <div
             key={reel.id}
+            ref={(el) => (reelRefs.current[index] = el)}
             className="snap-start snap-always"
             style={{ height: "calc(100vh - 4rem)" }}
           >
