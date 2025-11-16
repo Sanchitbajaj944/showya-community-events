@@ -54,19 +54,40 @@ export function ReelCard({
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    
     const handleWaiting = () => setIsLoading(true);
     const handleCanPlay = () => setIsLoading(false);
     const handlePlaying = () => setIsLoading(false);
+    const handleLoadedData = () => setIsLoading(false);
+    const handleError = () => {
+      setIsLoading(false);
+      console.error('Video loading error');
+    };
+    
     video.addEventListener('waiting', handleWaiting);
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('playing', handlePlaying);
+    video.addEventListener('loadeddata', handleLoadedData);
+    video.addEventListener('error', handleError);
+    
     if (isActive) {
       // Reset to beginning and play
       video.currentTime = 0;
       video.muted = false;
       setIsMuted(false);
       setIsLoading(true);
-      video.play().catch(() => {});
+      
+      // Load the video first, then play
+      video.load();
+      const playPromise = video.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.error('Play failed:', error);
+          setIsLoading(false);
+        });
+      }
+      
       // Track view on first play
       if (!hasViewed) {
         setHasViewed(true);
@@ -86,10 +107,13 @@ export function ReelCard({
       setIsMuted(true);
       setIsLoading(true);
     }
+    
     return () => {
       video.removeEventListener('waiting', handleWaiting);
       video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('playing', handlePlaying);
+      video.removeEventListener('loadeddata', handleLoadedData);
+      video.removeEventListener('error', handleError);
     };
   }, [isActive]);
   const checkIfLiked = async () => {
@@ -190,7 +214,17 @@ export function ReelCard({
   const performerName = performerData?.display_name || performerData?.name || "Unknown Performer";
   return <div className="relative h-full w-full bg-background">
       {/* Video Player */}
-      <video ref={videoRef} src={reel.video_url || ""} className="h-full w-full object-contain" loop muted={isMuted} playsInline onClick={() => videoRef.current?.paused ? videoRef.current?.play() : videoRef.current?.pause()} />
+      <video 
+        ref={videoRef} 
+        src={reel.video_url || ""} 
+        className="h-full w-full object-contain" 
+        loop 
+        muted={isMuted} 
+        playsInline 
+        preload="auto"
+        webkit-playsinline="true"
+        onClick={() => videoRef.current?.paused ? videoRef.current?.play() : videoRef.current?.pause()} 
+      />
 
       {/* Loading Indicator */}
       {isLoading && <div className="absolute inset-0 flex items-center justify-center bg-background/20 backdrop-blur-sm">
