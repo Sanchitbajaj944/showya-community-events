@@ -39,7 +39,7 @@ export default function Events() {
   const upcomingEvents = events.filter(event => !isPast(new Date(event.event_date)));
   const pastEvents = events.filter(event => isPast(new Date(event.event_date)));
 
-  const renderEventCard = (event: any) => (
+  const renderEventCard = (event: any, isPastEvent: boolean = false) => (
     <Link
       key={event.id}
       to={`/events/${event.id}`}
@@ -96,8 +96,8 @@ export default function Events() {
           </div>
         </div>
 
-        <Button className="w-full mt-4 text-xs sm:text-sm" variant={event.ticket_type === 'paid' ? 'default' : 'outline'}>
-          {event.ticket_type === 'paid' ? `Book Now • ₹${event.performer_ticket_price}` : 'View Details'}
+        <Button className="w-full mt-4 text-xs sm:text-sm" variant="outline">
+          {isPastEvent ? 'View Event' : event.ticket_type === 'paid' ? `Book Now • ₹${event.performer_ticket_price}` : 'View Details'}
         </Button>
       </div>
     </Link>
@@ -152,7 +152,7 @@ export default function Events() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {upcomingEvents.map(renderEventCard)}
+                  {upcomingEvents.map(event => renderEventCard(event, false))}
                 </div>
               )}
             </TabsContent>
@@ -166,7 +166,7 @@ export default function Events() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {pastEvents.map(renderEventCard)}
+                  {pastEvents.map(event => renderEventCard(event, true))}
                 </div>
               )}
             </TabsContent>
