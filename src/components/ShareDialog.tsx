@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Share2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface ShareDialogProps {
   url: string;
@@ -84,7 +85,7 @@ export const ShareDialog = ({ url, title, description, triggerClassName }: Share
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" className={triggerClassName}>
+        <Button variant="outline" size="lg" className={cn("h-11 w-11 p-0", triggerClassName)}>
           <Share2 className="h-4 w-4" />
         </Button>
       </DialogTrigger>

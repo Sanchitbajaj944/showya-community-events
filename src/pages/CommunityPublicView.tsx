@@ -152,12 +152,12 @@ export default function CommunityPublicView() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
+              <div className="grid grid-cols-[1fr_auto_auto] gap-2 pt-4 border-t border-border">
                 <Button 
-                  className="w-full sm:flex-1" 
                   size="lg" 
                   onClick={handleJoin}
                   disabled={joining}
+                  className="h-11"
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
                   <span className="truncate">{joining ? "Joining..." : "Join Community"}</span>
@@ -166,11 +166,11 @@ export default function CommunityPublicView() {
                   url={`/community/${communityId}/public`}
                   title={community.name}
                   description={community.description}
-                  triggerClassName="w-full sm:w-auto"
+                  triggerClassName="h-11"
                 />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                    <Button variant="outline" size="lg" className="h-11 w-11 p-0">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
