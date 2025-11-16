@@ -85,7 +85,7 @@ const Footer = () => {
               {t('footer.copyright')}
             </p>
             <nav className="flex space-x-6">
-              <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a href="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 {t('footer.privacy')}
               </a>
               <a href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
