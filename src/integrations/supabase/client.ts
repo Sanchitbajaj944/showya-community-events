@@ -2,76 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Try multiple sources for environment variables
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 
-  (typeof window !== 'undefined' && (window as any).__SUPABASE_URL__) ||
-  'https://loitjamnkuvgcpovfkpf.supabase.co';
+const SUPABASE_URL = "https://loitjamnkuvgcpovfkpf.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvaXRqYW1ua3V2Z2Nwb3Zma3BmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3NjEwNjYsImV4cCI6MjA3NTMzNzA2Nn0.Ckzt6EKDuwEHi_0PW9s9NZCKkyIlZXGlOgmAyla_lBk";
 
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 
-  (typeof window !== 'undefined' && (window as any).__SUPABASE_KEY__) ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvaXRqYW1ua3V2Z2Nwb3Zma3BmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3NjEwNjYsImV4cCI6MjA3NTMzNzA2Nn0.Ckzt6EKDuwEHi_0PW9s9NZCKkyIlZXGlOgmAyla_lBk';
-
-// Critical debugging - log what we're initializing with
-console.log("🔧 SUPABASE CLIENT INIT", { 
-  url: SUPABASE_URL,
-  keyPrefix: SUPABASE_PUBLISHABLE_KEY?.substring(0, 20) + '...',
-  source: import.meta.env.VITE_SUPABASE_URL ? 'import.meta.env' : 'fallback'
-});
-
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  const errorMsg = "❌ CRITICAL: Supabase URL or key missing";
-  console.error(errorMsg, {
-    url: SUPABASE_URL,
-    hasKey: !!SUPABASE_PUBLISHABLE_KEY
-  });
-  throw new Error(errorMsg);
-}
-
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
-
-export const supabase = createClient<Database>(
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY,
-  {
-    auth: {
-      storage: localStorage,
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-    global: {
-      fetch: (url: RequestInfo | URL, options?: RequestInit) => {
-        console.log('🌐 Supabase fetch:', url);
-        
-        // Create timeout controller
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
-        return fetch(url, {
-          ...options,
-          signal: controller.signal,
-        }).then(res => {
-          clearTimeout(timeoutId);
-          console.log('✅ Supabase response:', res.status, url);
-          return res;
-        }).catch(err => {
-          clearTimeout(timeoutId);
-          console.error('❌ Supabase fetch error:', err, url);
-          throw err;
-        });
-      }
-    }
-  }
-);
-
-console.log("✅ Supabase client created successfully");
-
-// Test the client immediately
-(async () => {
-  try {
-    const result = await supabase.from('events').select('id').limit(1);
-    console.log('🧪 Supabase client test:', result);
-  } catch (err) {
-    console.error('❌ Supabase client test failed:', err);
-  }
-})();
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
