@@ -18,17 +18,21 @@ export default function Communities() {
 
   const fetchCommunities = async () => {
     setLoading(true);
+    console.log("Starting to fetch communities...");
     try {
       const { data, error } = await supabase
         .from('communities')
         .select('*')
         .order('created_at', { ascending: false });
 
+      console.log("Communities fetch result:", { data, error });
       if (error) throw error;
       setCommunities(data || []);
+      console.log("Communities set successfully:", data?.length || 0);
     } catch (error) {
       console.error('Error fetching communities:', error);
     } finally {
+      console.log("Setting communities loading to false");
       setLoading(false);
     }
   };

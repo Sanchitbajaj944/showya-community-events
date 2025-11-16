@@ -52,39 +52,46 @@ const Index = () => {
 
   const fetchUpcomingEvents = async () => {
     try {
+      console.log("Index: Starting to fetch upcoming events...");
       const { data, error } = await supabase
         .from("events")
         .select("*")
         .order("event_date", { ascending: true })
         .limit(8);
 
+      console.log("Index: Events fetch result:", { data, error });
       if (error) throw error;
       
       // Filter only upcoming events
       const upcoming = (data || []).filter(event => !isPast(new Date(event.event_date)));
       setEvents(upcoming.slice(0, 4)); // Show max 4 on homepage
+      console.log("Index: Upcoming events set:", upcoming.length);
     } catch (error) {
-      console.error("Error fetching events:", error);
+      console.error("Index: Error fetching events:", error);
     }
   };
 
   const fetchCommunities = async () => {
     try {
+      console.log("Index: Starting to fetch communities...");
       const { data: communitiesData, error: communitiesError } = await supabase
         .from("communities")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(6);
 
+      console.log("Index: Communities fetch result:", { communitiesData, communitiesError });
       if (communitiesError) throw communitiesError;
 
       if (!communitiesData || communitiesData.length === 0) {
+        console.log("Index: No communities found");
         setCommunities([]);
         return;
       }
 
       // Fetch owner details for each community
       const ownerIds = [...new Set(communitiesData.map(c => c.owner_id).filter(Boolean))];
+      console.log("Index: Owner IDs to fetch:", ownerIds);
       
       if (ownerIds.length === 0) {
         setCommunities(communitiesData.map(c => ({ ...c, owner: null })));
@@ -96,8 +103,9 @@ const Index = () => {
         .select("user_id, name, display_name, profile_picture_url")
         .in("user_id", ownerIds);
 
+      console.log("Index: Owners fetch result:", { ownersData, ownersError });
       if (ownersError) {
-        console.error("Error fetching owners:", ownersError);
+        console.error("Index: Error fetching owners:", ownersError);
         setCommunities(communitiesData.map(c => ({ ...c, owner: null })));
         return;
       }
@@ -108,10 +116,10 @@ const Index = () => {
         owner: ownersData?.find(owner => owner.user_id === community.owner_id) || null
       }));
 
-      console.log("Communities with owners:", communitiesWithOwners);
+      console.log("Index: Communities with owners:", communitiesWithOwners);
       setCommunities(communitiesWithOwners);
     } catch (error) {
-      console.error("Error fetching communities:", error);
+      console.error("Index: Error fetching communities:", error);
     }
   };
 
