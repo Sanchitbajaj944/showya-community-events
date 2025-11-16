@@ -38,8 +38,40 @@ export const supabase = createClient<Database>(
       storage: localStorage,
       persistSession: true,
       autoRefreshToken: true,
+    },
+    global: {
+      fetch: (url: RequestInfo | URL, options?: RequestInit) => {
+        console.log('🌐 Supabase fetch:', url);
+        
+        // Create timeout controller
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
+        return fetch(url, {
+          ...options,
+          signal: controller.signal,
+        }).then(res => {
+          clearTimeout(timeoutId);
+          console.log('✅ Supabase response:', res.status, url);
+          return res;
+        }).catch(err => {
+          clearTimeout(timeoutId);
+          console.error('❌ Supabase fetch error:', err, url);
+          throw err;
+        });
+      }
     }
   }
 );
 
 console.log("✅ Supabase client created successfully");
+
+// Test the client immediately
+(async () => {
+  try {
+    const result = await supabase.from('events').select('id').limit(1);
+    console.log('🧪 Supabase client test:', result);
+  } catch (err) {
+    console.error('❌ Supabase client test failed:', err);
+  }
+})();
