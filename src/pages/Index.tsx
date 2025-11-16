@@ -24,6 +24,14 @@ const Index = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
+  // Debug Supabase connection
+  useEffect(() => {
+    console.log("Index: Component mounted");
+    console.log("Index: Supabase URL:", import.meta.env.VITE_SUPABASE_URL);
+    console.log("Index: Supabase Key exists:", !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+    console.log("Index: User logged in:", !!user);
+  }, [user]);
+
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -53,47 +61,72 @@ const Index = () => {
   const fetchUpcomingEvents = async () => {
     try {
       console.log("Index: Starting to fetch upcoming events...");
-      const { data, error } = await supabase
+      console.log("Index: Supabase client exists:", !!supabase);
+      
+      const promise = supabase
         .from("events")
         .select("*")
         .order("event_date", { ascending: true })
         .limit(8);
+      
+      console.log("Index: Query created, waiting for response...");
+      const { data, error } = await promise;
 
-      console.log("Index: Events fetch result:", { data, error });
-      if (error) throw error;
+      console.log("Index: Events fetch result:", { data, error, dataLength: data?.length });
+      if (error) {
+        console.error("Index: Supabase error:", error);
+        throw error;
+      }
       
       // Filter only upcoming events
       const upcoming = (data || []).filter(event => !isPast(new Date(event.event_date)));
+      console.log("Index: Filtered upcoming events:", upcoming.length);
       setEvents(upcoming.slice(0, 4)); // Show max 4 on homepage
-      console.log("Index: Upcoming events set:", upcoming.length);
+      console.log("Index: Upcoming events set successfully");
     } catch (error) {
       console.error("Index: Error fetching events:", error);
+      setEvents([]);
     }
   };
 
   const fetchCommunities = async () => {
     try {
       console.log("Index: Starting to fetch communities...");
-      const { data: communitiesData, error: communitiesError } = await supabase
+      console.log("Index: Supabase client exists:", !!supabase);
+      
+      const promise = supabase
         .from("communities")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(6);
+        
+      console.log("Index: Communities query created, waiting for response...");
+      const { data: communitiesData, error: communitiesError } = await promise;
 
-      console.log("Index: Communities fetch result:", { communitiesData, communitiesError });
-      if (communitiesError) throw communitiesError;
+      console.log("Index: Communities fetch result:", { 
+        communitiesData, 
+        communitiesError,
+        dataLength: communitiesData?.length 
+      });
+      
+      if (communitiesError) {
+        console.error("Index: Supabase communities error:", communitiesError);
+        throw communitiesError;
+      }
 
       if (!communitiesData || communitiesData.length === 0) {
-        console.log("Index: No communities found");
+        console.log("Index: No communities found in database");
         setCommunities([]);
         return;
       }
 
+      console.log("Index: Found", communitiesData.length, "communities");
       // Fetch owner details for each community
       const ownerIds = [...new Set(communitiesData.map(c => c.owner_id).filter(Boolean))];
       console.log("Index: Owner IDs to fetch:", ownerIds);
       
       if (ownerIds.length === 0) {
+        console.log("Index: No owner IDs, setting communities without owners");
         setCommunities(communitiesData.map(c => ({ ...c, owner: null })));
         return;
       }
@@ -116,10 +149,11 @@ const Index = () => {
         owner: ownersData?.find(owner => owner.user_id === community.owner_id) || null
       }));
 
-      console.log("Index: Communities with owners:", communitiesWithOwners);
+      console.log("Index: Communities with owners set:", communitiesWithOwners.length);
       setCommunities(communitiesWithOwners);
     } catch (error) {
       console.error("Index: Error fetching communities:", error);
+      setCommunities([]);
     }
   };
 
