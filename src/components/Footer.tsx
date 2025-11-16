@@ -1,6 +1,7 @@
 import { Instagram, Twitter, Youtube } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -85,15 +86,15 @@ const Footer = () => {
               {t('footer.copyright')}
             </p>
             <nav className="flex space-x-6">
-              <a href="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link to="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 {t('footer.privacy')}
-              </a>
-              <a href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 {t('footer.terms')}
-              </a>
-              <a href="/refund-policy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link to="/refund-policy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Refund Policy
-              </a>
+              </Link>
               <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 {t('footer.cookies')}
               </a>
