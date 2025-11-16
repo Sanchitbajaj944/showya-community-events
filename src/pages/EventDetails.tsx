@@ -124,12 +124,12 @@ export default function EventDetails() {
     const ticketPrice = event.ticket_type === 'paid' ? event.performer_ticket_price : 0;
     
     let percentage = 0;
-    if (hoursUntilEvent >= 48) {
-      percentage = 100; // Full refund
-    } else if (hoursUntilEvent >= 24) {
-      percentage = 50; // 50% refund
+    if (hoursUntilEvent >= 24) {
+      percentage = 100; // Full refund - 24+ hours before
+    } else if (hoursUntilEvent >= 2) {
+      percentage = 75; // 75% refund - 2-24 hours before
     } else {
-      percentage = 0; // No refund
+      percentage = 0; // No refund - less than 2 hours before
     }
     
     setRefundPercentage(percentage);
@@ -429,9 +429,9 @@ export default function EventDetails() {
             <CardContent className="p-6">
               <h3 className="font-semibold mb-2">Cancellation & Refund Policy</h3>
               <p className="text-sm text-muted-foreground">
-                Cancellations made 48 hours before the event are eligible for a full refund. 
-                Cancellations within 48 hours will receive a 50% refund. No refunds for cancellations 
-                within 24 hours of the event.
+                Cancellations made 24 hours or more before the event are eligible for a full refund. 
+                Cancellations within 2-24 hours will receive a 75% refund. No refunds for cancellations 
+                within 2 hours of the event.
               </p>
             </CardContent>
           </Card>
@@ -509,17 +509,17 @@ export default function EventDetails() {
                       </p>
                       {refundPercentage === 100 && (
                         <p className="text-green-600 dark:text-green-400">
-                          ✓ Full refund - Cancelling more than 48 hours before the event
+                          ✓ Full refund - Cancelling 24+ hours before the event
                         </p>
                       )}
-                      {refundPercentage === 50 && (
+                      {refundPercentage === 75 && (
                         <p className="text-orange-600 dark:text-orange-400">
-                          ⚠ 50% refund - Cancelling between 24-48 hours before the event
+                          ⚠ 75% refund - Cancelling 2-24 hours before the event
                         </p>
                       )}
                       {refundPercentage === 0 && (
                         <p className="text-destructive">
-                          ✗ No refund available - Cancelling within 24 hours of the event
+                          ✗ No refund available - Cancelling within 2 hours of the event
                         </p>
                       )}
                     </div>
@@ -528,13 +528,13 @@ export default function EventDetails() {
                   <div className="bg-muted/50 p-3 rounded text-xs space-y-1">
                     <p className="font-semibold text-foreground">Refund Policy:</p>
                     <ul className="list-disc list-inside space-y-1">
-                      <li>48+ hours before: 100% refund</li>
-                      <li>24-48 hours before: 50% refund</li>
-                      <li>Within 24 hours: No refund</li>
+                      <li>24+ hours before: 100% refund</li>
+                      <li>2-24 hours before: 75% refund</li>
+                      <li>Within 2 hours: No refund</li>
                     </ul>
                     {refundPercentage > 0 && (
                       <p className="mt-2 text-muted-foreground">
-                        Refunds will be processed within 5-7 business days.
+                        Refunds will be processed within 5-10 business days.
                       </p>
                     )}
                   </div>
