@@ -311,8 +311,6 @@ const MemberEventsView = ({ communityId, ownerId }: { communityId: string; owner
   const [loading, setLoading] = useState(true);
   const isOwner = user?.id === ownerId;
 
-  console.log('MemberEventsView - User ID:', user?.id, 'Owner ID:', ownerId, 'Is Owner:', isOwner);
-
   useEffect(() => {
     fetchEvents();
   }, [communityId]);
