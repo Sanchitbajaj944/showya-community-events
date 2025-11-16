@@ -15,6 +15,7 @@ export default function DebugSupabase() {
   const [testResult, setTestResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [networkCheck, setNetworkCheck] = useState<boolean | null>(null);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   useEffect(() => {
     // Check environment variables
@@ -58,6 +59,9 @@ export default function DebugSupabase() {
     setLoading(true);
     setTestResult(null);
 
+    const controller = new AbortController();
+    setAbortController(controller);
+
     try {
       console.log("=== DEBUG: Starting test query ===");
       console.log("Supabase client:", supabase);
@@ -69,7 +73,8 @@ export default function DebugSupabase() {
       const { data, error, count } = await supabase
         .from("events")
         .select("id", { count: "exact", head: false })
-        .limit(1);
+        .limit(1)
+        .abortSignal(controller.signal);
 
       const endTime = performance.now();
       const duration = endTime - startTime;
@@ -93,16 +98,34 @@ export default function DebugSupabase() {
         duration: Math.round(duration),
       });
     } catch (err: any) {
-      console.error("=== DEBUG: Query exception ===", err);
-      setTestResult({
-        success: false,
-        error: {
-          message: err.message || "Unknown error",
-          stack: err.stack,
-        },
-      });
+      if (err.name === 'AbortError') {
+        console.log("=== DEBUG: Query cancelled ===");
+        setTestResult({
+          success: false,
+          error: {
+            message: "Query cancelled by user",
+          },
+        });
+      } else {
+        console.error("=== DEBUG: Query exception ===", err);
+        setTestResult({
+          success: false,
+          error: {
+            message: err.message || "Unknown error",
+            stack: err.stack,
+          },
+        });
+      }
     } finally {
       setLoading(false);
+      setAbortController(null);
+    }
+  };
+
+  const stopQuery = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
     }
   };
 
@@ -231,13 +254,25 @@ export default function DebugSupabase() {
               </p>
             </div>
 
-            <Button 
-              onClick={runTestQuery} 
-              disabled={loading || !allEnvVarsPresent}
-              size="lg"
-            >
-              {loading ? "Running..." : "Run Test Query"}
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                onClick={runTestQuery} 
+                disabled={loading || !allEnvVarsPresent}
+                size="lg"
+              >
+                {loading ? "Running..." : "Run Test Query"}
+              </Button>
+              
+              {loading && (
+                <Button 
+                  onClick={stopQuery} 
+                  variant="destructive"
+                  size="lg"
+                >
+                  Stop
+                </Button>
+              )}
+            </div>
 
             {testResult && (
               <div className="p-4 rounded-lg border bg-muted space-y-3">
