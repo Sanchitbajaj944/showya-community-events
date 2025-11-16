@@ -461,7 +461,7 @@ export default function EditEvent() {
                     type="file"
                     accept="image/*"
                     onChange={handlePosterUpload}
-                    disabled={isFieldDisabled("poster_url") || uploading}
+                    disabled={uploading}
                     className="cursor-pointer flex-1"
                   />
                   {formData.poster_url && (
