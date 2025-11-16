@@ -2,20 +2,28 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// Try multiple sources for environment variables
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 
+  (typeof window !== 'undefined' && (window as any).__SUPABASE_URL__) ||
+  'https://loitjamnkuvgcpovfkpf.supabase.co';
+
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 
+  (typeof window !== 'undefined' && (window as any).__SUPABASE_KEY__) ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvaXRqYW1ua3V2Z2Nwb3Zma3BmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3NjEwNjYsImV4cCI6MjA3NTMzNzA2Nn0.Ckzt6EKDuwEHi_0PW9s9NZCKkyIlZXGlOgmAyla_lBk';
 
 // Critical debugging - log what we're initializing with
-console.log("SUPABASE CLIENT INIT", { 
-  supabaseUrl: SUPABASE_URL, 
-  keySet: !!SUPABASE_PUBLISHABLE_KEY 
+console.log("🔧 SUPABASE CLIENT INIT", { 
+  url: SUPABASE_URL,
+  keyPrefix: SUPABASE_PUBLISHABLE_KEY?.substring(0, 20) + '...',
+  source: import.meta.env.VITE_SUPABASE_URL ? 'import.meta.env' : 'fallback'
 });
 
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  const errorMsg = "❌ CRITICAL: Supabase URL or key missing at init. Cannot create Supabase client.";
-  console.error(errorMsg);
-  console.error("URL:", SUPABASE_URL);
-  console.error("Key exists:", !!SUPABASE_PUBLISHABLE_KEY);
+  const errorMsg = "❌ CRITICAL: Supabase URL or key missing";
+  console.error(errorMsg, {
+    url: SUPABASE_URL,
+    hasKey: !!SUPABASE_PUBLISHABLE_KEY
+  });
   throw new Error(errorMsg);
 }
 
