@@ -447,6 +447,51 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          action_url: string | null
+          category: string
+          created_at: string
+          id: string
+          is_email_sent: boolean
+          is_read: boolean
+          message: string
+          read_at: string | null
+          related_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          is_email_sent?: boolean
+          is_read?: boolean
+          message: string
+          read_at?: string | null
+          related_id?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          is_email_sent?: boolean
+          is_read?: boolean
+          message?: string
+          read_at?: string | null
+          related_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           bio: string | null
@@ -864,6 +909,7 @@ export type Database = {
           target_user_id: string
         }[]
       }
+      get_unread_notification_count: { Args: never; Returns: number }
       get_user_report_count: {
         Args: { p_days?: number; p_user_id: string }
         Returns: number
@@ -887,6 +933,11 @@ export type Database = {
       is_community_owner: {
         Args: { _community_id: string; _user_id: string }
         Returns: boolean
+      }
+      mark_all_notifications_read: { Args: never; Returns: undefined }
+      mark_notification_read: {
+        Args: { notification_id: string }
+        Returns: undefined
       }
     }
     Enums: {
