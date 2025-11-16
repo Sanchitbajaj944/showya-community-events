@@ -23,10 +23,11 @@ export default function CommunityPublicView() {
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [isMember, setIsMember] = useState(false);
 
   useEffect(() => {
     fetchCommunityData();
-  }, [communityId]);
+  }, [communityId, user]);
 
   const fetchCommunityData = async () => {
     if (!communityId) return;
@@ -49,6 +50,18 @@ export default function CommunityPublicView() {
         .rpc('get_community_member_count', { p_community_id: communityId });
 
       setMemberCount(countData || 0);
+
+      // Check if user is already a member
+      if (user) {
+        const { data: membershipData } = await supabase
+          .from("community_members")
+          .select("id")
+          .eq("community_id", communityId)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        setIsMember(!!membershipData);
+      }
     } catch (error: any) {
       console.error("Error fetching community:", error);
       toast.error("Failed to load community");
@@ -63,6 +76,12 @@ export default function CommunityPublicView() {
       return;
     }
 
+    // If already a member, navigate to member view
+    if (isMember) {
+      navigate(`/community/${communityId}`);
+      return;
+    }
+
     setJoining(true);
     try {
       const { error } = await supabase
@@ -73,7 +92,16 @@ export default function CommunityPublicView() {
           role: 'member'
         });
 
-      if (error) throw error;
+      if (error) {
+        // Handle duplicate key error
+        if (error.code === '23505') {
+          setIsMember(true);
+          toast.info("You're already a member of this community");
+          navigate(`/community/${communityId}`);
+          return;
+        }
+        throw error;
+      }
 
       toast.success("Joined community successfully!");
       navigate(`/community/${communityId}`);
@@ -158,9 +186,19 @@ export default function CommunityPublicView() {
                   onClick={handleJoin}
                   disabled={joining}
                   className="h-11"
+                  variant={isMember ? "outline" : "default"}
                 >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  <span className="truncate">{joining ? "Joining..." : "Join Community"}</span>
+                  {isMember ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      <span className="truncate">Already a Member</span>
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      <span className="truncate">{joining ? "Joining..." : "Join Community"}</span>
+                    </>
+                  )}
                 </Button>
                 <ShareDialog
                   url={`/community/${communityId}/public`}
