@@ -19,6 +19,7 @@ import {
   DropdownMenuSubTrigger,
 } from "./ui/dropdown-menu";
 import { SUPPORTED_LANGUAGES } from "@/i18n/config";
+import { LanguageSelector } from "./LanguageSelector";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -258,6 +259,12 @@ const Header = () => {
                 Profile
               </Link>
             )}
+            
+            {/* Language Selector */}
+            <div className="pt-4 border-t border-border">
+              <LanguageSelector showLabel={true} />
+            </div>
+            
             <div className="pt-4 space-y-3">
               {user ? (
                 <>
