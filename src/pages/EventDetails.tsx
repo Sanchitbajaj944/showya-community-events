@@ -282,9 +282,19 @@ export default function EventDetails() {
             {/* Booking Status / Button */}
             <div className="shrink-0 self-start sm:self-center">
               {userBooking ? (
-                <div className="sm:text-right">
+                <div className="sm:text-right space-y-2">
                   <Badge className="mb-2 text-xs">You're Booked</Badge>
                   <p className="text-xs sm:text-sm text-muted-foreground">Ticket: {userBooking.ticket_code}</p>
+                  {!isEventPast && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={openCancelDialog}
+                    >
+                      Cancel Booking
+                    </Button>
+                  )}
                 </div>
               ) : event.ticket_type === 'paid' ? (
                 <div className="sm:text-right">
