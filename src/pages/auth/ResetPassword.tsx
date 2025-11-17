@@ -22,37 +22,54 @@ export default function ResetPassword() {
   });
 
   useEffect(() => {
-    // Listen for auth state changes to detect password recovery session
+    let mounted = true;
+
+    const initializePasswordReset = async () => {
+      // Check if we have the recovery hash in the URL
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const type = hashParams.get('type');
+
+      if (type === 'recovery' && accessToken) {
+        // We have a valid recovery link, mark as valid immediately
+        if (mounted) {
+          setValidToken(true);
+        }
+        return;
+      }
+
+      // Check current session as fallback
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && mounted) {
+        setValidToken(true);
+        return;
+      }
+
+      // If no valid token found after checking, redirect
+      if (mounted) {
+        toast.error("This link has expired. Request a new one.");
+        navigate("/auth/forgot-password");
+      }
+    };
+
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === "PASSWORD_RECOVERY") {
-          setValidToken(true);
-        } else if (event === "SIGNED_IN" && session) {
+        if (!mounted) return;
+        
+        if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
           setValidToken(true);
         }
       }
     );
 
-    // Also check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setValidToken(true);
-      }
-    });
-
-    // Set a timeout to show error if no valid session after 3 seconds
-    const timeout = setTimeout(() => {
-      if (!validToken) {
-        toast.error("This link has expired. Request a new one.");
-        navigate("/auth/forgot-password");
-      }
-    }, 3000);
+    initializePasswordReset();
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
-      clearTimeout(timeout);
     };
-  }, [navigate, validToken]);
+  }, [navigate]);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     try {
