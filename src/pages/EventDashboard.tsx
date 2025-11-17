@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { format, isPast, differenceInHours } from "date-fns";
 import { Calendar, Clock, MapPin, Users, Edit, Trash2, Link as LinkIcon, IndianRupee, AlertTriangle, MoreVertical, UserX, Flag, Eye, Film } from "lucide-react";
 import { UploadReelDialog } from "@/components/UploadReelDialog";
+import { UserAvatar } from "@/components/UserAvatar";
 
 export default function EventDashboard() {
   const { eventId } = useParams();
@@ -461,13 +462,11 @@ export default function EventDashboard() {
                           to={`/profile/${attendee.user_id}`}
                           className="hover:underline flex items-center gap-2"
                         >
-                          {attendee.profiles?.profile_picture_url && (
-                            <img 
-                              src={attendee.profiles.profile_picture_url} 
-                              alt=""
-                              className="h-8 w-8 rounded-full object-cover"
-                            />
-                          )}
+                          <UserAvatar
+                            src={attendee.profiles?.profile_picture_url}
+                            name={attendee.profiles?.display_name || attendee.profiles?.name}
+                            size="sm"
+                          />
                           <span>{attendee.profiles?.display_name || attendee.profiles?.name || 'User'}</span>
                         </Link>
                       </TableCell>
