@@ -88,7 +88,7 @@ export default function Profile() {
           .from("profiles")
           .select("*")
           .eq("user_id", targetUserId)
-          .single();
+          .maybeSingle();
         profileData = result.data;
         profileError = result.error;
       } else {
@@ -96,7 +96,7 @@ export default function Profile() {
           .from("profiles_public")
           .select("*")
           .eq("user_id", targetUserId)
-          .single();
+          .maybeSingle();
         profileData = result.data;
         profileError = result.error;
       }
