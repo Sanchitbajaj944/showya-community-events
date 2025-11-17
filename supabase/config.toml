@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.start-kyc]
 verify_jwt = true
+
+[functions.send-password-reset-email]
+verify_jwt = false
