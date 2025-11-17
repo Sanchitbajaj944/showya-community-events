@@ -55,6 +55,46 @@ export default function EventDetails() {
     fetchEventDetails();
   }, [eventId, user]);
 
+  // Real-time subscription for slot updates
+  useEffect(() => {
+    if (!eventId) return;
+
+    const channel = supabase
+      .channel(`event-${eventId}-participants`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'event_participants',
+          filter: `event_id=eq.${eventId}`
+        },
+        () => {
+          // Recalculate available slots when participants change
+          fetchParticipantCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [eventId, event]);
+
+  const fetchParticipantCount = async () => {
+    if (!eventId || !event) return;
+
+    const { data: participants } = await supabase
+      .from("event_participants")
+      .select("id")
+      .eq("event_id", eventId);
+
+    const totalSlots = event.performer_slots + (event.audience_enabled ? event.audience_slots : 0);
+    const bookedSlots = participants?.length || 0;
+    const available = Math.max(0, totalSlots - bookedSlots);
+    setAvailableSlots(available);
+  };
+
   const fetchEventDetails = async () => {
     if (!eventId) return;
 
@@ -108,7 +148,8 @@ export default function EventDetails() {
 
       const totalSlots = eventData.performer_slots + (eventData.audience_enabled ? eventData.audience_slots : 0);
       const bookedSlots = participants?.length || 0;
-      setAvailableSlots(totalSlots - bookedSlots);
+      const available = Math.max(0, totalSlots - bookedSlots);
+      setAvailableSlots(available);
 
       // Fetch spotlight video if event has passed
       const { data: spotlightData } = await supabase
