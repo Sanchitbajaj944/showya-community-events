@@ -152,6 +152,26 @@ export default function SignUp() {
           </Button>
         </form>
 
+        <p className="text-center text-xs text-muted-foreground mb-4">
+          By signing up, you agree to our{" "}
+          <Link to="/terms" className="text-primary hover:underline">
+            Terms & Conditions
+          </Link>
+          ,{" "}
+          <Link to="/privacy-policy" className="text-primary hover:underline">
+            Privacy Policy
+          </Link>
+          ,{" "}
+          <Link to="/cookie-policy" className="text-primary hover:underline">
+            Cookie Policy
+          </Link>
+          {" "}and{" "}
+          <Link to="/refund-policy" className="text-primary hover:underline">
+            Refund Policy
+          </Link>
+          .
+        </p>
+
         <p className="text-center text-sm text-muted-foreground">
           {t('auth.alreadyHaveAccount')}{" "}
           <Link to="/auth/signin" className="text-primary hover:underline font-medium">
