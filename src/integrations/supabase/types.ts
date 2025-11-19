@@ -899,6 +899,18 @@ export type Database = {
           total_count: number
         }[]
       }
+      get_event_participants_with_profiles: {
+        Args: { _event_id: string; _role?: string }
+        Returns: {
+          bio: string
+          display_name: string
+          joined_at: string
+          name: string
+          profile_picture_url: string
+          skills: string[]
+          user_id: string
+        }[]
+      }
       get_reports_admin: {
         Args: { p_limit?: number; p_offset?: number; p_status?: string }
         Returns: {
