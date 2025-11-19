@@ -151,16 +151,25 @@ export default function EventDetails() {
         }
       }
 
-      // Calculate available slots
+      // Calculate available slots by role
       const { data: participants } = await supabase
         .from("event_participants")
-        .select("id")
+        .select("id, role")
         .eq("event_id", eventId);
 
-      const totalSlots = eventData.performer_slots + (eventData.audience_enabled ? eventData.audience_slots : 0);
-      const bookedSlots = participants?.length || 0;
-      const available = Math.max(0, totalSlots - bookedSlots);
-      setAvailableSlots(available);
+      const pCount = participants?.filter(p => p.role === 'performer').length || 0;
+      const aCount = participants?.filter(p => p.role === 'audience').length || 0;
+      
+      setPerformerCount(pCount);
+      setAudienceCount(aCount);
+      
+      const performerAvailable = Math.max(0, eventData.performer_slots - pCount);
+      const audienceAvailable = eventData.audience_enabled && eventData.audience_slots > 0 
+        ? Math.max(0, eventData.audience_slots - aCount) 
+        : 0;
+      
+      const totalAvailable = performerAvailable + audienceAvailable;
+      setAvailableSlots(totalAvailable);
 
       // Fetch spotlight video if event has passed
       const { data: spotlightData } = await supabase
