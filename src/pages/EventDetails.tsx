@@ -133,7 +133,10 @@ export default function EventDetails() {
         .maybeSingle();
 
       if (eventError) throw eventError;
-      setEvent(eventData);
+      
+      if (!eventData) {
+        throw new Error("Event not found");
+      }
 
       // Fetch community details and KYC status
       if (eventData.community_id) {
@@ -151,14 +154,22 @@ export default function EventDetails() {
         }
       }
 
-      // Calculate available slots by role
-      const { data: participants } = await supabase
+      // Calculate available slots by role - fetch ALL participants
+      const { data: participants, error: participantsError } = await supabase
         .from("event_participants")
         .select("id, role")
         .eq("event_id", eventId);
 
+      if (participantsError) {
+        console.error("Error fetching participants:", participantsError);
+      }
+
+      console.log("All participants:", participants);
+
       const pCount = participants?.filter(p => p.role === 'performer').length || 0;
       const aCount = participants?.filter(p => p.role === 'audience').length || 0;
+      
+      console.log("Performer count:", pCount, "Audience count:", aCount);
       
       setPerformerCount(pCount);
       setAudienceCount(aCount);
@@ -169,7 +180,13 @@ export default function EventDetails() {
         : 0;
       
       const totalAvailable = performerAvailable + audienceAvailable;
+      
+      console.log("Available - Performers:", performerAvailable, "Audience:", audienceAvailable, "Total:", totalAvailable);
+      
       setAvailableSlots(totalAvailable);
+      
+      // Set event data AFTER calculations to ensure counts are ready
+      setEvent(eventData);
 
       // Fetch spotlight video if event has passed
       const { data: spotlightData } = await supabase
