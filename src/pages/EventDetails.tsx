@@ -86,10 +86,13 @@ export default function EventDetails() {
 
     const { data: participants } = await supabase
       .from("event_participants")
-      .select("id")
+      .select("id, role")
       .eq("event_id", eventId);
 
-    const totalSlots = event.performer_slots + (event.audience_enabled ? event.audience_slots : 0);
+    const performerCount = participants?.filter(p => p.role === 'performer').length || 0;
+    const audienceCount = participants?.filter(p => p.role === 'audience').length || 0;
+    
+    const totalSlots = event.performer_slots + (event.audience_enabled && event.audience_slots ? event.audience_slots : 0);
     const bookedSlots = participants?.length || 0;
     const available = Math.max(0, totalSlots - bookedSlots);
     setAvailableSlots(available);
@@ -439,16 +442,16 @@ export default function EventDetails() {
                 </div>
                 <div>
                   <p className="font-semibold mb-1">Capacity</p>
-                  <p className="text-muted-foreground">
-                    {event.performer_slots} performer{event.performer_slots > 1 ? 's' : ''}
+                  <p className="text-muted-foreground text-sm">
+                    Performers: {event.performer_slots} total
                   </p>
-                  {event.audience_enabled && (
-                    <p className="text-muted-foreground">
-                      {event.audience_slots} audience seats
+                  {event.audience_enabled && event.audience_slots > 0 && (
+                    <p className="text-muted-foreground text-sm">
+                      Audience: {event.audience_slots} total
                     </p>
                   )}
-                  <p className="text-sm text-primary font-semibold mt-1">
-                    {availableSlots} slots available
+                  <p className="text-sm text-primary font-semibold mt-2">
+                    {availableSlots > 0 ? `${availableSlots} slots available` : 'All slots filled'}
                   </p>
                 </div>
               </div>
