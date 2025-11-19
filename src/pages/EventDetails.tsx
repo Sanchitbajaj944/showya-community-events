@@ -86,13 +86,14 @@ export default function EventDetails() {
   const fetchParticipantCount = async () => {
     if (!eventId || !event) return;
 
-    const { data: participants } = await supabase
-      .from("event_participants")
-      .select("id, role")
-      .eq("event_id", eventId);
+    const { data: countsData } = await supabase
+      .rpc("get_event_participant_counts", {
+        _event_id: eventId
+      })
+      .single();
 
-    const pCount = participants?.filter(p => p.role === 'performer').length || 0;
-    const aCount = participants?.filter(p => p.role === 'audience').length || 0;
+    const pCount = countsData?.performer_count || 0;
+    const aCount = countsData?.audience_count || 0;
     
     setPerformerCount(pCount);
     setAudienceCount(aCount);
@@ -154,22 +155,19 @@ export default function EventDetails() {
         }
       }
 
-      // Calculate available slots by role - fetch ALL participants
-      const { data: participants, error: participantsError } = await supabase
-        .from("event_participants")
-        .select("id, role")
-        .eq("event_id", eventId);
+      // Calculate available slots by role using secure function that bypasses RLS
+      const { data: countsData, error: countsError } = await supabase
+        .rpc("get_event_participant_counts", {
+          _event_id: eventId
+        })
+        .single();
 
-      if (participantsError) {
-        console.error("Error fetching participants:", participantsError);
+      if (countsError) {
+        console.error("Error fetching participant counts:", countsError);
       }
 
-      console.log("All participants:", participants);
-
-      const pCount = participants?.filter(p => p.role === 'performer').length || 0;
-      const aCount = participants?.filter(p => p.role === 'audience').length || 0;
-      
-      console.log("Performer count:", pCount, "Audience count:", aCount);
+      const pCount = countsData?.performer_count || 0;
+      const aCount = countsData?.audience_count || 0;
       
       setPerformerCount(pCount);
       setAudienceCount(aCount);
@@ -180,9 +178,6 @@ export default function EventDetails() {
         : 0;
       
       const totalAvailable = performerAvailable + audienceAvailable;
-      
-      console.log("Available - Performers:", performerAvailable, "Audience:", audienceAvailable, "Total:", totalAvailable);
-      
       setAvailableSlots(totalAvailable);
       
       // Set event data AFTER calculations to ensure counts are ready
