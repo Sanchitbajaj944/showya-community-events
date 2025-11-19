@@ -891,6 +891,14 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_event_participant_counts: {
+        Args: { _event_id: string }
+        Returns: {
+          audience_count: number
+          performer_count: number
+          total_count: number
+        }[]
+      }
       get_reports_admin: {
         Args: { p_limit?: number; p_offset?: number; p_status?: string }
         Returns: {
