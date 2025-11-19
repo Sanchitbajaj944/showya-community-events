@@ -43,6 +43,8 @@ export default function EventDetails() {
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [userBooking, setUserBooking] = useState<any>(null);
   const [availableSlots, setAvailableSlots] = useState(0);
+  const [performerCount, setPerformerCount] = useState(0);
+  const [audienceCount, setAudienceCount] = useState(0);
   const [kycStatus, setKycStatus] = useState<string | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [refundAmount, setRefundAmount] = useState(0);
@@ -89,13 +91,19 @@ export default function EventDetails() {
       .select("id, role")
       .eq("event_id", eventId);
 
-    const performerCount = participants?.filter(p => p.role === 'performer').length || 0;
-    const audienceCount = participants?.filter(p => p.role === 'audience').length || 0;
+    const pCount = participants?.filter(p => p.role === 'performer').length || 0;
+    const aCount = participants?.filter(p => p.role === 'audience').length || 0;
     
-    const totalSlots = event.performer_slots + (event.audience_enabled && event.audience_slots ? event.audience_slots : 0);
-    const bookedSlots = participants?.length || 0;
-    const available = Math.max(0, totalSlots - bookedSlots);
-    setAvailableSlots(available);
+    setPerformerCount(pCount);
+    setAudienceCount(aCount);
+    
+    const performerAvailable = Math.max(0, event.performer_slots - pCount);
+    const audienceAvailable = event.audience_enabled && event.audience_slots > 0 
+      ? Math.max(0, event.audience_slots - aCount) 
+      : 0;
+    
+    const totalAvailable = performerAvailable + audienceAvailable;
+    setAvailableSlots(totalAvailable);
   };
 
   const fetchEventDetails = async () => {
@@ -440,19 +448,46 @@ export default function EventDetails() {
                 <div className="p-3 rounded-lg bg-primary/10">
                   <Users className="h-6 w-6 text-primary" />
                 </div>
-                <div>
-                  <p className="font-semibold mb-1">Capacity</p>
-                  <p className="text-muted-foreground text-sm">
-                    Performers: {event.performer_slots} total
-                  </p>
-                  {event.audience_enabled && event.audience_slots > 0 && (
-                    <p className="text-muted-foreground text-sm">
-                      Audience: {event.audience_slots} total
+                <div className="flex-1">
+                  <p className="font-semibold mb-2">Capacity</p>
+                  
+                  {/* Performer slots */}
+                  <div className="mb-2">
+                    <p className="text-sm text-muted-foreground">
+                      Performers: {performerCount}/{event.performer_slots} booked
                     </p>
+                    {event.performer_slots - performerCount > 0 && (
+                      <p className="text-xs text-primary">
+                        {event.performer_slots - performerCount} available
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* Audience slots */}
+                  {event.audience_enabled && (
+                    <div className="mb-2">
+                      <p className="text-sm text-muted-foreground">
+                        Audience: {audienceCount}/{event.audience_slots || 0} booked
+                      </p>
+                      {event.audience_slots > 0 && event.audience_slots - audienceCount > 0 && (
+                        <p className="text-xs text-primary">
+                          {event.audience_slots - audienceCount} available
+                        </p>
+                      )}
+                      {event.audience_slots === 0 && audienceCount > 0 && (
+                        <p className="text-xs text-amber-600">
+                          Overbooked by {audienceCount}
+                        </p>
+                      )}
+                    </div>
                   )}
-                  <p className="text-sm text-primary font-semibold mt-2">
-                    {availableSlots > 0 ? `${availableSlots} slots available` : 'All slots filled'}
-                  </p>
+                  
+                  {/* Total availability */}
+                  <div className="pt-2 border-t border-border mt-2">
+                    <p className="text-sm font-semibold text-primary">
+                      {availableSlots > 0 ? `${availableSlots} total slots available` : 'Event fully booked'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>
