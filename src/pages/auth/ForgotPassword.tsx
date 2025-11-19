@@ -25,7 +25,7 @@ export default function ForgotPassword() {
       setIsLoading(true);
       
       const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: 'https://showya-community-events.lovable.app/auth/reset-password',
       });
 
       if (error) {
