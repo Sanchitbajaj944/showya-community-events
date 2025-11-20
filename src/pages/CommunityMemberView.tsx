@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
@@ -21,12 +21,14 @@ export default function CommunityMemberView() {
   const { communityId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [community, setCommunity] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [ownerProfile, setOwnerProfile] = useState<any>(null);
   const [joinDate, setJoinDate] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const defaultTab = searchParams.get('tab') || 'about';
 
   useEffect(() => {
     if (!user) {
@@ -213,7 +215,7 @@ export default function CommunityMemberView() {
         </Card>
 
         {/* Tabs */}
-        <Tabs defaultValue="about" className="space-y-4 sm:space-y-6">
+        <Tabs value={defaultTab} className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
             <TabsList className="inline-flex w-auto min-w-full sm:min-w-0">
               <TabsTrigger value="about" className="flex-1 sm:flex-none text-xs sm:text-sm">About</TabsTrigger>
