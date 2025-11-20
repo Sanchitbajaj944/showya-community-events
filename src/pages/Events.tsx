@@ -14,6 +14,7 @@ export default function Events() {
   const { t } = useTranslation();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [participantCounts, setParticipantCounts] = useState<Record<string, any>>({});
 
   useEffect(() => {
     fetchEvents();
@@ -28,7 +29,22 @@ export default function Events() {
         .order("event_date", { ascending: true });
 
       if (error) throw error;
-      setEvents(data || []);
+      
+      const eventsData = data || [];
+      setEvents(eventsData);
+      
+      // Fetch participant counts for all events
+      const counts: Record<string, any> = {};
+      await Promise.all(
+        eventsData.map(async (event) => {
+          const { data: countData } = await supabase
+            .rpc("get_event_participant_counts", { _event_id: event.id });
+          if (countData && countData.length > 0) {
+            counts[event.id] = countData[0];
+          }
+        })
+      );
+      setParticipantCounts(counts);
     } catch (error) {
       console.error("Error fetching events:", error);
     } finally {
@@ -39,7 +55,16 @@ export default function Events() {
   const upcomingEvents = events.filter(event => !isPast(new Date(event.event_date)));
   const pastEvents = events.filter(event => isPast(new Date(event.event_date)));
 
-  const renderEventCard = (event: any, isPastEvent: boolean = false) => (
+  const renderEventCard = (event: any, isPastEvent: boolean = false) => {
+    const counts = participantCounts[event.id] || { performer_count: 0, audience_count: 0 };
+    const performerSlotsLeft = event.performer_slots - counts.performer_count;
+    const audienceSlotsLeft = event.audience_enabled && event.audience_slots 
+      ? event.audience_slots - counts.audience_count 
+      : 0;
+    const totalSlotsLeft = performerSlotsLeft + audienceSlotsLeft;
+    const isFull = totalSlotsLeft <= 0;
+    
+    return (
     <Link
       key={event.id}
       to={`/events/${event.id}`}
@@ -94,14 +119,24 @@ export default function Events() {
               {event.audience_enabled && event.audience_slots && `, ${event.audience_slots} audience`}
             </span>
           </div>
+          {!isPastEvent && (
+            <div className="text-xs sm:text-sm font-medium">
+              {isFull ? (
+                <span className="text-destructive">All slots full</span>
+              ) : (
+                <span className="text-primary">{totalSlotsLeft} slot{totalSlotsLeft > 1 ? 's' : ''} left</span>
+              )}
+            </div>
+          )}
         </div>
 
         <Button className="w-full mt-4 text-xs sm:text-sm" variant="outline">
-          {isPastEvent ? 'View Event' : event.ticket_type === 'paid' ? `Book Now • ₹${event.performer_ticket_price}` : 'View Details'}
+          {isPastEvent ? 'View Event' : isFull ? 'View Event' : event.ticket_type === 'paid' ? `Book Now • ₹${event.performer_ticket_price}` : 'Register'}
         </Button>
       </div>
     </Link>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-8">
