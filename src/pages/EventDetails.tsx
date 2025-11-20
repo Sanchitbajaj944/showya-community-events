@@ -7,7 +7,8 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, LayoutDashboard, Share2, Flag } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, LayoutDashboard, Share2, Flag, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format, isPast, differenceInHours } from "date-fns";
 import { toast } from "sonner";
 import { BookingModal } from "@/components/BookingModal";
@@ -53,6 +54,7 @@ export default function EventDetails() {
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [spotlight, setSpotlight] = useState<any>(null);
   const [performers, setPerformers] = useState<any[]>([]);
+  const [performersOpen, setPerformersOpen] = useState(true);
 
   useEffect(() => {
     fetchEventDetails();
@@ -566,42 +568,53 @@ export default function EventDetails() {
         {performers.length > 0 && (
           <Card className="mb-8">
             <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-4">
-                Performing Artists ({performers.length})
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {performers.map((performer) => (
-                  <Link
-                    key={performer.user_id}
-                    to={`/profile/${performer.user_id}`}
-                    className="flex flex-col items-center p-4 rounded-lg hover:bg-accent transition-colors group"
-                  >
-                    <div className="relative mb-3">
-                      <div className="w-16 h-16 rounded-full overflow-hidden bg-muted ring-2 ring-border group-hover:ring-primary transition-all">
-                        {performer.profile_picture_url ? (
-                          <img
-                            src={performer.profile_picture_url}
-                            alt={performer.display_name || performer.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-semibold text-lg">
-                            {(performer.display_name || performer.name).charAt(0).toUpperCase()}
+              <Collapsible open={performersOpen} onOpenChange={setPerformersOpen}>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">
+                    Performing Artists ({performers.length})
+                  </h2>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="p-2">
+                      <ChevronDown className={`h-5 w-5 transition-transform ${performersOpen ? 'transform rotate-180' : ''}`} />
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+                <CollapsibleContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {performers.map((performer) => (
+                      <Link
+                        key={performer.user_id}
+                        to={`/profile/${performer.user_id}`}
+                        className="flex flex-col items-center p-4 rounded-lg hover:bg-accent transition-colors group"
+                      >
+                        <div className="relative mb-3">
+                          <div className="w-16 h-16 rounded-full overflow-hidden bg-muted ring-2 ring-border group-hover:ring-primary transition-all">
+                            {performer.profile_picture_url ? (
+                              <img
+                                src={performer.profile_picture_url}
+                                alt={performer.display_name || performer.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-semibold text-lg">
+                                {(performer.display_name || performer.name).charAt(0).toUpperCase()}
+                              </div>
+                            )}
                           </div>
+                        </div>
+                        <p className="font-medium text-sm text-center line-clamp-1">
+                          {performer.display_name || performer.name}
+                        </p>
+                        {performer.skills && performer.skills.length > 0 && (
+                          <p className="text-xs text-muted-foreground text-center line-clamp-1 mt-1">
+                            {performer.skills[0]}
+                          </p>
                         )}
-                      </div>
-                    </div>
-                    <p className="font-medium text-sm text-center line-clamp-1">
-                      {performer.display_name || performer.name}
-                    </p>
-                    {performer.skills && performer.skills.length > 0 && (
-                      <p className="text-xs text-muted-foreground text-center line-clamp-1 mt-1">
-                        {performer.skills[0]}
-                      </p>
-                    )}
-                  </Link>
-                ))}
-              </div>
+                      </Link>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </CardContent>
           </Card>
         )}
