@@ -91,7 +91,7 @@ export default function Events() {
             <Users className="h-4 w-4 shrink-0" />
             <span>
               {event.performer_slots} performer{event.performer_slots > 1 ? 's' : ''}
-              {event.audience_enabled && `, ${event.audience_slots} audience`}
+              {event.audience_enabled && event.audience_slots && `, ${event.audience_slots} audience`}
             </span>
           </div>
         </div>
