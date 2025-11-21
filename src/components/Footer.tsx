@@ -9,7 +9,7 @@ const Footer = () => {
   return (
     <footer className="border-t bg-muted/30">
       <div className="container px-4 py-12 md:px-6 md:py-16">
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
@@ -53,30 +53,6 @@ const Footer = () => {
             </nav>
           </div>
 
-          {/* Social */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-base">{t('footer.connect')}</h3>
-            <div className="flex space-x-4">
-              <a
-                href="#"
-                className="w-10 h-10 rounded-full bg-gradient-card hover:bg-gradient-hero flex items-center justify-center transition-all hover:scale-110 shadow-sm"
-              >
-                <Instagram className="h-5 w-5 text-primary hover:text-white" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 rounded-full bg-gradient-card hover:bg-gradient-hero flex items-center justify-center transition-all hover:scale-110 shadow-sm"
-              >
-                <Twitter className="h-5 w-5 text-primary hover:text-white" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 rounded-full bg-gradient-card hover:bg-gradient-hero flex items-center justify-center transition-all hover:scale-110 shadow-sm"
-              >
-                <Youtube className="h-5 w-5 text-primary hover:text-white" />
-              </a>
-            </div>
-          </div>
         </div>
 
         {/* Bottom */}
