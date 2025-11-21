@@ -17,11 +17,15 @@ export default function CommunityDashboard() {
   const { communityId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [community, setCommunity] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<'owner' | 'member' | 'public'>('public');
-  const defaultTab = searchParams.get('tab') || 'overview';
+  const currentTab = searchParams.get('tab') || 'overview';
+
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
 
   useEffect(() => {
     if (!user) {
@@ -115,7 +119,7 @@ export default function CommunityDashboard() {
         <Header />
         
         <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
-          <Tabs value={defaultTab} className="space-y-4 sm:space-y-6">
+          <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4 sm:space-y-6">
             <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
               <TabsList className="inline-flex w-auto min-w-full sm:min-w-0">
                 <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
