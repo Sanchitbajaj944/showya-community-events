@@ -26,6 +26,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
+type PromoCode = {
+  id?: string;
+  code: string;
+  discount_type: "percentage" | "flat";
+  discount_value: number;
+  applies_to: "performer" | "audience" | "all";
+  usage_limit?: number;
+  valid_until?: string;
+};
+
 export default function EditEvent() {
   const { eventId } = useParams();
   const { user } = useAuth();
@@ -41,6 +51,13 @@ export default function EditEvent() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isWithinRestrictedWindow, setIsWithinRestrictedWindow] = useState(false);
   const [restrictedMinutes, setRestrictedMinutes] = useState(60);
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
+  const [newPromo, setNewPromo] = useState<PromoCode>({
+    code: "",
+    discount_type: "percentage",
+    discount_value: 0,
+    applies_to: "performer",
+  });
 
   const [formData, setFormData] = useState({
     title: "",
@@ -165,6 +182,24 @@ export default function EditEvent() {
 
       setBookingCount(bookings?.length || 0);
 
+      // Fetch promo codes
+      const { data: promoCodesData } = await supabase
+        .from("promocodes")
+        .select("*")
+        .eq("event_id", eventId);
+      
+      if (promoCodesData) {
+        setPromoCodes(promoCodesData.map(p => ({
+          id: p.id,
+          code: p.code,
+          discount_type: p.discount_type as "percentage" | "flat",
+          discount_value: p.discount_value,
+          applies_to: p.applies_to as "performer" | "audience" | "all",
+          usage_limit: p.usage_limit || undefined,
+          valid_until: p.valid_until || undefined,
+        })));
+      }
+
       // Set form data
       setFormData({
         title: eventData.title || "",
@@ -185,6 +220,48 @@ export default function EditEvent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const addPromoCode = () => {
+    if (!newPromo.code.trim()) {
+      toast.error("Please enter a promo code");
+      return;
+    }
+    if (newPromo.discount_value <= 0) {
+      toast.error("Discount value must be greater than 0");
+      return;
+    }
+    setPromoCodes([...promoCodes, newPromo]);
+    setNewPromo({
+      code: "",
+      discount_type: "percentage",
+      discount_value: 0,
+      applies_to: "performer",
+    });
+    toast.success("Promo code added!");
+  };
+
+  const removePromoCode = async (index: number) => {
+    const promo = promoCodes[index];
+    
+    // If promo has an ID, delete from database immediately
+    if (promo.id) {
+      try {
+        const { error } = await supabase
+          .from("promocodes")
+          .delete()
+          .eq("id", promo.id);
+        
+        if (error) throw error;
+        toast.success("Promo code deleted");
+      } catch (error: any) {
+        console.error("Error deleting promo code:", error);
+        toast.error("Failed to delete promo code");
+        return;
+      }
+    }
+    
+    setPromoCodes(promoCodes.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (confirmDateChange = false) => {
@@ -235,6 +312,29 @@ export default function EditEvent() {
           return;
         }
         throw new Error(data.message || "Failed to update event");
+      }
+
+      // Save new promo codes (ones without IDs)
+      const newPromoCodes = promoCodes.filter(p => !p.id);
+      if (newPromoCodes.length > 0) {
+        const promoInserts = newPromoCodes.map(promo => ({
+          event_id: eventId,
+          code: promo.code,
+          discount_type: promo.discount_type,
+          discount_value: promo.discount_value,
+          applies_to: promo.applies_to,
+          usage_limit: promo.usage_limit,
+          valid_until: promo.valid_until,
+        }));
+
+        const { error: promoError } = await supabase
+          .from("promocodes")
+          .insert(promoInserts);
+
+        if (promoError) {
+          console.error("Error saving promo codes:", promoError);
+          toast.error("Event updated but failed to save some promo codes");
+        }
       }
 
       toast.success(
@@ -551,6 +651,102 @@ export default function EditEvent() {
                   min="0"
                   className="mt-1"
                 />
+              </div>
+            )}
+
+            {/* Promo Codes Section */}
+            {event?.ticket_type === 'paid' && (
+              <div className="space-y-3">
+                <div>
+                  <Label>Promo Codes</Label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Create discount codes for this event
+                  </p>
+                </div>
+
+                {/* Existing Promo Codes */}
+                {promoCodes.length > 0 && (
+                  <div className="space-y-2">
+                    {promoCodes.map((promo, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-accent/10 rounded-lg border">
+                        <div className="flex items-center gap-3">
+                          <Badge variant="secondary">{promo.code}</Badge>
+                          <span className="text-sm">
+                            {promo.discount_type === "percentage" ? `${promo.discount_value}%` : `₹${promo.discount_value}`} off
+                            {" for "}{promo.applies_to === "all" ? "both tickets" : promo.applies_to}
+                          </span>
+                          {promo.usage_limit && (
+                            <span className="text-xs text-muted-foreground">
+                              (Limit: {promo.usage_limit})
+                            </span>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removePromoCode(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add New Promo Code */}
+                <div className="space-y-2 p-3 border rounded-lg">
+                  <Label className="text-sm font-semibold">Add New Promo Code</Label>
+                  <Input
+                    placeholder="Promo code (e.g., SAVE20)"
+                    value={newPromo.code}
+                    onChange={(e) => setNewPromo(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                    maxLength={20}
+                  />
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Discount value"
+                      value={newPromo.discount_value || ""}
+                      onChange={(e) => setNewPromo(prev => ({ ...prev, discount_value: parseFloat(e.target.value) }))}
+                      min="0"
+                      className="flex-1"
+                    />
+                    <select
+                      className="px-3 py-2 border rounded-md"
+                      value={newPromo.discount_type}
+                      onChange={(e) => setNewPromo(prev => ({ ...prev, discount_type: e.target.value as "percentage" | "flat" }))}
+                    >
+                      <option value="percentage">%</option>
+                      <option value="flat">₹</option>
+                    </select>
+                  </div>
+                  <select
+                    className="w-full px-3 py-2 border rounded-md"
+                    value={newPromo.applies_to}
+                    onChange={(e) => setNewPromo(prev => ({ ...prev, applies_to: e.target.value as "performer" | "audience" | "all" }))}
+                  >
+                    <option value="performer">Performers Only</option>
+                    <option value="audience">Audience Only</option>
+                    <option value="all">Both Tickets</option>
+                  </select>
+                  <Input
+                    type="number"
+                    placeholder="Usage limit (optional)"
+                    value={newPromo.usage_limit || ""}
+                    onChange={(e) => setNewPromo(prev => ({ ...prev, usage_limit: e.target.value ? parseInt(e.target.value) : undefined }))}
+                    min="1"
+                  />
+                  <Input
+                    type="date"
+                    placeholder="Valid until (optional)"
+                    value={newPromo.valid_until || ""}
+                    onChange={(e) => setNewPromo(prev => ({ ...prev, valid_until: e.target.value }))}
+                  />
+                  <Button type="button" variant="outline" onClick={addPromoCode} className="w-full">
+                    Add Promo Code
+                  </Button>
+                </div>
               </div>
             )}
 
