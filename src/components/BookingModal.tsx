@@ -87,7 +87,7 @@ export function BookingModal({
       }
 
       // Check if promo applies to selected role
-      if (promo.applies_to !== 'all' && promo.applies_to !== role) {
+      if (promo.applies_to !== 'all' && promo.applies_to !== 'both' && promo.applies_to !== role) {
         toast.error(`This promo code is only valid for ${promo.applies_to} tickets`);
         return;
       }
