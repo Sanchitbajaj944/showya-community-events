@@ -58,7 +58,7 @@ export default function EventDetails() {
 
   useEffect(() => {
     fetchEventDetails();
-  }, [eventId, user]);
+  }, [eventId, user?.id]);
 
   // Real-time subscription for slot updates
   useEffect(() => {
