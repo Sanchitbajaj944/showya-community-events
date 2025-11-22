@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const PaymentOrderSchema = z.object({
   event_id: z.string().uuid('Invalid event ID format'),
-  amount: z.number().positive('Amount must be positive').max(1000000, 'Amount exceeds maximum')
+  amount: z.number().min(1, 'Minimum amount is ₹1').max(1000000, 'Amount exceeds maximum')
 });
 
 serve(async (req) => {
@@ -80,6 +80,14 @@ serve(async (req) => {
 
     if (!razorpayAccount || razorpayAccount.kyc_status !== 'ACTIVATED') {
       throw new Error('Community KYC not approved for payments');
+    }
+
+    // Ensure minimum amount after platform fees
+    const platformFeePercentage = community?.platform_fee_percentage || 5;
+    const transferAmount = amount * (1 - platformFeePercentage / 100);
+    
+    if (transferAmount < 1) {
+      throw new Error(`Minimum payment amount is ₹${Math.ceil(1 / (1 - platformFeePercentage / 100))} after platform fees`);
     }
 
     // Create Razorpay order

@@ -117,7 +117,10 @@ export function BookingModal({
       discount = appliedPromo.discount_value;
     }
 
-    return Math.max(0, basePrice - discount);
+    const finalPrice = Math.max(0, basePrice - discount);
+    
+    // Round to 2 decimal places and ensure minimum of ₹1
+    return Math.max(1, Math.round(finalPrice * 100) / 100);
   };
 
   const handleFreeBooking = async () => {
