@@ -20,7 +20,7 @@ type PromoCode = {
   code: string;
   discount_type: "percentage" | "flat";
   discount_value: number;
-  applies_to: "performer" | "audience" | "both";
+  applies_to: "performer" | "audience" | "all";
   usage_limit?: number;
   valid_until?: string;
 };
@@ -57,7 +57,7 @@ export default function CreateEvent() {
     code: "",
     discount_type: "percentage",
     discount_value: 0,
-    applies_to: "both",
+    applies_to: "performer",
   });
 
   useEffect(() => {
@@ -150,7 +150,7 @@ export default function CreateEvent() {
       code: "",
       discount_type: "percentage",
       discount_value: 0,
-      applies_to: "both",
+      applies_to: "performer",
     });
     toast.success("Promo code added!");
   };
@@ -555,11 +555,11 @@ export default function CreateEvent() {
                   <select
                     className="w-full px-3 py-2 border rounded-md"
                     value={newPromo.applies_to}
-                    onChange={(e) => setNewPromo(prev => ({ ...prev, applies_to: e.target.value as "performer" | "audience" | "both" }))}
+                    onChange={(e) => setNewPromo(prev => ({ ...prev, applies_to: e.target.value as "performer" | "audience" | "all" }))}
                   >
-                    <option value="both">Applies to Both</option>
                     <option value="performer">Performers Only</option>
                     <option value="audience">Audience Only</option>
+                    <option value="all">Both Tickets</option>
                   </select>
                   <Button type="button" variant="outline" onClick={addPromoCode} className="w-full">
                     Add Promo Code
