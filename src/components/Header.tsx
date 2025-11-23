@@ -33,6 +33,7 @@ const Header = () => {
     profile_picture_url?: string;
   } | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [ownsCommunity, setOwnsCommunity] = useState(false);
 
   const handleLanguageChange = async (langCode: string) => {
     i18n.changeLanguage(langCode);
@@ -50,6 +51,7 @@ const Header = () => {
     if (user) {
       fetchProfileData();
       checkAdminStatus();
+      checkCommunityOwnership();
     }
   }, [user]);
 
@@ -88,6 +90,22 @@ const Header = () => {
     }
   };
 
+  const checkCommunityOwnership = async () => {
+    if (!user) return;
+
+    try {
+      const { data } = await supabase
+        .from("communities")
+        .select("id")
+        .eq("owner_id", user.id)
+        .maybeSingle();
+
+      setOwnsCommunity(!!data);
+    } catch (error) {
+      console.error("Error checking community ownership:", error);
+    }
+  };
+
   const displayName = profileData?.display_name || profileData?.name || user?.email || "User";
   const profilePicture = profileData?.profile_picture_url;
 
@@ -120,6 +138,13 @@ const Header = () => {
         <div className="hidden md:flex items-center space-x-3">
           {user ? (
             <>
+              {!ownsCommunity && (
+                <Link to="/communities">
+                  <Button size="sm" className="mr-2">
+                    Create Community
+                  </Button>
+                </Link>
+              )}
               <NotificationCenter />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -262,6 +287,14 @@ const Header = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Profile
+              </Link>
+            )}
+            
+            {user && !ownsCommunity && (
+              <Link to="/communities" onClick={() => setMobileMenuOpen(false)}>
+                <Button className="w-full mb-2">
+                  Create Community
+                </Button>
               </Link>
             )}
             
