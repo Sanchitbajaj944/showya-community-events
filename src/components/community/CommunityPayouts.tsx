@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, XCircle, AlertCircle, RefreshCw, DollarSign } from "lucide-react";
+import { CheckCircle, Clock, XCircle, AlertCircle, RefreshCw, DollarSign, Calendar, User } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { KycAddressDialog } from "./KycAddressDialog";
 import { KycPanDobDialog } from "./KycPanDobDialog";
 import { KycDocumentsDialog } from "./KycDocumentsDialog";
 import { KycBankDetailsDialog } from "./KycBankDetailsDialog";
+import { format } from "date-fns";
 
 interface CommunityPayoutsProps {
   community: any;
@@ -33,6 +34,77 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   const [kycRetryMode, setKycRetryMode] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [requirementErrors, setRequirementErrors] = useState<any>({});
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [loadingTransactions, setLoadingTransactions] = useState(true);
+
+  // Fetch transaction history
+  useEffect(() => {
+    fetchTransactions();
+  }, [community.id]);
+
+  const fetchTransactions = async () => {
+    try {
+      setLoadingTransactions(true);
+      
+      // Fetch all event participants for events belonging to this community
+      const { data: participants, error } = await supabase
+        .from('event_participants')
+        .select(`
+          *,
+          event:events!inner(
+            id,
+            title,
+            community_id,
+            community_name,
+            performer_ticket_price,
+            audience_ticket_price,
+            event_date
+          ),
+          profile:profiles_public!event_participants_user_id_fkey(
+            name,
+            display_name
+          )
+        `)
+        .eq('event.community_id', community.id)
+        .order('joined_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Calculate earnings for each transaction
+      const transactionsWithEarnings = participants.map((p: any) => {
+        const ticketPrice = p.role === 'performer' 
+          ? p.event.performer_ticket_price 
+          : p.event.audience_ticket_price || 0;
+        
+        const platformFee = (ticketPrice * community.platform_fee_percentage) / 100;
+        const ownerEarnings = ticketPrice - platformFee;
+
+        return {
+          id: p.id,
+          eventTitle: p.event.title,
+          eventDate: p.event.event_date,
+          participantName: p.profile?.display_name || p.profile?.name || 'Anonymous',
+          role: p.role,
+          ticketPrice,
+          platformFee,
+          ownerEarnings,
+          joinedAt: p.joined_at
+        };
+      });
+
+      setTransactions(transactionsWithEarnings);
+
+      // Calculate total earnings
+      const total = transactionsWithEarnings.reduce((sum, t) => sum + t.ownerEarnings, 0);
+      setTotalEarnings(total);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      toast.error('Failed to load transaction history');
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
 
   // Reset all KYC collected data and profile
   const resetKycData = async () => {
@@ -830,16 +902,98 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         </CardContent>
       </Card>
 
+      {/* Total Earnings Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Total Earnings
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="p-6 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Total Collection (after platform fees)</p>
+              <p className="text-4xl font-bold">₹{totalEarnings.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">
+                From {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Transaction History */}
       <Card>
         <CardHeader>
-          <CardTitle>Transaction History</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Transaction History</CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={fetchTransactions}
+              disabled={loadingTransactions}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loadingTransactions ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-12 text-muted-foreground">
-            <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>Set up payouts to start earning from your events.</p>
-          </div>
+          {loadingTransactions ? (
+            <div className="text-center py-12">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-3" />
+              <p className="text-muted-foreground">Loading transactions...</p>
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>No transactions yet.</p>
+              <p className="text-sm mt-2">Earnings will appear here once attendees book your events.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {transactions.map((transaction) => (
+                <div 
+                  key={transaction.id} 
+                  className="p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <h4 className="font-medium truncate">{transaction.eventTitle}</h4>
+                        <Badge variant={transaction.role === 'performer' ? 'default' : 'secondary'} className="shrink-0">
+                          {transaction.role}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          <span className="truncate">{transaction.participantName}</span>
+                        </div>
+                        <span className="hidden sm:inline">•</span>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>{format(new Date(transaction.joinedAt), "MMM dd, yyyy • h:mm a")}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right space-y-1 shrink-0">
+                      <p className="text-lg font-bold text-green-600">
+                        +₹{transaction.ownerEarnings.toFixed(2)}
+                      </p>
+                      <div className="text-xs text-muted-foreground space-y-0.5">
+                        <p>Ticket: ₹{transaction.ticketPrice.toFixed(2)}</p>
+                        <p>Fee: -₹{transaction.platformFee.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
