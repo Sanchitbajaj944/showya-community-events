@@ -40,7 +40,7 @@ export default function CommunityMemberView() {
       return;
     }
     fetchCommunityData();
-  }, [communityId, user]);
+  }, [communityId, user?.id]);
 
   const fetchCommunityData = async () => {
     if (!communityId || !user) return;

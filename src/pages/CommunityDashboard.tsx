@@ -33,7 +33,7 @@ export default function CommunityDashboard() {
       return;
     }
     fetchCommunityData();
-  }, [communityId, user]);
+  }, [communityId, user?.id]);
 
   // Redirect based on user role
   useEffect(() => {

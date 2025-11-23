@@ -35,7 +35,7 @@ export default function Communities() {
 
   useEffect(() => {
     fetchCommunities();
-  }, [user]);
+  }, [user?.id]);
 
 
   return (

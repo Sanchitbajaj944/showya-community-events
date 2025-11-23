@@ -72,7 +72,7 @@ export default function Profile() {
       return;
     }
     fetchProfileData();
-  }, [targetUserId, user]);
+  }, [targetUserId, user?.id]);
 
   const fetchProfileData = async () => {
     if (!targetUserId) return;
