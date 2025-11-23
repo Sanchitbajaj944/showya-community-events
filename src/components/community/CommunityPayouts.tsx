@@ -47,12 +47,29 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
     try {
       setLoadingTransactions(true);
       
-      // Fetch all event participants for events belonging to this community
+      // First get all events for this community
+      const { data: communityEvents, error: eventsError } = await supabase
+        .from('events')
+        .select('id')
+        .eq('community_id', community.id);
+
+      if (eventsError) throw eventsError;
+      
+      if (!communityEvents || communityEvents.length === 0) {
+        setTransactions([]);
+        setTotalEarnings(0);
+        setLoadingTransactions(false);
+        return;
+      }
+
+      const eventIds = communityEvents.map(e => e.id);
+
+      // Fetch all event participants for these events
       const { data: participants, error } = await supabase
         .from('event_participants')
         .select(`
           *,
-          event:events!inner(
+          event:events(
             id,
             title,
             community_id,
@@ -66,7 +83,7 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
             display_name
           )
         `)
-        .eq('event.community_id', community.id)
+        .in('event_id', eventIds)
         .order('joined_at', { ascending: false });
 
       if (error) throw error;
