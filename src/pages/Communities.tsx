@@ -14,18 +14,37 @@ export default function Communities() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [communities, setCommunities] = useState<any[]>([]);
+  const [myCommunity, setMyCommunity] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchCommunities = async () => {
     setLoading(true);
     try {
+      // Fetch user's own community if logged in
+      if (user) {
+        const { data: ownCommunity } = await supabase
+          .from('communities')
+          .select('*')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+        
+        setMyCommunity(ownCommunity);
+      }
+
+      // Fetch all communities
       const { data, error } = await supabase
         .from('communities')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCommunities(data || []);
+      
+      // Filter out user's own community from the list
+      const otherCommunities = user && data 
+        ? data.filter(c => c.owner_id !== user.id)
+        : data || [];
+      
+      setCommunities(otherCommunities);
     } catch (error) {
       console.error('Error fetching communities:', error);
     } finally {
@@ -49,6 +68,82 @@ export default function Communities() {
           <p className="text-muted-foreground text-base sm:text-lg">
             Connect with passionate groups hosting amazing experiences across India
           </p>
+        </div>
+
+        {/* My Community Section */}
+        {myCommunity && (
+          <div className="mb-8 sm:mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl sm:text-2xl font-bold">My Community</h2>
+              <Button 
+                onClick={() => navigate(`/community/${myCommunity.id}/dashboard`)}
+                size="sm"
+              >
+                Manage
+              </Button>
+            </div>
+            <div className="group rounded-xl border-2 border-primary bg-card overflow-hidden hover:shadow-xl transition-all duration-300">
+              {/* Banner Image */}
+              <div className="relative h-44 sm:h-52 overflow-hidden bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20">
+                {myCommunity.banner_url ? (
+                  <img 
+                    src={myCommunity.banner_url} 
+                    alt={myCommunity.name} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Users className="h-16 w-16 sm:h-20 sm:w-20 text-primary/40" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              </div>
+
+              {/* Community Info */}
+              <div className="p-6 sm:p-8 space-y-4">
+                <div>
+                  <h3 className="font-bold text-xl sm:text-2xl mb-3 group-hover:text-primary transition-colors">
+                    {myCommunity.name}
+                  </h3>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {myCommunity.categories?.map((cat: string) => (
+                      <Badge key={cat} variant="secondary" className="text-sm">
+                        {cat}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {myCommunity.description && (
+                  <p className="text-base text-muted-foreground">
+                    {myCommunity.description}
+                  </p>
+                )}
+
+                <div className="flex gap-3">
+                  <Button
+                    className="flex-1" 
+                    onClick={() => navigate(`/community/${myCommunity.id}/dashboard`)}
+                  >
+                    Go to Dashboard
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(`/community/${myCommunity.id}`)}
+                  >
+                    View Public Page
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* All Communities Section */}
+        <div className="mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4">
+            {myCommunity ? 'Other Communities' : 'All Communities'}
+          </h2>
         </div>
 
         {/* Communities Grid */}
