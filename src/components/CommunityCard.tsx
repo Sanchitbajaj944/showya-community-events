@@ -1,63 +1,106 @@
-import { Users, Calendar } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Users } from "lucide-react";
 
 interface CommunityCardProps {
-  name: string;
-  description: string;
-  members: number;
-  upcomingEvents: number;
-  image?: string;
+  community: any;
+  variant?: "default" | "featured";
+  showManage?: boolean;
 }
 
-const CommunityCard = ({
-  name,
-  description,
-  members,
-  upcomingEvents,
-  image,
-}: CommunityCardProps) => {
+export const CommunityCard = ({ community, variant = "default", showManage = false }: CommunityCardProps) => {
+  const navigate = useNavigate();
+  
+  const isFeatured = variant === "featured";
+
   return (
-    <Card className="overflow-hidden hover:shadow-glow transition-all duration-500 cursor-pointer group h-full flex flex-col border-2 hover:border-primary/50">
-      <div className="relative h-44 overflow-hidden bg-gradient-card">
-        {image ? (
+    <div
+      className={`group rounded-xl border bg-card overflow-hidden hover:shadow-xl transition-all duration-300 ${
+        isFeatured ? "border-2 border-primary" : "border-border hover:shadow-lg"
+      } flex flex-col`}
+    >
+      {/* Banner Image */}
+      <div className={`relative overflow-hidden bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20 ${
+        isFeatured ? "h-44 sm:h-52" : "h-36 sm:h-44"
+      }`}>
+        {community.banner_url ? (
           <img 
-            src={image} 
-            alt={name} 
+            src={community.banner_url} 
+            alt={community.name} 
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
           />
         ) : (
-          <div className="w-full h-full bg-gradient-card flex items-center justify-center">
-            <div className="text-6xl opacity-20">🎨</div>
+          <div className="w-full h-full flex items-center justify-center">
+            <Users className={`text-primary/40 ${
+              isFeatured ? "h-16 w-16 sm:h-20 sm:w-20" : "h-12 w-12 sm:h-16 sm:w-16"
+            }`} />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
       </div>
-      <CardContent className="p-6 flex-1 flex flex-col">
-        <h3 className="font-bold text-xl mb-3 group-hover:text-gradient transition-all line-clamp-1">
-          {name}
-        </h3>
-        <p className="text-sm text-muted-foreground mb-5 line-clamp-2 flex-1 leading-relaxed">
-          {description}
-        </p>
-        <div className="flex items-center justify-between text-sm mb-5 pb-5 border-b">
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary" />
-            <span className="font-semibold">{members.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-secondary" />
-            <span className="font-semibold">{upcomingEvents} events</span>
+
+      {/* Community Info */}
+      <div className={`space-y-2 sm:space-y-3 flex-1 flex flex-col ${
+        isFeatured ? "p-6 sm:p-8 space-y-4" : "p-4 sm:p-6"
+      }`}>
+        <div>
+          <h3 className={`font-semibold mb-2 group-hover:text-primary transition-colors ${
+            isFeatured 
+              ? "text-xl sm:text-2xl font-bold mb-3" 
+              : "text-base sm:text-lg line-clamp-1"
+          }`}>
+            {community.name}
+          </h3>
+          <div className={`flex flex-wrap mb-2 ${isFeatured ? "gap-2 mb-3" : "gap-1"}`}>
+            {community.categories?.map((cat: string) => (
+              <Badge 
+                key={cat} 
+                variant="secondary" 
+                className={isFeatured ? "text-sm" : "text-xs"}
+              >
+                {cat}
+              </Badge>
+            ))}
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          className="w-full group-hover:bg-gradient-hero group-hover:text-white group-hover:border-0 transition-all"
-        >
-          Follow Community
-        </Button>
-      </CardContent>
-    </Card>
+
+        {community.description && (
+          <p className={`text-muted-foreground flex-1 ${
+            isFeatured ? "text-base" : "text-sm line-clamp-2"
+          }`}>
+            {community.description}
+          </p>
+        )}
+
+        {isFeatured && showManage ? (
+          <div className="flex gap-3">
+            <Button
+              className="flex-1" 
+              onClick={() => navigate(`/community/${community.id}/dashboard`)}
+            >
+              Go to Dashboard
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/community/${community.id}`)}
+            >
+              View Public Page
+            </Button>
+          </div>
+        ) : (
+          <Button
+            className="w-full mt-auto" 
+            variant="outline"
+            onClick={() => navigate(`/community/${community.id}`)}
+          >
+            <span className={isFeatured ? "text-base" : "text-sm sm:text-base"}>
+              View Community
+            </span>
+          </Button>
+        )}
+      </div>
+    </div>
   );
 };
 
