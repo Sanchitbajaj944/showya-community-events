@@ -77,10 +77,6 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
             performer_ticket_price,
             audience_ticket_price,
             event_date
-          ),
-          profile:profiles_public!event_participants_user_id_fkey(
-            name,
-            display_name
           )
         `)
         .in('event_id', eventIds)
@@ -88,8 +84,19 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
       if (error) throw error;
 
+      // Fetch profiles separately to avoid join issues
+      const userIds = participants?.map((p: any) => p.user_id) || [];
+      const { data: profiles } = await supabase
+        .from('profiles_public')
+        .select('user_id, name, display_name')
+        .in('user_id', userIds);
+
+      // Create a map of profiles for easy lookup
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
       // Calculate earnings for each transaction
-      const transactionsWithEarnings = participants.map((p: any) => {
+      const transactionsWithEarnings = participants?.map((p: any) => {
+        const profile = profileMap.get(p.user_id);
         const ticketPrice = p.role === 'performer' 
           ? p.event.performer_ticket_price 
           : p.event.audience_ticket_price || 0;
@@ -101,14 +108,14 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           id: p.id,
           eventTitle: p.event.title,
           eventDate: p.event.event_date,
-          participantName: p.profile?.display_name || p.profile?.name || 'Anonymous',
+          participantName: profile?.display_name || profile?.name || 'Anonymous',
           role: p.role,
           ticketPrice,
           platformFee,
           ownerEarnings,
           joinedAt: p.joined_at
         };
-      });
+      }) || [];
 
       setTransactions(transactionsWithEarnings);
 
