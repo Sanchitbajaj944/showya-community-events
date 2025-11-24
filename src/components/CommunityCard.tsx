@@ -74,7 +74,7 @@ export const CommunityCard = ({ community, variant = "default", showManage = fal
         )}
 
         {isFeatured && showManage ? (
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <Button
               className="flex-1" 
               onClick={() => navigate(`/community/${community.id}`)}
@@ -82,6 +82,7 @@ export const CommunityCard = ({ community, variant = "default", showManage = fal
               Go to Dashboard
             </Button>
             <Button
+              className="flex-1"
               variant="outline"
               onClick={() => navigate(`/community/${community.id}/public`)}
             >
