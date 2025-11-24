@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+
+const CreateCommunitySchema = z.object({
+  name: z.string().trim().min(3, 'Name must be at least 3 characters').max(100, 'Name must be less than 100 characters'),
+  categories: z.array(z.string().max(50)).min(1, 'At least one category is required').max(10, 'Maximum 10 categories allowed'),
+  description: z.string().max(1000, 'Description must be less than 1000 characters').optional()
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,7 +32,23 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { name, categories, description } = await req.json();
+    const requestBody = await req.json();
+    const validationResult = CreateCommunitySchema.safeParse(requestBody);
+
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input',
+          details: validationResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { name, categories, description } = validationResult.data;
 
     // Check if user already has a community
     const { data: existingCommunity } = await supabaseClient
