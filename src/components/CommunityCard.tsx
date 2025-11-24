@@ -41,37 +41,41 @@ export const CommunityCard = ({ community, variant = "default", showManage = fal
       </div>
 
       {/* Community Info */}
-      <div className={`space-y-2 sm:space-y-3 flex-1 flex flex-col ${
-        isFeatured ? "p-6 sm:p-8 space-y-4" : "p-4 sm:p-6"
+      <div className={`flex-1 flex flex-col ${
+        isFeatured ? "p-6 sm:p-8" : "p-4 sm:p-6"
       }`}>
-        <div>
-          <h3 className={`font-semibold mb-2 group-hover:text-primary transition-colors ${
-            isFeatured 
-              ? "text-xl sm:text-2xl font-bold mb-3" 
-              : "text-base sm:text-lg line-clamp-1"
-          }`}>
-            {community.name}
-          </h3>
-          <div className={`flex flex-wrap mb-2 ${isFeatured ? "gap-2 mb-3" : "gap-1"}`}>
-            {community.categories?.map((cat: string) => (
-              <Badge 
-                key={cat} 
-                variant="secondary" 
-                className={isFeatured ? "text-sm" : "text-xs"}
-              >
-                {cat}
-              </Badge>
-            ))}
+        <div className={isFeatured ? "space-y-4" : "space-y-2 sm:space-y-3"}>
+          <div>
+            <h3 className={`font-semibold mb-2 group-hover:text-primary transition-colors ${
+              isFeatured 
+                ? "text-xl sm:text-2xl font-bold mb-3" 
+                : "text-base sm:text-lg line-clamp-1"
+            }`}>
+              {community.name}
+            </h3>
+            <div className={`flex flex-wrap mb-2 ${isFeatured ? "gap-2 mb-3" : "gap-1"}`}>
+              {community.categories?.map((cat: string) => (
+                <Badge 
+                  key={cat} 
+                  variant="secondary" 
+                  className={isFeatured ? "text-sm" : "text-xs"}
+                >
+                  {cat}
+                </Badge>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {community.description && (
-          <p className={`text-muted-foreground flex-1 ${
-            isFeatured ? "text-base" : "text-sm line-clamp-2"
-          }`}>
-            {community.description}
-          </p>
-        )}
+          {community.description && (
+            <p className={`text-muted-foreground ${
+              isFeatured ? "text-base" : "text-sm line-clamp-2"
+            }`}>
+              {community.description}
+            </p>
+          )}
+        </div>
+        
+        <div className="flex-1 min-h-4" />
 
         {isFeatured && showManage ? (
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
