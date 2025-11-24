@@ -125,7 +125,7 @@ export default function Communities() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl sm:text-2xl font-bold">My Community</h2>
               <Button 
-                onClick={() => navigate(`/community/${myCommunity.id}/dashboard`)}
+                onClick={() => navigate(`/community/${myCommunity.id}`)}
                 size="sm"
               >
                 Manage
