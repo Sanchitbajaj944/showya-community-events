@@ -77,13 +77,13 @@ export const CommunityCard = ({ community, variant = "default", showManage = fal
           <div className="flex gap-3">
             <Button
               className="flex-1" 
-              onClick={() => navigate(`/community/${community.id}/dashboard`)}
+              onClick={() => navigate(`/community/${community.id}`)}
             >
               Go to Dashboard
             </Button>
             <Button
               variant="outline"
-              onClick={() => navigate(`/community/${community.id}`)}
+              onClick={() => navigate(`/community/${community.id}/public`)}
             >
               View Public Page
             </Button>
@@ -92,7 +92,7 @@ export const CommunityCard = ({ community, variant = "default", showManage = fal
           <Button
             className="w-full mt-auto" 
             variant="outline"
-            onClick={() => navigate(`/community/${community.id}`)}
+            onClick={() => navigate(`/community/${community.id}/public`)}
           >
             <span className={isFeatured ? "text-base" : "text-sm sm:text-base"}>
               View Community
