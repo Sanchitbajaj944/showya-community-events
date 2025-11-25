@@ -206,6 +206,29 @@ serve(async (req) => {
       console.error('Error updating refund record:', updateError);
     }
 
+    // Create notification for refund initiation
+    await supabaseClient
+      .from('notifications')
+      .insert({
+        user_id: user.id,
+        title: 'Refund Initiated',
+        message: `Your refund of ₹${refundAmount} (${refundPercentage}%) for "${event.title}" has been initiated. It will be processed within 5-7 business days.`,
+        type: 'success',
+        category: 'payment',
+        related_id: refundRecord.id,
+        action_url: `/events/${event.id}`
+      });
+
+    // Send email notification
+    await supabaseClient.functions.invoke('send-notification-email', {
+      body: {
+        user_id: user.id,
+        title: 'Refund Initiated',
+        message: `Your refund of ₹${refundAmount} (${refundPercentage}%) for "${event.title}" has been initiated. It will be processed within 5-7 business days.`,
+        action_url: `${Deno.env.get('SUPABASE_URL')?.replace('//', '//app.')}/events/${event.id}`
+      }
+    });
+
     // Delete the booking after successful refund initiation
     const { error: deleteError } = await supabaseClient
       .from('event_participants')
