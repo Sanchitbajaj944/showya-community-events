@@ -289,6 +289,9 @@ export type Database = {
           event_id: string
           id: string
           joined_at: string | null
+          payment_status: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
           role: Database["public"]["Enums"]["participant_role"]
           ticket_code: string | null
           user_id: string
@@ -297,6 +300,9 @@ export type Database = {
           event_id: string
           id?: string
           joined_at?: string | null
+          payment_status?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
           role: Database["public"]["Enums"]["participant_role"]
           ticket_code?: string | null
           user_id: string
@@ -305,6 +311,9 @@ export type Database = {
           event_id?: string
           id?: string
           joined_at?: string | null
+          payment_status?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
           role?: Database["public"]["Enums"]["participant_role"]
           ticket_code?: string | null
           user_id?: string
@@ -669,6 +678,68 @@ export type Database = {
             columns: ["community_id"]
             isOneToOne: true
             referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      refunds: {
+        Row: {
+          amount: number
+          booking_id: string
+          created_at: string
+          error_message: string | null
+          event_id: string
+          id: string
+          initiated_at: string
+          processed_at: string | null
+          razorpay_payment_id: string
+          razorpay_refund_id: string | null
+          reason: string | null
+          refund_percentage: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          created_at?: string
+          error_message?: string | null
+          event_id: string
+          id?: string
+          initiated_at?: string
+          processed_at?: string | null
+          razorpay_payment_id: string
+          razorpay_refund_id?: string | null
+          reason?: string | null
+          refund_percentage: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          created_at?: string
+          error_message?: string | null
+          event_id?: string
+          id?: string
+          initiated_at?: string
+          processed_at?: string | null
+          razorpay_payment_id?: string
+          razorpay_refund_id?: string | null
+          reason?: string | null
+          refund_percentage?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
