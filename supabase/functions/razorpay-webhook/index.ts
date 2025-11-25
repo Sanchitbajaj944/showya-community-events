@@ -193,15 +193,71 @@ serve(async (req) => {
         updateData.error_message = event.payload.refund.entity.error_reason || 'Refund failed';
       }
 
-      const { error: refundUpdateError } = await supabaseClient
+      const { data: refundData, error: refundUpdateError } = await supabaseClient
         .from('refunds')
         .update(updateData)
-        .eq('razorpay_payment_id', paymentId);
+        .eq('razorpay_payment_id', paymentId)
+        .select('user_id, amount, event_id')
+        .single();
 
       if (refundUpdateError) {
         console.error('Error updating refund status:', refundUpdateError);
       } else {
         console.log(`Refund record updated to ${status}`);
+
+        // Get event details for notification
+        const { data: eventData } = await supabaseClient
+          .from('events')
+          .select('title')
+          .eq('id', refundData.event_id)
+          .single();
+
+        // Send email notification based on status
+        if (event.event === 'refund.processed') {
+          // Refund successful notification
+          await supabaseClient
+            .from('notifications')
+            .insert({
+              user_id: refundData.user_id,
+              title: 'Refund Completed',
+              message: `Your refund of ₹${refundData.amount} for "${eventData?.title || 'your event'}" has been successfully processed and credited to your account.`,
+              type: 'success',
+              category: 'payment',
+              related_id: refundData.event_id
+            });
+
+          await supabaseClient.functions.invoke('send-notification-email', {
+            body: {
+              user_id: refundData.user_id,
+              title: 'Refund Completed',
+              message: `Your refund of ₹${refundData.amount} for "${eventData?.title || 'your event'}" has been successfully processed and credited to your account.`,
+              action_url: `${Deno.env.get('SUPABASE_URL')?.replace('//', '//app.')}/events/${refundData.event_id}`
+            }
+          });
+        } else if (event.event === 'refund.failed') {
+          // Refund failed notification
+          const errorMessage = event.payload.refund.entity.error_reason || 'Unknown error';
+          
+          await supabaseClient
+            .from('notifications')
+            .insert({
+              user_id: refundData.user_id,
+              title: 'Refund Failed',
+              message: `Your refund of ₹${refundData.amount} for "${eventData?.title || 'your event'}" could not be processed. Reason: ${errorMessage}. Please contact support.`,
+              type: 'error',
+              category: 'payment',
+              related_id: refundData.event_id
+            });
+
+          await supabaseClient.functions.invoke('send-notification-email', {
+            body: {
+              user_id: refundData.user_id,
+              title: 'Refund Failed',
+              message: `Your refund of ₹${refundData.amount} for "${eventData?.title || 'your event'}" could not be processed. Reason: ${errorMessage}. Please contact support for assistance.`,
+              action_url: `${Deno.env.get('SUPABASE_URL')?.replace('//', '//app.')}/events/${refundData.event_id}`
+            }
+          });
+        }
       }
     }
 
