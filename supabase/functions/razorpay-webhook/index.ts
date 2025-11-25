@@ -158,17 +158,50 @@ serve(async (req) => {
       const notes = event.payload.payment.entity.notes;
       
       if (notes?.event_id && notes?.user_id) {
-        // Create event participant entry with ticket code
+        // Update event participant with payment details
         await supabaseClient
           .from('event_participants')
-          .insert({
-            event_id: notes.event_id,
-            user_id: notes.user_id,
-            role: 'attendee',
-            ticket_code: paymentId.substring(0, 10).toUpperCase()
-          });
+          .update({
+            razorpay_payment_id: paymentId,
+            razorpay_order_id: event.payload.payment.entity.order_id,
+            payment_status: 'captured'
+          })
+          .eq('event_id', notes.event_id)
+          .eq('user_id', notes.user_id);
 
-        console.log(`Ticket created for event ${notes.event_id}`);
+        console.log(`Payment captured for event ${notes.event_id}, payment: ${paymentId}`);
+      }
+    }
+
+    // Handle refund status updates
+    if (event.event === 'refund.processed' || event.event === 'refund.failed' || event.event === 'refund.created') {
+      const refundId = event.payload.refund.entity.id;
+      const paymentId = event.payload.refund.entity.payment_id;
+      const status = event.event === 'refund.processed' ? 'completed' : 
+                     event.event === 'refund.failed' ? 'failed' : 'processing';
+      
+      console.log(`Refund ${status} for payment ${paymentId}, refund: ${refundId}`);
+
+      // Update refund record in our database
+      const updateData: any = {
+        status: status,
+        razorpay_refund_id: refundId,
+        processed_at: new Date().toISOString()
+      };
+
+      if (event.event === 'refund.failed') {
+        updateData.error_message = event.payload.refund.entity.error_reason || 'Refund failed';
+      }
+
+      const { error: refundUpdateError } = await supabaseClient
+        .from('refunds')
+        .update(updateData)
+        .eq('razorpay_payment_id', paymentId);
+
+      if (refundUpdateError) {
+        console.error('Error updating refund status:', refundUpdateError);
+      } else {
+        console.log(`Refund record updated to ${status}`);
       }
     }
 

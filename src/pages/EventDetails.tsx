@@ -244,24 +244,26 @@ export default function EventDetails() {
     if (!userBooking || !user) return;
 
     try {
-      const { error } = await supabase
-        .from("event_participants")
-        .delete()
-        .eq("id", userBooking.id)
-        .eq("user_id", user.id);
+      // Call the refund edge function
+      const { data, error } = await supabase.functions.invoke('process-refund', {
+        body: {
+          bookingId: userBooking.id,
+          reason: 'User cancelled booking'
+        }
+      });
 
       if (error) throw error;
 
-      toast.success(
-        refundPercentage > 0 
-          ? `Booking cancelled successfully. Refund of ₹${refundAmount} will be processed within 5-7 business days.`
-          : "Booking cancelled successfully. No refund available."
-      );
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      toast.success(data.message || 'Booking cancelled and refund initiated successfully');
       setShowCancelDialog(false);
       fetchEventDetails();
     } catch (error: any) {
       console.error("Error cancelling booking:", error);
-      toast.error("Failed to cancel booking");
+      toast.error(error.message || "Failed to cancel booking");
     }
   };
 

@@ -15,6 +15,7 @@ import { format, isPast, differenceInHours } from "date-fns";
 import { Calendar, Clock, MapPin, Users, Edit, Trash2, Link as LinkIcon, IndianRupee, AlertTriangle, MoreVertical, UserX, Flag, Eye, Film } from "lucide-react";
 import { UploadReelDialog } from "@/components/UploadReelDialog";
 import { UserAvatar } from "@/components/UserAvatar";
+import { RefundsTable } from "@/components/RefundsTable";
 
 export default function EventDashboard() {
   const { eventId } = useParams();
@@ -515,6 +516,13 @@ export default function EventDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Refunds Section - Only show for paid events */}
+        {event.ticket_type === 'paid' && (
+          <div className="mt-6">
+            <RefundsTable eventId={event.id} />
+          </div>
+        )}
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
