@@ -620,7 +620,7 @@ export default function CreateEvent() {
                   {formData.description && (
                     <div>
                       <p className="text-muted-foreground text-sm">Description</p>
-                      <p className="mt-1">{formData.description}</p>
+                      <p className="mt-1 break-words whitespace-pre-wrap">{formData.description}</p>
                     </div>
                   )}
 
