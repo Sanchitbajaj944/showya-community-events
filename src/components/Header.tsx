@@ -139,7 +139,7 @@ const Header = () => {
           {user ? (
             <>
               {!ownsCommunity && (
-                <Link to="/communities">
+                <Link to="/communities/create">
                   <Button size="sm" className="mr-2">
                     Create Community
                   </Button>
@@ -291,7 +291,7 @@ const Header = () => {
             )}
             
             {user && !ownsCommunity && (
-              <Link to="/communities" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/communities/create" onClick={() => setMobileMenuOpen(false)}>
                 <Button className="w-full mb-2">
                   Create Community
                 </Button>
