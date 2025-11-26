@@ -16,7 +16,6 @@ import EditProfile from "./pages/EditProfile";
 import Events from "./pages/Events";
 import Reels from "./pages/Reels";
 import Communities from "./pages/Communities";
-import CreateCommunity from "./pages/CreateCommunity";
 import CommunityDashboard from "./pages/CommunityDashboard";
 import CommunityMemberView from "./pages/CommunityMemberView";
 import CommunityPublicView from "./pages/CommunityPublicView";
@@ -52,7 +51,6 @@ const App = () => (
             <Route path="/events/:eventId/dashboard" element={<EventDashboard />} />
             <Route path="/reels" element={<Reels />} />
             <Route path="/communities" element={<Communities />} />
-            <Route path="/communities/create" element={<CreateCommunity />} />
             <Route path="/community/:communityId" element={<CommunityDashboard />} />
             <Route path="/community/:communityId/create-event" element={<CreateEvent />} />
             <Route path="/community/:communityId/member" element={<CommunityMemberView />} />

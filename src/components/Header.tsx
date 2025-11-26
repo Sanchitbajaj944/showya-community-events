@@ -21,6 +21,7 @@ import {
 } from "./ui/dropdown-menu";
 import { SUPPORTED_LANGUAGES } from "@/i18n/config";
 import { LanguageSelector } from "./LanguageSelector";
+import { CreateCommunityDialog } from "./CreateCommunityDialog";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -139,11 +140,11 @@ const Header = () => {
           {user ? (
             <>
               {!ownsCommunity && (
-                <Link to="/communities/create">
+                <CreateCommunityDialog onSuccess={checkCommunityOwnership}>
                   <Button size="sm" className="mr-2">
                     Create Community
                   </Button>
-                </Link>
+                </CreateCommunityDialog>
               )}
               <NotificationCenter />
               <DropdownMenu>
@@ -291,11 +292,14 @@ const Header = () => {
             )}
             
             {user && !ownsCommunity && (
-              <Link to="/communities/create" onClick={() => setMobileMenuOpen(false)}>
+              <CreateCommunityDialog onSuccess={() => {
+                checkCommunityOwnership();
+                setMobileMenuOpen(false);
+              }}>
                 <Button className="w-full mb-2">
                   Create Community
                 </Button>
-              </Link>
+              </CreateCommunityDialog>
             )}
             
             {/* Language Selector */}
