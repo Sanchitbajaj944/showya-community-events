@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { BookingModal } from "@/components/BookingModal";
 import { ShareDialog } from "@/components/ShareDialog";
 import { ReportDialog } from "@/components/ReportDialog";
+import { CollapsibleDescription } from "@/components/CollapsibleDescription";
 import {
   Drawer,
   DrawerClose,
@@ -561,7 +562,7 @@ export default function EventDetails() {
           <Card className="mb-8">
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">About This Event</h2>
-              <p className="text-muted-foreground whitespace-pre-wrap">{event.description}</p>
+              <CollapsibleDescription description={event.description} />
             </CardContent>
           </Card>
         )}
