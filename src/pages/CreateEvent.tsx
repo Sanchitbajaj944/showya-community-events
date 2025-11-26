@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Upload, Ticket, Eye } from "lucide-react";
+import { CollapsibleDescription } from "@/components/CollapsibleDescription";
 import { Badge } from "@/components/ui/badge";
 import imageCompression from "browser-image-compression";
 
@@ -619,8 +620,8 @@ export default function CreateEvent() {
 
                   {formData.description && (
                     <div>
-                      <p className="text-muted-foreground text-sm">Description</p>
-                      <p className="mt-1 break-words whitespace-pre-wrap">{formData.description}</p>
+                      <p className="text-muted-foreground text-sm mb-2">Description</p>
+                      <CollapsibleDescription description={formData.description} className="mt-1" />
                     </div>
                   )}
 
