@@ -210,6 +210,8 @@ export function BookingModal({
         description: `${role === 'performer' ? 'Performer' : 'Audience'} Ticket`,
         handler: async function (response: any) {
           try {
+            toast.dismiss("razorpay-payment");
+            
             // Generate ticket code
             const ticketCode = `TKT-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
@@ -234,18 +236,18 @@ export function BookingModal({
               }
             });
 
+            // Show success dialog
             setBookingId(ticketCode);
             setBookingSuccess(true);
+            onOpenChange(true);
             toast.success("Payment successful! Booking confirmed 🎉");
             
-            // Refresh and close immediately after short delay
-            setTimeout(() => {
-              onOpenChange(false);
-              onBookingComplete();
-            }, 1500);
+            // Refresh after closing success dialog
+            onBookingComplete();
 
           } catch (error: any) {
             console.error("Post-payment error:", error);
+            toast.dismiss("razorpay-payment");
             toast.error("Payment received but booking failed. Please contact support.");
           }
         },
@@ -259,11 +261,17 @@ export function BookingModal({
 
       // @ts-ignore - Razorpay is loaded via script
       const razorpay = new window.Razorpay(options);
+      
+      // Close modal and show loading toast
+      onOpenChange(false);
+      setLoading(false);
+      toast.loading("Processing payment...", { id: "razorpay-payment" });
+      
       razorpay.open();
 
       razorpay.on('payment.failed', function (response: any) {
+        toast.dismiss("razorpay-payment");
         toast.error("Payment failed. Please try again.");
-        setLoading(false);
       });
 
     } catch (error: any) {
