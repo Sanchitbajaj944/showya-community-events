@@ -215,14 +215,17 @@ export function BookingModal({
             // Generate ticket code
             const ticketCode = `TKT-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-            // Save booking
+            // Save booking with payment details
             const { error: bookingError } = await supabase
               .from("event_participants")
               .insert({
                 event_id: event.id,
                 user_id: user?.id,
                 role: role,
-                ticket_code: ticketCode
+                ticket_code: ticketCode,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                payment_status: 'captured'
               });
 
             if (bookingError) throw bookingError;
