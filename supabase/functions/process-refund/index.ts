@@ -64,10 +64,48 @@ serve(async (req) => {
       throw new Error('Booking not found or unauthorized');
     }
 
-    // Check if payment exists
+    const event = booking.events;
+
+    // Handle free booking cancellation (no payment to refund)
     if (!booking.razorpay_payment_id) {
-      throw new Error('No payment found for this booking. Only paid bookings can be refunded.');
+      console.log('Processing free booking cancellation');
+      
+      // Delete the booking
+      const { error: deleteError } = await supabaseClient
+        .from('event_participants')
+        .delete()
+        .eq('id', bookingId)
+        .eq('user_id', user.id);
+
+      if (deleteError) {
+        console.error('Error deleting booking:', deleteError);
+        throw new Error('Failed to cancel booking');
+      }
+
+      // Create notification
+      await supabaseClient
+        .from('notifications')
+        .insert({
+          user_id: user.id,
+          title: 'Booking Cancelled',
+          message: `Your booking for "${event.title}" has been cancelled successfully.`,
+          type: 'info',
+          category: 'event',
+          related_id: event.id,
+          action_url: `/events/${event.id}`
+        });
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Booking cancelled successfully.'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    // Handle paid booking refund
+    console.log('Processing paid booking refund');
 
     // Check if refund already exists
     const { data: existingRefund } = await supabaseClient
@@ -85,8 +123,6 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const event = booking.events;
 
     // Calculate refund percentage based on time until event
     const hoursUntilEvent = (new Date(event.event_date).getTime() - Date.now()) / (1000 * 60 * 60);
