@@ -188,6 +188,8 @@ serve(async (req) => {
       amount: amountInPaise
     });
 
+    // For Route Transfer payments, we need to reverse the transfer first
+    // Using reverse_all to automatically reverse transfers before refunding
     const razorpayResponse = await fetch(
       `https://api.razorpay.com/v1/payments/${booking.razorpay_payment_id}/refund`,
       {
@@ -199,6 +201,7 @@ serve(async (req) => {
         body: JSON.stringify({
           amount: amountInPaise,
           speed: 'normal',
+          reverse_all: 1, // This reverses all transfers associated with the payment before processing refund
           notes: {
             refund_id: refundRecord.id,
             event_id: event.id,
