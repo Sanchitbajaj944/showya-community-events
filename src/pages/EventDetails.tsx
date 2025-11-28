@@ -223,10 +223,12 @@ export default function EventDetails() {
   };
 
   const calculateRefund = () => {
-    if (!event) return;
+    if (!event || !userBooking) return;
 
     const hoursUntilEvent = differenceInHours(new Date(event.event_date), new Date());
-    const ticketPrice = event.ticket_type === 'paid' ? event.performer_ticket_price : 0;
+    
+    // Use actual amount paid (after promo discounts) instead of ticket price
+    const amountPaid = userBooking.amount_paid || 0;
     
     let percentage = 0;
     if (hoursUntilEvent >= 24) {
@@ -238,7 +240,7 @@ export default function EventDetails() {
     }
     
     setRefundPercentage(percentage);
-    setRefundAmount((ticketPrice * percentage) / 100);
+    setRefundAmount((amountPaid * percentage) / 100);
   };
 
   const handleCancelBooking = async () => {
