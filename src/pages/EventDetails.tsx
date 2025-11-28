@@ -51,6 +51,7 @@ export default function EventDetails() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [refundAmount, setRefundAmount] = useState(0);
   const [refundPercentage, setRefundPercentage] = useState(0);
+  const [refundBaseAmount, setRefundBaseAmount] = useState(0);
   const [showBookingDrawer, setShowBookingDrawer] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [spotlight, setSpotlight] = useState<any>(null);
@@ -227,8 +228,13 @@ export default function EventDetails() {
 
     const hoursUntilEvent = differenceInHours(new Date(event.event_date), new Date());
     
-    // Use actual amount paid (after promo discounts) instead of ticket price
-    const amountPaid = userBooking.amount_paid || 0;
+    // Use actual amount paid (after promo discounts), fallback to ticket price for legacy bookings
+    const ticketPrice = userBooking.role === 'performer' 
+      ? event.performer_ticket_price 
+      : (event.audience_ticket_price || 0);
+    const amountPaid = (userBooking.amount_paid && userBooking.amount_paid > 0) 
+      ? userBooking.amount_paid 
+      : ticketPrice;
     
     let percentage = 0;
     if (hoursUntilEvent >= 24) {
@@ -240,6 +246,7 @@ export default function EventDetails() {
     }
     
     setRefundPercentage(percentage);
+    setRefundBaseAmount(amountPaid);
     setRefundAmount((amountPaid * percentage) / 100);
   };
 
@@ -750,7 +757,7 @@ export default function EventDetails() {
                     <h4 className="font-semibold text-foreground">Refund Information</h4>
                     <div className="space-y-2 text-sm">
                       <p className="text-foreground">
-                        <strong>Refund Amount:</strong> ₹{refundAmount} ({refundPercentage}% of ₹{event.performer_ticket_price})
+                        <strong>Refund Amount:</strong> ₹{refundAmount} ({refundPercentage}% of ₹{refundBaseAmount})
                       </p>
                       {refundPercentage === 100 && (
                         <p className="text-green-600 dark:text-green-400">
