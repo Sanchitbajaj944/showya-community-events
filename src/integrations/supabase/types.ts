@@ -286,6 +286,7 @@ export type Database = {
       }
       event_participants: {
         Row: {
+          amount_paid: number | null
           event_id: string
           id: string
           joined_at: string | null
@@ -297,6 +298,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          amount_paid?: number | null
           event_id: string
           id?: string
           joined_at?: string | null
@@ -308,6 +310,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          amount_paid?: number | null
           event_id?: string
           id?: string
           joined_at?: string | null

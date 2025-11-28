@@ -140,14 +140,17 @@ serve(async (req) => {
       throw new Error('Refund not available. Event is less than 2 hours away.');
     }
 
-    // Calculate refund amount
-    const ticketPrice = booking.role === 'performer' 
-      ? event.performer_ticket_price 
-      : event.audience_ticket_price || 0;
+    // Calculate refund amount using actual amount paid (after promo discounts)
+    // Fall back to ticket price for legacy bookings without amount_paid
+    const amountPaid = booking.amount_paid || (
+      booking.role === 'performer' 
+        ? event.performer_ticket_price 
+        : event.audience_ticket_price || 0
+    );
     
-    const refundAmount = (ticketPrice * refundPercentage) / 100;
+    const refundAmount = (amountPaid * refundPercentage) / 100;
 
-    console.log(`Refund calculation: ${refundPercentage}% of ₹${ticketPrice} = ₹${refundAmount}`);
+    console.log(`Refund calculation: ${refundPercentage}% of ₹${amountPaid} = ₹${refundAmount}`);
 
     // Create refund record
     const { data: refundRecord, error: refundInsertError } = await supabaseClient

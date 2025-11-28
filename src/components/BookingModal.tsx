@@ -225,7 +225,8 @@ export function BookingModal({
                 ticket_code: ticketCode,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
-                payment_status: 'captured'
+                payment_status: 'captured',
+                amount_paid: finalPrice
               });
 
             if (bookingError) throw bookingError;
