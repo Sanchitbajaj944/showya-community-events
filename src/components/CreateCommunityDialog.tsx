@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 
 interface CreateCommunityDialogProps {
   children: React.ReactNode;
@@ -21,6 +21,8 @@ export const CreateCommunityDialog = ({ children, onSuccess }: CreateCommunityDi
     categories: [] as string[],
     description: "",
   });
+  const [nameAvailable, setNameAvailable] = useState<boolean | null>(null);
+  const [checkingName, setCheckingName] = useState(false);
   const { toast } = useToast();
 
   const categories = [
@@ -36,6 +38,37 @@ export const CreateCommunityDialog = ({ children, onSuccess }: CreateCommunityDi
     "Other"
   ];
 
+  // Debounced name availability check
+  useEffect(() => {
+    const trimmedName = formData.name.trim();
+    
+    if (trimmedName.length < 3) {
+      setNameAvailable(null);
+      return;
+    }
+
+    setCheckingName(true);
+    const timeoutId = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('communities')
+          .select('id')
+          .ilike('name', trimmedName)
+          .limit(1);
+
+        if (error) throw error;
+        setNameAvailable(data.length === 0);
+      } catch (error) {
+        console.error('Error checking name:', error);
+        setNameAvailable(null);
+      } finally {
+        setCheckingName(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.name]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -43,6 +76,15 @@ export const CreateCommunityDialog = ({ children, onSuccess }: CreateCommunityDi
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields and select at least one category",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (nameAvailable === false) {
+      toast({
+        title: "Name Taken",
+        description: "This community name is already taken. Please choose another.",
         variant: "destructive",
       });
       return;
@@ -73,6 +115,7 @@ export const CreateCommunityDialog = ({ children, onSuccess }: CreateCommunityDi
       });
 
       setFormData({ name: "", categories: [], description: "" });
+      setNameAvailable(null);
       setOpen(false);
       onSuccess?.();
     } catch (error: any) {
@@ -102,14 +145,34 @@ export const CreateCommunityDialog = ({ children, onSuccess }: CreateCommunityDi
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Community Name *</Label>
-            <Input
-              id="name"
-              placeholder="e.g., Mumbai Poetry Club"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              maxLength={100}
-            />
+            <div className="relative">
+              <Input
+                id="name"
+                placeholder="e.g., Mumbai Poetry Club"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                maxLength={100}
+                className={nameAvailable === false ? "border-destructive pr-10" : nameAvailable === true ? "border-green-500 pr-10" : ""}
+              />
+              {formData.name.trim().length >= 3 && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {checkingName ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : nameAvailable === true ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  ) : nameAvailable === false ? (
+                    <XCircle className="h-4 w-4 text-destructive" />
+                  ) : null}
+                </div>
+              )}
+            </div>
+            {formData.name.trim().length >= 3 && !checkingName && nameAvailable === false && (
+              <p className="text-xs text-destructive">This name is already taken</p>
+            )}
+            {formData.name.trim().length >= 3 && !checkingName && nameAvailable === true && (
+              <p className="text-xs text-green-500">This name is available</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -171,7 +234,11 @@ export const CreateCommunityDialog = ({ children, onSuccess }: CreateCommunityDi
             >
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" disabled={loading}>
+            <Button 
+              type="submit" 
+              className="flex-1" 
+              disabled={loading || nameAvailable === false || checkingName}
+            >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
