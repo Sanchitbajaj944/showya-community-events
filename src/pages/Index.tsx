@@ -320,50 +320,52 @@ const Index = () => {
                     </div>
 
                     {/* Community Info */}
-                    <CardContent className="p-5 space-y-3 flex-1 flex flex-col">
-                      <div>
-                        <h3 className="font-bold text-lg mb-2 line-clamp-1 group-hover:text-gradient transition-all">
-                          {community.name}
-                        </h3>
-                        <div className="flex flex-wrap gap-1.5 mb-3">
-                          {community.categories?.slice(0, 3).map((cat: string) => (
-                            <Badge key={cat} variant="secondary" className="text-xs">
-                              {cat}
-                            </Badge>
-                          ))}
-                          {community.categories && community.categories.length > 3 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{community.categories.length - 3}
-                            </Badge>
+                    <CardContent className="p-5 flex-1 flex flex-col">
+                      <div className="flex-1 space-y-3">
+                        <div>
+                          <h3 className="font-bold text-lg mb-2 line-clamp-1 group-hover:text-gradient transition-all">
+                            {community.name}
+                          </h3>
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {community.categories?.slice(0, 3).map((cat: string) => (
+                              <Badge key={cat} variant="secondary" className="text-xs">
+                                {cat}
+                              </Badge>
+                            ))}
+                            {community.categories && community.categories.length > 3 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{community.categories.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                          {community.owner && (
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {community.owner.profile_picture_url ? (
+                                  <img 
+                                    src={community.owner.profile_picture_url} 
+                                    alt={community.owner.display_name || community.owner.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Users className="h-3 w-3 text-primary" />
+                                )}
+                              </div>
+                              <span className="text-xs text-muted-foreground truncate">
+                                by {community.owner.display_name || community.owner.name}
+                              </span>
+                            </div>
                           )}
                         </div>
-                        {community.owner && (
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
-                              {community.owner.profile_picture_url ? (
-                                <img 
-                                  src={community.owner.profile_picture_url} 
-                                  alt={community.owner.display_name || community.owner.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <Users className="h-3 w-3 text-primary" />
-                              )}
-                            </div>
-                            <span className="text-xs text-muted-foreground truncate">
-                              by {community.owner.display_name || community.owner.name}
-                            </span>
-                          </div>
+
+                        {community.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                            {community.description}
+                          </p>
                         )}
                       </div>
 
-                      {community.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                          {community.description}
-                        </p>
-                      )}
-
-                      <Button className="w-full mt-auto">
+                      <Button className="w-full mt-4">
                         {t('home.viewCommunity')}
                       </Button>
                     </CardContent>
