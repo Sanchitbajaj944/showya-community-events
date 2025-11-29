@@ -55,14 +55,14 @@ const Index = () => {
       const { data, error } = await supabase
         .from("events")
         .select("*")
+        .gte("event_date", new Date().toISOString())  // Only fetch upcoming events
+        .eq("is_cancelled", false)  // Exclude cancelled events
         .order("event_date", { ascending: true })
-        .limit(8);
+        .limit(4);
 
       if (error) throw error;
       
-      // Filter only upcoming events
-      const upcoming = (data || []).filter(event => !isPast(new Date(event.event_date)));
-      setEvents(upcoming.slice(0, 4)); // Show max 4 on homepage
+      setEvents(data || []);
     } catch (error) {
       console.error("Error fetching events:", error);
     }
