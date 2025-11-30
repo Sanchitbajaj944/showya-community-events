@@ -6,6 +6,47 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper to detect if request is from development environment
+function isDevEnvironment(req: Request): boolean {
+  const origin = req.headers.get('origin') || '';
+  const referer = req.headers.get('referer') || '';
+  
+  const devPatterns = [
+    'localhost',
+    '127.0.0.1',
+    'lovableproject.com',
+    'lovable.app',
+    'webcontainer.io'
+  ];
+  
+  return devPatterns.some(pattern => 
+    origin.includes(pattern) || referer.includes(pattern)
+  );
+}
+
+// Get Razorpay credentials based on environment
+function getRazorpayCredentials(req: Request): { keyId: string; keySecret: string; isTestMode: boolean } {
+  const isDev = isDevEnvironment(req);
+  
+  if (isDev) {
+    const keyId = Deno.env.get('RAZORPAY_KEY_ID_TEST');
+    const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET_TEST');
+    
+    if (keyId && keySecret) {
+      console.log('Using Razorpay TEST credentials (dev environment)');
+      return { keyId, keySecret, isTestMode: true };
+    }
+    console.log('Test credentials not found, falling back to live');
+  }
+  
+  console.log('Using Razorpay LIVE credentials');
+  return {
+    keyId: Deno.env.get('RAZORPAY_KEY_ID') || '',
+    keySecret: Deno.env.get('RAZORPAY_KEY_SECRET') || '',
+    isTestMode: false
+  };
+}
+
 // Error sanitization
 function sanitizeError(error: any, logId: string): string {
   console.error(`[${logId}]`, error);
@@ -69,9 +110,13 @@ serve(async (req) => {
       );
     }
 
-    // Fetch latest status from Razorpay
-    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
-    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
+    // Fetch latest status from Razorpay with environment-appropriate credentials
+    const { keyId: razorpayKeyId, keySecret: razorpayKeySecret } = getRazorpayCredentials(req);
+    
+    if (!razorpayKeyId || !razorpayKeySecret) {
+      throw new Error('Razorpay credentials not configured');
+    }
+    
     const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
     const response = await fetch(
