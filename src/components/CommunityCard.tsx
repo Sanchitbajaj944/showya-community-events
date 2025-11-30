@@ -7,12 +7,18 @@ interface CommunityCardProps {
   community: any;
   variant?: "default" | "featured";
   showManage?: boolean;
+  isMember?: boolean;
 }
 
-export const CommunityCard = ({ community, variant = "default", showManage = false }: CommunityCardProps) => {
+export const CommunityCard = ({ community, variant = "default", showManage = false, isMember = false }: CommunityCardProps) => {
   const navigate = useNavigate();
   
   const isFeatured = variant === "featured";
+  
+  // Navigate to member view if user is a member, otherwise public view
+  const viewPath = isMember 
+    ? `/community/${community.id}/member` 
+    : `/community/${community.id}/public`;
 
   return (
     <div
@@ -97,7 +103,7 @@ export const CommunityCard = ({ community, variant = "default", showManage = fal
           <Button
             className="w-full mt-auto" 
             variant="outline"
-            onClick={() => navigate(`/community/${community.id}/public`)}
+            onClick={() => navigate(viewPath)}
           >
             <span className={isFeatured ? "text-base" : "text-sm sm:text-base"}>
               View Community
