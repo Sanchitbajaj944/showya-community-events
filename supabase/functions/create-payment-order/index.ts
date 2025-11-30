@@ -12,6 +12,47 @@ const PaymentOrderSchema = z.object({
   amount: z.number().min(1, 'Minimum amount is ₹1').max(1000000, 'Amount exceeds maximum')
 });
 
+// Helper to detect if request is from development environment
+function isDevEnvironment(req: Request): boolean {
+  const origin = req.headers.get('origin') || '';
+  const referer = req.headers.get('referer') || '';
+  
+  const devPatterns = [
+    'localhost',
+    '127.0.0.1',
+    'lovableproject.com',
+    'lovable.app',
+    'webcontainer.io'
+  ];
+  
+  return devPatterns.some(pattern => 
+    origin.includes(pattern) || referer.includes(pattern)
+  );
+}
+
+// Get Razorpay credentials based on environment
+function getRazorpayCredentials(req: Request): { keyId: string; keySecret: string; isTestMode: boolean } {
+  const isDev = isDevEnvironment(req);
+  
+  if (isDev) {
+    const keyId = Deno.env.get('RAZORPAY_KEY_ID_TEST');
+    const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET_TEST');
+    
+    if (keyId && keySecret) {
+      console.log('Using Razorpay TEST credentials (dev environment)');
+      return { keyId, keySecret, isTestMode: true };
+    }
+    console.log('Test credentials not found, falling back to live');
+  }
+  
+  console.log('Using Razorpay LIVE credentials');
+  return {
+    keyId: Deno.env.get('RAZORPAY_KEY_ID') || '',
+    keySecret: Deno.env.get('RAZORPAY_KEY_SECRET') || '',
+    isTestMode: false
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -90,9 +131,13 @@ serve(async (req) => {
       throw new Error(`Minimum payment amount is ₹${Math.ceil(1 / (1 - platformFeePercentage / 100))} after platform fees`);
     }
 
-    // Create Razorpay order
-    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
-    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
+    // Create Razorpay order with environment-appropriate credentials
+    const { keyId: razorpayKeyId, keySecret: razorpayKeySecret, isTestMode } = getRazorpayCredentials(req);
+    
+    if (!razorpayKeyId || !razorpayKeySecret) {
+      throw new Error('Razorpay credentials not configured');
+    }
+    
     const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
     const orderResponse = await fetch('https://api.razorpay.com/v1/orders', {
