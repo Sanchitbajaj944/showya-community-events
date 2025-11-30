@@ -163,6 +163,7 @@ export default function Communities() {
                 <CommunityCard 
                   key={community.id} 
                   community={community}
+                  isMember={true}
                 />
               ))}
             </div>
