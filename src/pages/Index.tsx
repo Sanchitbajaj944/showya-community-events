@@ -309,7 +309,8 @@ const Index = () => {
                         <img 
                           src={community.banner_url} 
                           alt={community.name} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
@@ -346,6 +347,7 @@ const Index = () => {
                                     src={community.owner.profile_picture_url} 
                                     alt={community.owner.display_name || community.owner.name}
                                     className="w-full h-full object-cover"
+                                    loading="lazy"
                                   />
                                 ) : (
                                   <Users className="h-3 w-3 text-primary" />

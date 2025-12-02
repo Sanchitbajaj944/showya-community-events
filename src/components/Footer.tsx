@@ -13,7 +13,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <img src={logo} alt="Logo" className="h-10 w-10" />
+              <img src={logo} alt="Logo" className="h-10 w-10" loading="lazy" />
               <span className="text-2xl font-bold text-gradient">Showya</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
