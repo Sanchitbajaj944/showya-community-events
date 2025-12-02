@@ -29,7 +29,8 @@ const EventCard = ({
           <img 
             src={image} 
             alt={title} 
-            className="w-full h-full object-cover" 
+            className="w-full h-full object-cover"
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-full bg-gradient-card flex items-center justify-center">

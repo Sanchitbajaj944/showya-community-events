@@ -34,7 +34,8 @@ export const CommunityCard = ({ community, variant = "default", showManage = fal
           <img 
             src={community.banner_url} 
             alt={community.name} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
