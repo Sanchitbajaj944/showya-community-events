@@ -184,7 +184,13 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
       if (checkError) {
         console.error("Error checking KYC status:", checkError);
-        toast.error("Failed to check KYC status");
+        const isConnectionError = checkError.message?.includes('non-2xx') || 
+                                  checkError.message?.includes('connection');
+        if (isConnectionError) {
+          toast.error("Connection error. Please check your internet and try again.");
+        } else {
+          toast.error("Failed to check KYC status. Please try again.");
+        }
         return;
       }
 
@@ -341,10 +347,30 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
       // Handle error response from edge function
       if (error || (data && data.error)) {
-        const errorMessage = data?.error || error?.message || "Failed to start KYC process";
-        const errorField = data?.field;
+        // Extract error message - handle both data.error and edge function error format
+        let errorMessage = "Failed to start KYC process";
+        let errorField = data?.field;
         
-        console.error("KYC Error:", errorMessage, "Field:", errorField);
+        if (data?.error) {
+          errorMessage = data.error;
+        } else if (error) {
+          // Try to extract actual error from edge function response
+          // Edge function errors may contain the response body in error.context
+          try {
+            if (error.context && typeof error.context === 'object') {
+              errorMessage = error.context.error || error.context.message || error.message;
+            } else if (error.message && error.message.includes('non-2xx')) {
+              // Generic edge function error - provide helpful message
+              errorMessage = "Connection error. Please check your internet and try again.";
+            } else {
+              errorMessage = error.message;
+            }
+          } catch {
+            errorMessage = error.message || "An error occurred";
+          }
+        }
+        
+        console.error("KYC Error:", errorMessage, "Field:", errorField, "Raw error:", error);
         
         // Check if it's a street length validation error from Razorpay
         const isStreetLengthError = errorMessage.toLowerCase().includes('street must be between 10 and 255') ||
@@ -381,8 +407,15 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           toast.error("Name validation failed. Please verify your profile.");
           setPhoneDialogOpen(true);
         } else {
-          // Generic validation error - prompt to re-enter all details
-          toast.error(`Validation failed: ${errorMessage}. Please re-enter your details.`);
+          // Generic error - provide helpful message without exposing raw error
+          const isConnectionError = errorMessage.toLowerCase().includes('non-2xx') || 
+                                    errorMessage.toLowerCase().includes('connection') ||
+                                    errorMessage.toLowerCase().includes('network');
+          if (isConnectionError) {
+            toast.error("Connection error. Please check your internet and try again.");
+          } else {
+            toast.error("Something went wrong. Please try again or contact support if the issue persists.");
+          }
           setPhoneDialogOpen(true);
         }
         return;
