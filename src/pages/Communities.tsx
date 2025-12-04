@@ -10,14 +10,28 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { CommunityCard } from "@/components/CommunityCard";
 
+interface CommunityWithOwner {
+  id: string;
+  name: string;
+  description: string | null;
+  banner_url: string | null;
+  categories: string[];
+  owner_id: string;
+  created_at: string;
+  updated_at: string;
+  kyc_status: string;
+  platform_fee_percentage: number;
+  owner?: { name: string | null; display_name: string | null } | null;
+}
+
 export default function Communities() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [allCommunities, setAllCommunities] = useState<any[]>([]);
-  const [myCommunity, setMyCommunity] = useState<any | null>(null);
-  const [joinedCommunities, setJoinedCommunities] = useState<any[]>([]);
-  const [exploreCommunities, setExploreCommunities] = useState<any[]>([]);
+  const [allCommunities, setAllCommunities] = useState<CommunityWithOwner[]>([]);
+  const [myCommunity, setMyCommunity] = useState<CommunityWithOwner | null>(null);
+  const [joinedCommunities, setJoinedCommunities] = useState<CommunityWithOwner[]>([]);
+  const [exploreCommunities, setExploreCommunities] = useState<CommunityWithOwner[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAllJoined, setShowAllJoined] = useState(false);
 
@@ -26,11 +40,23 @@ export default function Communities() {
     try {
       // Fetch user's own community if logged in
       if (user) {
-        const { data: ownCommunity } = await supabase
+        const { data: ownCommunityData } = await supabase
           .from('communities')
           .select('*')
           .eq('owner_id', user.id)
           .maybeSingle();
+        
+        let ownCommunity: CommunityWithOwner | null = ownCommunityData as CommunityWithOwner | null;
+        
+        // Fetch owner profile for own community
+        if (ownCommunity) {
+          const { data: ownerProfile } = await supabase
+            .from('profiles_public')
+            .select('name, display_name')
+            .eq('user_id', ownCommunity.owner_id)
+            .maybeSingle();
+          ownCommunity.owner = ownerProfile;
+        }
         
         setMyCommunity(ownCommunity);
 
@@ -50,7 +76,23 @@ export default function Communities() {
             .in('id', joinedCommunityIds)
             .order('created_at', { ascending: false });
           
-          setJoinedCommunities(joinedData || []);
+          const joinedWithOwners: CommunityWithOwner[] = (joinedData || []) as CommunityWithOwner[];
+          
+          // Fetch owner profiles for joined communities
+          if (joinedWithOwners.length > 0) {
+            const ownerIds = [...new Set(joinedWithOwners.map(c => c.owner_id))];
+            const { data: ownerProfiles } = await supabase
+              .from('profiles_public')
+              .select('user_id, name, display_name')
+              .in('user_id', ownerIds);
+            
+            const ownerMap = new Map(ownerProfiles?.map(p => [p.user_id, p]) || []);
+            joinedWithOwners.forEach(c => {
+              c.owner = ownerMap.get(c.owner_id) || null;
+            });
+          }
+          
+          setJoinedCommunities(joinedWithOwners);
         }
       }
 
@@ -62,21 +104,35 @@ export default function Communities() {
 
       if (error) throw error;
       
-      setAllCommunities(data || []);
+      const allData: CommunityWithOwner[] = (data || []) as CommunityWithOwner[];
+      
+      // Fetch owner profiles for all communities
+      if (allData.length > 0) {
+        const ownerIds = [...new Set(allData.map(c => c.owner_id))];
+        const { data: ownerProfiles } = await supabase
+          .from('profiles_public')
+          .select('user_id, name, display_name')
+          .in('user_id', ownerIds);
+        
+        const ownerMap = new Map(ownerProfiles?.map(p => [p.user_id, p]) || []);
+        allData.forEach(c => {
+          c.owner = ownerMap.get(c.owner_id) || null;
+        });
+      }
+      
+      setAllCommunities(allData);
 
       // Filter communities for "Explore" section
-      if (user && data) {
+      if (user && allData) {
         const joinedIds = joinedCommunities.map(c => c.id);
-        const ownCommunityId = myCommunity?.id;
-        
-        const explore = data.filter(c => 
+        const explore = allData.filter(c => 
           c.owner_id !== user.id && 
           !joinedIds.includes(c.id)
         );
         
         setExploreCommunities(explore);
       } else {
-        setExploreCommunities(data || []);
+        setExploreCommunities(allData);
       }
     } catch (error) {
       console.error('Error fetching communities:', error);

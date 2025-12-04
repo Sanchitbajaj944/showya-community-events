@@ -71,6 +71,11 @@ export const CommunityCard = ({ community, variant = "default", showManage = fal
                 </Badge>
               ))}
             </div>
+            {community.owner && (
+              <p className={`text-muted-foreground ${isFeatured ? "text-sm" : "text-xs"}`}>
+                by {community.owner.display_name || community.owner.name}
+              </p>
+            )}
           </div>
 
           {community.description && (
