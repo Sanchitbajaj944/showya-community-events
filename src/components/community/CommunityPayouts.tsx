@@ -621,6 +621,13 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
       if (error) throw error;
 
+      // Handle account mismatch (test vs live environment)
+      if (data.account_mismatch || data.needs_restart) {
+        toast.warning(data.message || "KYC account mismatch. Please restart the KYC process.", { duration: 6000 });
+        onRefresh();
+        return;
+      }
+
       // Store missing fields and errors for display
       if (data.missing_fields) {
         setMissingFields(data.missing_fields);
@@ -633,7 +640,13 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
       onRefresh();
     } catch (error: any) {
       console.error("Error checking KYC status:", error);
-      toast.error(error.message || "Failed to check KYC status");
+      const isConnectionError = error.message?.includes('non-2xx') || 
+                                error.message?.includes('connection');
+      if (isConnectionError) {
+        toast.error("Connection error. Please try again.");
+      } else {
+        toast.error("Failed to check KYC status. Please try again.");
+      }
     } finally {
       setChecking(false);
     }

@@ -131,6 +131,23 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Razorpay API error:', response.status, errorText);
+      
+      // Check if it's an access denied error - account may be from different environment
+      if (errorText.includes('Access Denied') || response.status === 400) {
+        console.log('Access denied - account may have been created with different credentials (test vs live)');
+        
+        // Return a helpful response instead of throwing an error
+        return new Response(
+          JSON.stringify({ 
+            kyc_status: 'NOT_STARTED',
+            message: 'This KYC account was created in a different environment. Please restart the KYC process.',
+            needs_restart: true,
+            account_mismatch: true
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       throw new Error('Razorpay API error');
     }
 
