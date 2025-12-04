@@ -21,7 +21,7 @@ interface CommunityWithOwner {
   updated_at: string;
   kyc_status: string;
   platform_fee_percentage: number;
-  owner?: { name: string | null; display_name: string | null } | null;
+  owner?: { name: string | null; display_name: string | null; profile_picture_url: string | null } | null;
 }
 
 export default function Communities() {
@@ -52,9 +52,10 @@ export default function Communities() {
         if (ownCommunity) {
           const { data: ownerProfile } = await supabase
             .from('profiles_public')
-            .select('name, display_name')
+            .select('name, display_name, profile_picture_url')
             .eq('user_id', ownCommunity.owner_id)
             .maybeSingle();
+          ownCommunity.owner = ownerProfile;
           ownCommunity.owner = ownerProfile;
         }
         
@@ -83,7 +84,7 @@ export default function Communities() {
             const ownerIds = [...new Set(joinedWithOwners.map(c => c.owner_id))];
             const { data: ownerProfiles } = await supabase
               .from('profiles_public')
-              .select('user_id, name, display_name')
+              .select('user_id, name, display_name, profile_picture_url')
               .in('user_id', ownerIds);
             
             const ownerMap = new Map(ownerProfiles?.map(p => [p.user_id, p]) || []);
@@ -111,7 +112,7 @@ export default function Communities() {
         const ownerIds = [...new Set(allData.map(c => c.owner_id))];
         const { data: ownerProfiles } = await supabase
           .from('profiles_public')
-          .select('user_id, name, display_name')
+          .select('user_id, name, display_name, profile_picture_url')
           .in('user_id', ownerIds);
         
         const ownerMap = new Map(ownerProfiles?.map(p => [p.user_id, p]) || []);

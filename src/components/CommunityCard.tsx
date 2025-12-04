@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CommunityCardProps {
   community: any;
@@ -72,9 +73,23 @@ export const CommunityCard = ({ community, variant = "default", showManage = fal
               ))}
             </div>
             {community.owner && (
-              <p className={`text-muted-foreground ${isFeatured ? "text-sm" : "text-xs"}`}>
-                by {community.owner.display_name || community.owner.name}
-              </p>
+              <div 
+                className={`flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity ${isFeatured ? "mt-1" : ""}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/profile/${community.owner_id}`);
+                }}
+              >
+                <Avatar className={isFeatured ? "h-6 w-6" : "h-5 w-5"}>
+                  <AvatarImage src={community.owner.profile_picture_url || undefined} />
+                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                    {(community.owner.display_name || community.owner.name || 'U').charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className={`text-muted-foreground hover:text-primary transition-colors ${isFeatured ? "text-sm" : "text-xs"}`}>
+                  {community.owner.display_name || community.owner.name}
+                </span>
+              </div>
             )}
           </div>
 
