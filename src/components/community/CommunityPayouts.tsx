@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, XCircle, AlertCircle, RefreshCw, DollarSign, Calendar, User } from "lucide-react";
+import { CheckCircle, Clock, XCircle, AlertCircle, RefreshCw, DollarSign, Calendar, User, RotateCcw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -12,6 +12,17 @@ import { KycPanDobDialog } from "./KycPanDobDialog";
 import { KycDocumentsDialog } from "./KycDocumentsDialog";
 import { KycBankDetailsDialog } from "./KycBankDetailsDialog";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface CommunityPayoutsProps {
   community: any;
@@ -37,6 +48,8 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
   const [transactions, setTransactions] = useState<any[]>([]);
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [loadingTransactions, setLoadingTransactions] = useState(true);
+  const [resetting, setResetting] = useState(false);
+  const [showAccountMismatch, setShowAccountMismatch] = useState(false);
 
   // Fetch transaction history
   useEffect(() => {
@@ -155,6 +168,35 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           dob: null
         })
         .eq("user_id", session.user.id);
+    }
+  };
+
+  const handleResetKyc = async () => {
+    setResetting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('reset-kyc', {
+        body: { communityId: community.id }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success(data.message || "KYC has been reset. You can start fresh.");
+        setShowAccountMismatch(false);
+        setMissingFields([]);
+        setRequirementErrors({});
+        setDocuments(null);
+        setBankDetails(null);
+        setExistingProfile(null);
+        onRefresh();
+      } else {
+        throw new Error(data.error || "Failed to reset KYC");
+      }
+    } catch (error: any) {
+      console.error("Error resetting KYC:", error);
+      toast.error(error.message || "Failed to reset KYC. Please try again.");
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -623,10 +665,12 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
       // Handle account mismatch (test vs live environment)
       if (data.account_mismatch || data.needs_restart) {
-        toast.warning(data.message || "KYC account mismatch. Please restart the KYC process.", { duration: 6000 });
-        onRefresh();
+        setShowAccountMismatch(true);
+        toast.warning(data.message || "KYC account mismatch. Please reset and restart the KYC process.", { duration: 6000 });
         return;
       }
+      
+      setShowAccountMismatch(false);
 
       // Store missing fields and errors for display
       if (data.missing_fields) {
@@ -829,24 +873,47 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
               <strong>🔴 Verification Failed</strong>
               <p className="mt-1">Your previous KYC attempt couldn't be verified. Please review all your details and try again.</p>
               <p className="mt-2 text-sm">Make sure your PAN and address match your government records.</p>
-              <Button 
-                size="sm" 
-                className="mt-3"
-                onClick={async () => {
-                  const { data: { session } } = await supabase.auth.getSession();
-                  if (!session) {
-                    toast.error("Please sign in to continue");
-                    return;
-                  }
-                  setUserId(session.user.id);
-                  await resetKycData();
-                  toast.info("Please re-enter all your details from the beginning", { duration: 4000 });
-                  setPhoneDialogOpen(true);
-                }}
-                disabled={loading}
-              >
-                {loading ? "Loading..." : "Start KYC Again"}
-              </Button>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <Button 
+                  size="sm" 
+                  onClick={async () => {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) {
+                      toast.error("Please sign in to continue");
+                      return;
+                    }
+                    setUserId(session.user.id);
+                    await resetKycData();
+                    toast.info("Please re-enter all your details from the beginning", { duration: 4000 });
+                    setPhoneDialogOpen(true);
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? "Loading..." : "Start KYC Again"}
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" disabled={resetting}>
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      Reset KYC
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Reset KYC?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will delete your existing KYC account and clear all saved KYC details. You'll need to re-enter all information from scratch.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleResetKyc} disabled={resetting}>
+                        {resetting ? "Resetting..." : "Yes, Reset KYC"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </AlertDescription>
           </Alert>
         );
@@ -939,6 +1006,39 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           <CardTitle>Payout Status</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Account Mismatch Alert */}
+          {showAccountMismatch && (
+            <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
+              <AlertCircle className="h-4 w-4 text-orange-500" />
+              <AlertDescription className="text-orange-700 dark:text-orange-300">
+                <strong>⚠️ KYC Account Mismatch</strong>
+                <p className="mt-1">Your KYC account was created in a different environment (test vs production). You need to reset and restart the KYC process.</p>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" className="mt-3" disabled={resetting}>
+                      <RotateCcw className={`h-4 w-4 mr-1 ${resetting ? 'animate-spin' : ''}`} />
+                      {resetting ? "Resetting..." : "Reset & Start Fresh"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Reset KYC?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will delete your existing KYC account and clear all saved KYC details. You'll need to re-enter all information from scratch.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleResetKyc} disabled={resetting}>
+                        {resetting ? "Resetting..." : "Yes, Reset KYC"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {getKycCard(community.kyc_status)}
           
           <Button 
