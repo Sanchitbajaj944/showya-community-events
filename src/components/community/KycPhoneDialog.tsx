@@ -49,11 +49,15 @@ export const KycPhoneDialog = ({ open, onOpenChange, onPhoneSubmit, loading, ini
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Update phone in profile table
+      // Update phone in profile_kyc_data table (upsert to handle both insert and update)
       const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ phone: formattedPhone })
-        .eq("user_id", user.id);
+        .from("profile_kyc_data")
+        .upsert({ 
+          user_id: user.id,
+          phone: formattedPhone 
+        }, {
+          onConflict: 'user_id'
+        });
 
       if (updateError) throw updateError;
 

@@ -52,13 +52,16 @@ export const KycPanDobDialog = ({ open, onOpenChange, userId, onComplete, loadin
 
     setSaving(true);
     try {
+      // Use upsert to handle both insert and update cases
       const { error } = await supabase
-        .from("profiles")
-        .update({ 
+        .from("profile_kyc_data")
+        .upsert({ 
+          user_id: userId,
           pan: pan.toUpperCase(),
           dob: dob
-        })
-        .eq("user_id", userId);
+        }, {
+          onConflict: 'user_id'
+        });
 
       if (error) throw error;
 

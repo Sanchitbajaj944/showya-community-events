@@ -117,16 +117,19 @@ export const KycAddressDialog = ({ open, onOpenChange, userId, onComplete, initi
 
     setLoading(true);
     try {
+      // Use upsert to handle both insert and update cases
       const { error } = await supabase
-        .from("profiles")
-        .update({
+        .from("profile_kyc_data")
+        .upsert({
+          user_id: userId,
           street1: formData.street1,
           street2: formData.street2 || null,
           city: formData.city,
           state: formData.state,
           postal_code: formData.postal_code
-        })
-        .eq("user_id", userId);
+        }, {
+          onConflict: 'user_id'
+        });
 
       if (error) throw error;
 

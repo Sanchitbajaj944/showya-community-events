@@ -143,23 +143,14 @@ serve(async (req) => {
       // Non-critical, continue
     }
 
-    // Clear user's KYC-related profile data so they can re-enter fresh
-    const { error: profileError } = await supabaseClient
-      .from('profiles')
-      .update({
-        phone: null,
-        street1: null,
-        street2: null,
-        city: null,
-        state: null,
-        postal_code: null,
-        pan: null,
-        dob: null
-      })
+    // Clear user's KYC data from the separate secure table so they can re-enter fresh
+    const { error: kycDataError } = await supabaseClient
+      .from('profile_kyc_data')
+      .delete()
       .eq('user_id', user.id);
 
-    if (profileError) {
-      console.error('Error clearing profile KYC data:', profileError);
+    if (kycDataError) {
+      console.error('Error clearing KYC data:', kycDataError);
       // Non-critical, continue
     }
 
