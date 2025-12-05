@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,11 +8,16 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-interface RegistrationRequest {
-  event_id: string;
-  user_id: string;
-  role: "performer" | "audience";
-}
+// Input validation schema
+const RegistrationSchema = z.object({
+  event_id: z.string().uuid("Invalid event ID format"),
+  user_id: z.string().uuid("Invalid user ID format"),
+  role: z.enum(["performer", "audience"], {
+    errorMap: () => ({ message: "Role must be 'performer' or 'audience'" }),
+  }),
+});
+
+type RegistrationRequest = z.infer<typeof RegistrationSchema>;
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -19,12 +25,72 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Authentication check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("Missing authorization header");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Missing authorization header" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        }
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { event_id, user_id, role }: RegistrationRequest = await req.json();
+    // Verify the user's token
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+
+    if (authError || !user) {
+      console.error("Authentication failed:", authError?.message);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Invalid token" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        }
+      );
+    }
+
+    // Parse and validate input
+    const requestBody = await req.json();
+    const validationResult = RegistrationSchema.safeParse(requestBody);
+
+    if (!validationResult.success) {
+      console.error("Validation failed:", validationResult.error.errors);
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid input", 
+          details: validationResult.error.errors.map(e => e.message) 
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        }
+      );
+    }
+
+    const { event_id, user_id, role }: RegistrationRequest = validationResult.data;
+
+    // Verify the authenticated user matches the user_id in the request
+    if (user.id !== user_id) {
+      console.error("User ID mismatch - authenticated:", user.id, "requested:", user_id);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - User ID mismatch" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403,
+        }
+      );
+    }
+
+    console.log("Processing registration for user:", user_id, "event:", event_id, "role:", role);
 
     // Get event details
     const { data: event, error: eventError } = await supabaseClient
@@ -34,7 +100,14 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (eventError || !event) {
-      throw new Error("Event not found");
+      console.error("Event not found:", eventError?.message);
+      return new Response(
+        JSON.stringify({ error: "Event not found" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 404,
+        }
+      );
     }
 
     // Get community owner
@@ -97,6 +170,8 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    console.log("Registration handled successfully for user:", user_id);
+
     return new Response(
       JSON.stringify({ success: true }),
       {
@@ -107,7 +182,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error handling registration:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Internal server error" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
