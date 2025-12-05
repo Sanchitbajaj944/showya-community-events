@@ -673,6 +673,10 @@ serve(async (req) => {
           if (errorData.includes('Access Denied') || stakeholderResponse.status === 403) {
             console.log('Access denied. Account requires manual setup in Razorpay dashboard.');
             canAccessAccount = false;
+          } else if (errorData.includes('pan') && (errorData.includes('invalid') || errorData.includes('Invalid'))) {
+            // PAN validation failed - in live mode, Razorpay verifies against government records
+            console.error('PAN validation failed - Razorpay rejected the PAN number');
+            throw new Error('Your PAN number could not be verified by Razorpay. Please ensure you entered your actual PAN card number exactly as it appears on your PAN card. Test PAN numbers (like ABCDE1234F) will not work in production.');
           } else {
             throw new Error(`Failed to add stakeholder: ${errorData}`);
           }
