@@ -918,6 +918,38 @@ export type Database = {
       }
     }
     Views: {
+      event_participants_public: {
+        Row: {
+          event_id: string | null
+          id: string | null
+          joined_at: string | null
+          role: Database["public"]["Enums"]["participant_role"] | null
+          user_id: string | null
+        }
+        Insert: {
+          event_id?: string | null
+          id?: string | null
+          joined_at?: string | null
+          role?: Database["public"]["Enums"]["participant_role"] | null
+          user_id?: string | null
+        }
+        Update: {
+          event_id?: string | null
+          id?: string | null
+          joined_at?: string | null
+          role?: Database["public"]["Enums"]["participant_role"] | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles_public: {
         Row: {
           bio: string | null
@@ -998,6 +1030,16 @@ export type Database = {
           audience_count: number
           performer_count: number
           total_count: number
+        }[]
+      }
+      get_event_participants_basic: {
+        Args: { _event_id: string }
+        Returns: {
+          event_id: string
+          id: string
+          joined_at: string
+          role: Database["public"]["Enums"]["participant_role"]
+          user_id: string
         }[]
       }
       get_event_participants_with_profiles: {
