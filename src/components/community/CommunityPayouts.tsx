@@ -151,22 +151,13 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
     setExistingProfile(null);
     setKycRetryMode(true);
     
-    // Clear user profile data from database (phone, address, pan, dob)
+    // Clear user KYC data from database (phone, address, pan, dob)
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       setUserId(session.user.id);
       await supabase
-        .from("profiles")
-        .update({
-          phone: null,
-          street1: null,
-          street2: null,
-          city: null,
-          state: null,
-          postal_code: null,
-          pan: null,
-          dob: null
-        })
+        .from("profile_kyc_data")
+        .delete()
         .eq("user_id", session.user.id);
     }
   };
@@ -253,15 +244,15 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
 
       if (checkResult.action === 'proceed') {
         // No existing account or IN_PROGRESS - proceed with forms
-        // Check if user has complete profile information
-        const { data: profile } = await supabase
-          .from("profiles")
+        // Check if user has KYC data
+        const { data: kycData } = await supabase
+          .from("profile_kyc_data")
           .select("phone, street1, street2, city, state, postal_code, pan, dob")
           .eq("user_id", session.user.id)
           .single();
 
-        // Store profile for pre-filling
-        setExistingProfile(profile);
+        // Store KYC data for pre-filling
+        setExistingProfile(kycData);
 
         // Start from phone dialog
         setPhoneDialogOpen(true);

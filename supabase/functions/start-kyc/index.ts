@@ -329,12 +329,32 @@ serve(async (req) => {
       );
     }
 
-    // Get user profile for KYC details
-    const { data: profile } = await supabaseClient
+    // Get user profile for name
+    const { data: userProfile } = await supabaseClient
       .from('profiles')
-      .select('name, phone, street1, street2, city, state, postal_code, pan, dob')
+      .select('name')
       .eq('user_id', user.id)
       .single();
+
+    // Get user KYC data from separate secure table
+    const { data: kycData } = await supabaseClient
+      .from('profile_kyc_data')
+      .select('phone, street1, street2, city, state, postal_code, pan, dob')
+      .eq('user_id', user.id)
+      .single();
+
+    // Combine profile and KYC data
+    const profile = {
+      name: userProfile?.name,
+      phone: kycData?.phone,
+      street1: kycData?.street1,
+      street2: kycData?.street2,
+      city: kycData?.city,
+      state: kycData?.state,
+      postal_code: kycData?.postal_code,
+      pan: kycData?.pan,
+      dob: kycData?.dob
+    };
 
     // Validate required fields
     if (!profile) {
