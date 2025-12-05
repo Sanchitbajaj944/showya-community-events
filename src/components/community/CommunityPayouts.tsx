@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, XCircle, AlertCircle, RefreshCw, DollarSign, Calendar, User, RotateCcw } from "lucide-react";
+import { CheckCircle, Clock, XCircle, AlertCircle, RefreshCw, IndianRupee, Calendar, User, RotateCcw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -1067,7 +1067,7 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
+            <IndianRupee className="h-5 w-5" />
             Total Earnings
           </CardTitle>
         </CardHeader>
@@ -1108,7 +1108,7 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
             </div>
           ) : transactions.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <IndianRupee className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>No transactions yet.</p>
               <p className="text-sm mt-2">Earnings will appear here once attendees book your events.</p>
             </div>
