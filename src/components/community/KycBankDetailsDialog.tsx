@@ -59,8 +59,9 @@ export const KycBankDetailsDialog = ({
       return;
     }
 
-    // Validate IFSC (11 characters: 4 letters, 7 alphanumeric)
-    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc.toUpperCase())) {
+    // Validate IFSC (11 characters: 4 letters, 0 or alphanumeric at 5th, 6 alphanumeric)
+    // More lenient: accepts both 0 and O at 5th position as some users confuse them
+    if (!/^[A-Z]{4}[0O][A-Z0-9]{6}$/.test(ifsc.toUpperCase())) {
       toast.error("Invalid IFSC code format (e.g., SBIN0001234)");
       return;
     }
@@ -164,7 +165,14 @@ export const KycBankDetailsDialog = ({
               id="ifsc"
               placeholder="e.g., SBIN0001234"
               value={ifsc}
-              onChange={(e) => setIfsc(e.target.value.toUpperCase())}
+              onChange={(e) => {
+                let value = e.target.value.toUpperCase();
+                // Auto-correct common mistake: replace letter O with digit 0 at 5th position
+                if (value.length >= 5 && value[4] === 'O') {
+                  value = value.substring(0, 4) + '0' + value.substring(5);
+                }
+                setIfsc(value);
+              }}
               maxLength={11}
               required
             />
