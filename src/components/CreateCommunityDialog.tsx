@@ -107,11 +107,21 @@ export const CreateCommunityDialog = ({ children, onSuccess }: CreateCommunityDi
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check for specific error types
+        if (error.message?.includes('FunctionsFetchError') || 
+            error.message?.includes('Failed to fetch') ||
+            error.message?.includes('NetworkError') ||
+            error.message?.includes('timeout') ||
+            error.name === 'FunctionsFetchError') {
+          throw new Error("Connection error. Please check your internet connection and try again.");
+        }
+        throw error;
+      }
 
       toast({
         title: "Community Created!",
-        description: data.message || "Your community has been created successfully. KYC process initiated.",
+        description: data.message || "Your community has been created successfully.",
       });
 
       setFormData({ name: "", categories: [], description: "" });
@@ -120,9 +130,26 @@ export const CreateCommunityDialog = ({ children, onSuccess }: CreateCommunityDi
       onSuccess?.();
     } catch (error: any) {
       console.error('Create community error:', error);
+      
+      // Determine user-friendly error message
+      let errorMessage = "Failed to create community. Please try again.";
+      
+      if (error.message?.includes('Connection error') || 
+          error.message?.includes('Failed to fetch') ||
+          error.message?.includes('NetworkError') ||
+          error.name === 'TypeError') {
+        errorMessage = "Connection error. Please check your internet connection and try again.";
+      } else if (error.message?.includes('already have a community')) {
+        errorMessage = "You already have a community. Each user can only create one.";
+      } else if (error.message?.includes('Unauthorized')) {
+        errorMessage = "Session expired. Please refresh the page and try again.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to create community. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
