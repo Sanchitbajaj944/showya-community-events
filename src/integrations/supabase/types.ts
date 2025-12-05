@@ -504,24 +504,62 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_kyc_data: {
+        Row: {
+          city: string | null
+          created_at: string
+          dob: string | null
+          id: string
+          pan: string | null
+          phone: string | null
+          postal_code: string | null
+          state: string | null
+          street1: string | null
+          street2: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          dob?: string | null
+          id?: string
+          pan?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          street1?: string | null
+          street2?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          dob?: string | null
+          id?: string
+          pan?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          street1?: string | null
+          street2?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           bio: string | null
           city: string | null
           created_at: string
           display_name: string | null
-          dob: string | null
           id: string
           name: string
-          pan: string | null
-          phone: string | null
-          postal_code: string | null
           preferred_language: string | null
           profile_picture_url: string | null
           skills: string[] | null
-          state: string | null
-          street1: string | null
-          street2: string | null
           updated_at: string | null
           user_id: string
         }
@@ -530,18 +568,11 @@ export type Database = {
           city?: string | null
           created_at?: string
           display_name?: string | null
-          dob?: string | null
           id?: string
           name: string
-          pan?: string | null
-          phone?: string | null
-          postal_code?: string | null
           preferred_language?: string | null
           profile_picture_url?: string | null
           skills?: string[] | null
-          state?: string | null
-          street1?: string | null
-          street2?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -550,18 +581,11 @@ export type Database = {
           city?: string | null
           created_at?: string
           display_name?: string | null
-          dob?: string | null
           id?: string
           name?: string
-          pan?: string | null
-          phone?: string | null
-          postal_code?: string | null
           preferred_language?: string | null
           profile_picture_url?: string | null
           skills?: string[] | null
-          state?: string | null
-          street1?: string | null
-          street2?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -897,6 +921,7 @@ export type Database = {
       profiles_public: {
         Row: {
           bio: string | null
+          city: string | null
           created_at: string | null
           display_name: string | null
           id: string | null
@@ -908,6 +933,7 @@ export type Database = {
         }
         Insert: {
           bio?: string | null
+          city?: string | null
           created_at?: string | null
           display_name?: string | null
           id?: string | null
@@ -919,6 +945,7 @@ export type Database = {
         }
         Update: {
           bio?: string | null
+          city?: string | null
           created_at?: string | null
           display_name?: string | null
           id?: string | null
