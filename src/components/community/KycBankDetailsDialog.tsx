@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 
 interface KycBankDetailsDialogProps {
   open: boolean;
@@ -38,6 +39,49 @@ export const KycBankDetailsDialog = ({
   const [beneficiaryName, setBeneficiaryName] = useState("");
   const [tncAccepted, setTncAccepted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [bankInfo, setBankInfo] = useState<{ bank: string; branch: string } | null>(null);
+  const [bankLookupLoading, setBankLookupLoading] = useState(false);
+  const [bankLookupError, setBankLookupError] = useState(false);
+
+  // Lookup bank details when IFSC changes
+  useEffect(() => {
+    const lookupBank = async () => {
+      // Normalize IFSC: replace O with 0 at 5th position for lookup
+      let normalizedIfsc = ifsc.toUpperCase();
+      if (normalizedIfsc.length >= 5 && normalizedIfsc[4] === 'O') {
+        normalizedIfsc = normalizedIfsc.substring(0, 4) + '0' + normalizedIfsc.substring(5);
+      }
+
+      if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(normalizedIfsc)) {
+        setBankInfo(null);
+        setBankLookupError(false);
+        return;
+      }
+
+      setBankLookupLoading(true);
+      setBankLookupError(false);
+      
+      try {
+        const response = await fetch(`https://ifsc.razorpay.com/${normalizedIfsc}`);
+        if (response.ok) {
+          const data = await response.json();
+          setBankInfo({ bank: data.BANK, branch: data.BRANCH });
+          setBankLookupError(false);
+        } else {
+          setBankInfo(null);
+          setBankLookupError(true);
+        }
+      } catch (error) {
+        setBankInfo(null);
+        setBankLookupError(true);
+      } finally {
+        setBankLookupLoading(false);
+      }
+    };
+
+    const debounce = setTimeout(lookupBank, 500);
+    return () => clearTimeout(debounce);
+  }, [ifsc]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,9 +220,26 @@ export const KycBankDetailsDialog = ({
               maxLength={11}
               required
             />
-            <p className="text-xs text-muted-foreground">
-              11-character code found on your cheque or bank statement
-            </p>
+            {bankLookupLoading ? (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Looking up bank...
+              </div>
+            ) : bankInfo ? (
+              <div className="flex items-center gap-1 text-xs text-green-600">
+                <CheckCircle2 className="h-3 w-3" />
+                {bankInfo.bank} - {bankInfo.branch}
+              </div>
+            ) : bankLookupError ? (
+              <div className="flex items-center gap-1 text-xs text-destructive">
+                <XCircle className="h-3 w-3" />
+                Invalid IFSC code
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                11-character code found on your cheque or bank statement
+              </p>
+            )}
           </div>
 
           <div className="flex items-start space-x-2 pt-2">
