@@ -337,6 +337,13 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         // Check current status to see what's missing
         const { data: statusData, error: statusError } = await supabase.functions.invoke('check-kyc-status');
         
+        // Handle account mismatch first
+        if (!statusError && statusData && (statusData.account_mismatch || statusData.needs_restart)) {
+          setShowAccountMismatch(true);
+          toast.warning(statusData.message || "KYC account mismatch. Please reset and restart the KYC process.", { duration: 6000 });
+          return;
+        }
+        
         if (!statusError && statusData && statusData.missing_fields) {
           const missing = statusData.missing_fields;
           console.log('Missing fields:', missing);
