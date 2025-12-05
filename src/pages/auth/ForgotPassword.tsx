@@ -24,11 +24,26 @@ export default function ForgotPassword() {
     try {
       setIsLoading(true);
       
-      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: 'https://showya-community-events.lovable.app/auth/reset-password',
+      // Determine the redirect URL based on current environment
+      const redirectUrl = `${window.location.origin}/auth/reset-password`;
+      
+      // Use custom edge function to send password reset email via Resend
+      const { data: result, error } = await supabase.functions.invoke('send-password-reset', {
+        body: {
+          email: data.email,
+          redirectUrl: redirectUrl,
+        },
       });
 
       if (error) {
+        console.error("Password reset error:", error);
+        // Check for network errors
+        if (error.message?.includes('FunctionsFetchError') || 
+            error.message?.includes('Failed to fetch') ||
+            error.message?.includes('NetworkError')) {
+          toast.error("Connection error. Please check your internet and try again.");
+          return;
+        }
         toast.error("Something went wrong. Please try again.");
         return;
       }
@@ -36,6 +51,7 @@ export default function ForgotPassword() {
       setEmailSent(true);
       toast.success("If this email exists, we've sent a reset link.");
     } catch (error) {
+      console.error("Password reset error:", error);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
@@ -49,7 +65,7 @@ export default function ForgotPassword() {
           <div>
             <h1 className="text-3xl font-bold">Check your email</h1>
             <p className="text-muted-foreground mt-2">
-              If this email exists, we've sent a reset link.
+              If this email exists, we've sent a reset link. The email should arrive within a minute.
             </p>
           </div>
           <Link to="/auth/signin">
