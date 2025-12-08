@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { Loader2, Tag, AlertCircle } from "lucide-react";
+import { MetaEvents } from "@/lib/metaConversions";
 
 interface BookingModalProps {
   open: boolean;
@@ -158,6 +159,11 @@ export function BookingModal({
         }
       });
 
+      // Track free event registration with Meta
+      if (user?.id) {
+        MetaEvents.eventRegistration(user.id, event.id, event.title, role, user.email);
+      }
+
       setBookingId(ticketCode);
       setBookingSuccess(true);
       toast.success("Booking confirmed! 🎉");
@@ -239,6 +245,11 @@ export function BookingModal({
                 role: role
               }
             });
+
+            // Track purchase with Meta
+            if (user?.id) {
+              MetaEvents.purchase(user.id, event.id, finalPrice, event.title, user.email);
+            }
 
             // Show success dialog
             setBookingId(ticketCode);

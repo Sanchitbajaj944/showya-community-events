@@ -11,6 +11,7 @@ import { SkillsSelect } from "@/components/SkillsSelect";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { MetaEvents } from "@/lib/metaConversions";
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -60,6 +61,12 @@ export default function SignUp() {
       }
 
       toast.success(t('auth.accountCreated'));
+      
+      // Track registration with Meta
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session?.user) {
+        MetaEvents.completeRegistration(sessionData.session.user.id, data.email);
+      }
       
       // Redirect to home or postAuthRedirect
       const postAuthRedirect = sessionStorage.getItem("postAuthRedirect");
