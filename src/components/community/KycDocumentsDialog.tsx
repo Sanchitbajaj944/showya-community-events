@@ -135,6 +135,16 @@ export const KycDocumentsDialog = ({ open, onOpenChange, onComplete, loading }: 
           >
             {loading ? "Processing..." : "Continue"}
           </Button>
+          
+          <div className="flex items-center justify-center gap-2 pt-2 border-t border-border mt-2">
+            <span className="text-xs text-muted-foreground">Powered by</span>
+            <img 
+              src="https://razorpay.com/assets/razorpay-glyph.svg" 
+              alt="Razorpay" 
+              className="h-4 w-auto"
+            />
+            <span className="text-xs font-medium text-muted-foreground">Razorpay</span>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
