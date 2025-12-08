@@ -499,7 +499,7 @@ serve(async (req) => {
           addresses: {
             registered: {
               street1: cappedStreet1,
-              street2: profile.street2?.trim() || '',
+              street2: profile.street2?.trim() || profile.city?.trim() || 'Near City Center',
               city: profile.city.trim(),
               state: profile.state.trim(),
               postal_code: postalCodeDigits,
