@@ -921,9 +921,9 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
           <Alert className="border-primary bg-primary/5">
             <AlertCircle className="h-4 w-4 text-primary" />
             <AlertDescription>
-              <strong>Start Your KYC to Enable Payouts</strong>
+              <strong>Complete Verification to Receive Payouts</strong>
               <p className="mt-1 text-muted-foreground">
-                Verify your identity on Razorpay's secure platform to start accepting payments for paid events.
+                To receive payments from your paid events directly to your bank account, we need to collect some information for our payment partner Razorpay. This is a one-time secure verification process.
               </p>
               <div className="flex gap-2 mt-3">
                 <Button 
