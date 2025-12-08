@@ -925,20 +925,13 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
               <p className="mt-1 text-muted-foreground">
                 To receive payments from your paid events directly to your bank account, we need to collect some information for our payment partner Razorpay. This is a one-time secure verification process.
               </p>
-              <div className="flex gap-2 mt-3">
+              <div className="mt-3">
                 <Button 
                   size="sm" 
                   onClick={handleStartKyc}
                   disabled={loading}
                 >
                   {loading ? "Starting..." : "Start KYC"}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => window.open('https://razorpay.com/docs/partners/route/onboarding/', '_blank')}
-                >
-                  Learn More
                 </Button>
               </div>
             </AlertDescription>
