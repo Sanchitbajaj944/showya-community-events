@@ -16,7 +16,7 @@ const UpdateEventSchema = z.object({
     category: z.string().max(50).optional(),
     event_date: z.string().datetime().optional(),
     duration: z.number().int().positive().max(480).optional(),
-    meeting_url: z.string().url().optional(),
+    meeting_url: z.string().max(2000).optional(),
     location: z.string().max(200).optional(),
     city: z.string().max(100).optional(),
     performer_slots: z.number().int().min(0).max(100).optional(),
