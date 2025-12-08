@@ -252,6 +252,16 @@ export const KycAddressDialog = ({ open, onOpenChange, userId, onComplete, initi
             </Button>
           </div>
         </form>
+        
+        <div className="flex items-center justify-center gap-2 pt-2 border-t border-border mt-2">
+          <span className="text-xs text-muted-foreground">Powered by</span>
+          <img 
+            src="https://razorpay.com/assets/razorpay-glyph.svg" 
+            alt="Razorpay" 
+            className="h-4 w-auto"
+          />
+          <span className="text-xs font-medium text-muted-foreground">Razorpay</span>
+        </div>
       </DialogContent>
     </Dialog>
   );
