@@ -1041,6 +1041,10 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
             <RefreshCw className={`h-4 w-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
             {checking ? "Checking..." : "Refresh Status"}
           </Button>
+          
+          <p className="text-xs text-muted-foreground text-center pt-2">
+            Powered by <span className="font-medium">Razorpay</span>
+          </p>
         </CardContent>
       </Card>
 
