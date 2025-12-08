@@ -188,6 +188,11 @@ export default function CreateEvent() {
         return;
       }
 
+      // Convert local datetime to proper ISO string with timezone
+      // The datetime-local input gives us a local time string, we need to convert it to UTC
+      const localDate = new Date(formData.event_date);
+      const eventDateISO = localDate.toISOString();
+
       // Create event
       const { data: event, error: eventError } = await supabase
         .from("events")
@@ -197,7 +202,7 @@ export default function CreateEvent() {
           category: formData.categories.join(", "),
           location: formData.location,
           city: formData.city,
-          event_date: formData.event_date,
+          event_date: eventDateISO,
           duration: formData.duration,
           poster_url: posterUrl,
           performer_slots: formData.performer_slots,

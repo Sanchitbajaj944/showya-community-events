@@ -270,9 +270,13 @@ export default function EditEvent() {
     try {
       setSubmitting(true);
 
+      // Convert local datetime to proper ISO string with timezone
+      // The datetime-local input gives us a local time string, we need to convert it to UTC
+      const localDate = new Date(formData.event_date);
+      const newDate = localDate.toISOString();
+      
       // Check if date changed
       const originalDate = event?.event_date;
-      const newDate = new Date(formData.event_date).toISOString();
       const isDateChanged = originalDate !== newDate;
 
       if (isDateChanged && bookingCount > 0 && !confirmDateChange) {
