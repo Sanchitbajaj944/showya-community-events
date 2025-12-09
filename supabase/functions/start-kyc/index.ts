@@ -192,7 +192,7 @@ serve(async (req) => {
       }
       
       // If KYC is pending or verified, show status
-      if (status === 'PENDING' || status === 'VERIFIED') {
+      if (status === 'IN_PROGRESS' || status === 'VERIFIED') {
         console.log('KYC already submitted and under review.');
         const onboardingUrl = `https://dashboard.razorpay.com/app/route-accounts/${existingAccount.razorpay_account_id}/onboarding`;
         
@@ -702,7 +702,7 @@ serve(async (req) => {
         .upsert({
           community_id: communityId,
           razorpay_account_id: razorpayAccountId,
-          kyc_status: 'PENDING',
+          kyc_status: 'IN_PROGRESS',
           business_type: 'individual',
           legal_business_name: sanitizedLegalBusinessName,
           error_reason: 'Account requires manual KYC completion in Razorpay dashboard',
@@ -715,14 +715,17 @@ serve(async (req) => {
         console.error('Failed to update database:', updateError);
       }
 
-      const manualOnboardingUrl = `https://dashboard.razorpay.com/app/route-accounts/${razorpayAccountId}/onboarding`;
+      // Since the account cannot be accessed, we need to inform the user of their options
+      // This typically happens when an account was created with test credentials but is now being accessed with live credentials
+      console.log('Account access restricted. Providing user with options.');
       
       return new Response(
         JSON.stringify({
-          action: 'manual_setup',
-          message: 'Your Razorpay account exists but requires manual completion. Please complete KYC in your Razorpay dashboard.',
-          onboarding_url: manualOnboardingUrl,
-          razorpay_account_id: razorpayAccountId
+          action: 'email_conflict',
+          message: 'Your email already has a Razorpay account that cannot be accessed. This usually happens when the account was created in a different environment. Options: (1) Contact Razorpay support to deactivate the old account, or (2) Use a different email for this community.',
+          razorpay_account_id: razorpayAccountId,
+          kyc_status: 'NEEDS_INFO',
+          requires_different_email: true
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -928,7 +931,7 @@ serve(async (req) => {
       if (finalProduct.activation_status === 'activated') {
         finalStatus = 'ACTIVATED';
       } else if (finalProduct.activation_status === 'under_review') {
-        finalStatus = 'PENDING';
+        finalStatus = 'IN_PROGRESS';
       } else if (finalProduct.activation_status === 'needs_clarification') {
         finalStatus = 'NEEDS_INFO';
       }
@@ -985,7 +988,7 @@ serve(async (req) => {
         kyc_status: finalStatus,
         message: finalStatus === 'ACTIVATED' 
           ? 'KYC approved! Payouts enabled.' 
-          : finalStatus === 'PENDING'
+          : finalStatus === 'IN_PROGRESS'
           ? 'Your details are under review. You\'ll be notified once verified.'
           : 'KYC submitted. Please check status.'
       }),
