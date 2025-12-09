@@ -385,6 +385,17 @@ export const CommunityPayouts = ({ community, onRefresh }: CommunityPayoutsProps
         return;
       }
 
+      // Handle email conflict - account exists with different credentials
+      if (data?.action === 'email_conflict') {
+        console.log('Email conflict detected - Razorpay account exists but cannot be accessed');
+        toast.error(
+          "Your email already has a Razorpay account that cannot be accessed with current credentials. Please contact Razorpay support to resolve this, or use a different email address.", 
+          { duration: 10000 }
+        );
+        setShowAccountMismatch(true);
+        return;
+      }
+
       // Handle error response from edge function
       if (error || (data && data.error)) {
         // Extract error message - handle both data.error and edge function error format
