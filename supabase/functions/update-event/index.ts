@@ -21,7 +21,8 @@ const UpdateEventSchema = z.object({
     city: z.string().max(100).optional(),
     performer_slots: z.number().int().min(0).max(100).optional(),
     audience_enabled: z.boolean().optional(),
-    audience_slots: z.number().int().min(0).max(1000).optional()
+    audience_slots: z.number().int().min(0).max(1000).optional(),
+    audience_ticket_price: z.number().min(0).max(100000).optional().nullable()
   }),
   confirmDateChange: z.boolean().optional()
 });
@@ -41,6 +42,7 @@ interface UpdateEventRequest {
     performer_slots?: number;
     audience_enabled?: boolean;
     audience_slots?: number;
+    audience_ticket_price?: number | null;
   };
   confirmDateChange?: boolean;
 }

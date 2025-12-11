@@ -70,6 +70,7 @@ export default function EditEvent() {
     performer_slots: 1,
     audience_enabled: false,
     audience_slots: 0,
+    audience_ticket_price: undefined as number | undefined,
   });
   const [uploading, setUploading] = useState(false);
 
@@ -212,6 +213,7 @@ export default function EditEvent() {
         performer_slots: eventData.performer_slots || 1,
         audience_enabled: eventData.audience_enabled || false,
         audience_slots: eventData.audience_slots || 0,
+        audience_ticket_price: eventData.audience_ticket_price || undefined,
       });
 
     } catch (error: any) {
@@ -297,6 +299,7 @@ export default function EditEvent() {
         performer_slots: formData.performer_slots,
         audience_enabled: formData.audience_enabled,
         audience_slots: formData.audience_slots,
+        audience_ticket_price: formData.audience_ticket_price,
       };
 
       // Call edge function
@@ -644,18 +647,38 @@ export default function EditEvent() {
 
             {/* Audience Slots */}
             {formData.audience_enabled && (
-              <div>
-                <Label htmlFor="audience_slots">Audience Seats *</Label>
-                <Input
-                  id="audience_slots"
-                  type="number"
-                  value={formData.audience_slots}
-                  onChange={(e) => setFormData({ ...formData, audience_slots: parseInt(e.target.value) })}
-                  disabled={isFieldDisabled("audience_slots")}
-                  min="0"
-                  className="mt-1"
-                />
-              </div>
+              <>
+                <div>
+                  <Label htmlFor="audience_slots">Audience Seats *</Label>
+                  <Input
+                    id="audience_slots"
+                    type="number"
+                    value={formData.audience_slots}
+                    onChange={(e) => setFormData({ ...formData, audience_slots: parseInt(e.target.value) })}
+                    disabled={isFieldDisabled("audience_slots")}
+                    min="0"
+                    className="mt-1"
+                  />
+                </div>
+
+                {/* Audience Ticket Price - only for paid events */}
+                {event?.ticket_type === 'paid' && (
+                  <div>
+                    <Label htmlFor="audience_ticket_price">Audience Ticket Price (₹) *</Label>
+                    <Input
+                      id="audience_ticket_price"
+                      type="number"
+                      value={formData.audience_ticket_price || ""}
+                      onChange={(e) => setFormData({ ...formData, audience_ticket_price: e.target.value ? parseFloat(e.target.value) : undefined })}
+                      disabled={isFieldDisabled("audience_ticket_price")}
+                      min="20"
+                      placeholder="Minimum ₹20"
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Required for paid events - Minimum ₹20</p>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Promo Codes Section */}

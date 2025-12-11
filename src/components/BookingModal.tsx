@@ -107,7 +107,12 @@ export function BookingModal({
   const calculateFinalPrice = () => {
     if (event.ticket_type !== 'paid') return 0;
     
-    const basePrice = role === 'performer' ? event.performer_ticket_price : event.audience_ticket_price;
+    const basePrice = role === 'performer' 
+      ? (event.performer_ticket_price || 0) 
+      : (event.audience_ticket_price || 0);
+    
+    // If no price set (null/0), treat as free for this role
+    if (!basePrice || basePrice === 0) return 0;
     
     if (!appliedPromo) return basePrice;
 
@@ -297,7 +302,9 @@ export function BookingModal({
   };
 
   const handleBooking = () => {
-    if (event.ticket_type === 'paid') {
+    const finalPrice = calculateFinalPrice();
+    // Use paid flow only if ticket_type is paid AND the role has a price > 0
+    if (event.ticket_type === 'paid' && finalPrice > 0) {
       handlePaidBooking();
     } else {
       handleFreeBooking();
