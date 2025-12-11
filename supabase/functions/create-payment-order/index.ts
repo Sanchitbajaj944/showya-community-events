@@ -30,21 +30,10 @@ function isDevEnvironment(req: Request): boolean {
   );
 }
 
-// Get Razorpay credentials based on environment
-function getRazorpayCredentials(req: Request): { keyId: string; keySecret: string; isTestMode: boolean } {
-  const isDev = isDevEnvironment(req);
-  
-  if (isDev) {
-    const keyId = Deno.env.get('RAZORPAY_KEY_ID_TEST');
-    const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET_TEST');
-    
-    if (keyId && keySecret) {
-      console.log('Using Razorpay TEST credentials (dev environment)');
-      return { keyId, keySecret, isTestMode: true };
-    }
-    console.log('Test credentials not found, falling back to live');
-  }
-  
+// Get Razorpay credentials - always use live since linked accounts are live-only
+function getRazorpayCredentials(): { keyId: string; keySecret: string; isTestMode: boolean } {
+  // Always use live credentials - linked accounts created with live credentials
+  // cannot be accessed with test credentials
   console.log('Using Razorpay LIVE credentials');
   return {
     keyId: Deno.env.get('RAZORPAY_KEY_ID') || '',
@@ -131,8 +120,8 @@ serve(async (req) => {
       throw new Error(`Minimum payment amount is ₹${Math.ceil(1 / (1 - platformFeePercentage / 100))} after platform fees`);
     }
 
-    // Create Razorpay order with environment-appropriate credentials
-    const { keyId: razorpayKeyId, keySecret: razorpayKeySecret, isTestMode } = getRazorpayCredentials(req);
+    // Create Razorpay order with live credentials
+    const { keyId: razorpayKeyId, keySecret: razorpayKeySecret, isTestMode } = getRazorpayCredentials();
     
     if (!razorpayKeyId || !razorpayKeySecret) {
       throw new Error('Razorpay credentials not configured');
