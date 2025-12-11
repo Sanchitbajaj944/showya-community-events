@@ -492,7 +492,7 @@ export default function EventDetails() {
                       </a>
                     ) : (
                       <p className="text-xs sm:text-sm text-muted-foreground">
-                        {user ? 'Meeting link will be shared after booking' : 'Register to get the event link'}
+                        Meeting link will be provided to registered participants
                       </p>
                     )}
                   </div>
