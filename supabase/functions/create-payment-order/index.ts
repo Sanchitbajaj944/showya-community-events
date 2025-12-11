@@ -140,31 +140,39 @@ serve(async (req) => {
     
     const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
+    // Build order payload - skip route transfers in test mode as linked accounts are live-only
+    const orderPayload: Record<string, unknown> = {
+      amount: Math.round(amount * 100), // Convert to paise
+      currency: 'INR',
+      notes: {
+        event_id,
+        user_id: user.id,
+        event_name: event.title,
+        is_test_mode: isTestMode
+      }
+    };
+
+    // Only add transfers for live mode - test mode linked accounts don't work with live accounts
+    if (!isTestMode) {
+      orderPayload.transfers = [{
+        account: razorpayAccount.razorpay_account_id,
+        amount: Math.round(amount * 100 * (1 - (community?.platform_fee_percentage || 5) / 100)),
+        currency: 'INR',
+        notes: {
+          event_id,
+          community_id: event.community_id,
+          platform_fee_percentage: community?.platform_fee_percentage || 5
+        }
+      }];
+    }
+
     const orderResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${auth}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        amount: Math.round(amount * 100), // Convert to paise
-        currency: 'INR',
-        notes: {
-          event_id,
-          user_id: user.id,
-          event_name: event.title
-        },
-        transfers: [{
-          account: razorpayAccount.razorpay_account_id,
-          amount: Math.round(amount * 100 * (1 - (community?.platform_fee_percentage || 5) / 100)), // Dynamic platform fee
-          currency: 'INR',
-          notes: {
-            event_id,
-            community_id: event.community_id,
-            platform_fee_percentage: community?.platform_fee_percentage || 5
-          }
-        }]
-      })
+      body: JSON.stringify(orderPayload)
     });
 
     if (!orderResponse.ok) {
