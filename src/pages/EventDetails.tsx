@@ -471,8 +471,8 @@ export default function EventDetails() {
             </Card>
           )}
 
-          {/* Meeting URL / Online Event */}
-          {event.meeting_url && (
+          {/* Meeting URL - Only for registered participants */}
+          {event.meeting_url && userBooking && (
             <Card>
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-start gap-3 sm:gap-4">
@@ -481,20 +481,33 @@ export default function EventDetails() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold mb-1 text-sm sm:text-base">Online Event</p>
-                    {userBooking ? (
-                      <a 
-                        href={event.meeting_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline text-xs sm:text-sm truncate block"
-                      >
-                        Join Meeting
-                      </a>
-                    ) : (
-                      <p className="text-xs sm:text-sm text-muted-foreground">
-                        Meeting link will be provided to registered participants
-                      </p>
-                    )}
+                    <a 
+                      href={event.meeting_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline text-xs sm:text-sm truncate block"
+                    >
+                      Join Meeting
+                    </a>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Online Event info - Only for non-participants */}
+          {event.meeting_url && !userBooking && (
+            <Card>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="p-2 sm:p-3 rounded-lg bg-primary/10">
+                    <ExternalLink className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold mb-1 text-sm sm:text-base">Online Event</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Meeting link will be provided to registered participants
+                    </p>
                   </div>
                 </div>
               </CardContent>
