@@ -20,6 +20,7 @@ const UpdateEventSchema = z.object({
     location: z.string().max(200).optional(),
     city: z.string().max(100).optional(),
     performer_slots: z.number().int().min(0).max(100).optional(),
+    performer_ticket_price: z.number().min(20).max(100000).optional(),
     audience_enabled: z.boolean().optional(),
     audience_slots: z.number().int().min(0).max(1000).optional(),
     audience_ticket_price: z.number().min(0).max(100000).optional().nullable()
@@ -40,6 +41,7 @@ interface UpdateEventRequest {
     location?: string;
     city?: string;
     performer_slots?: number;
+    performer_ticket_price?: number;
     audience_enabled?: boolean;
     audience_slots?: number;
     audience_ticket_price?: number | null;
@@ -100,13 +102,16 @@ serve(async (req: Request) => {
       throw new Error("Operation not permitted");
     }
 
-    // Check if event has bookings
+    // Check if event has bookings - get payment_status to determine active bookings
     const { data: bookings } = await supabase
       .from("event_participants")
-      .select("user_id")
+      .select("user_id, payment_status, role")
       .eq("event_id", eventId);
 
     const hasBookings = bookings && bookings.length > 0;
+    // Active bookings are those not refunded
+    const activeBookings = bookings?.filter(b => b.payment_status !== 'refunded') || [];
+    const hasActiveBookings = activeBookings.length > 0;
 
     // Calculate time until event
     const eventDate = new Date(event.event_date);
@@ -130,8 +135,8 @@ serve(async (req: Request) => {
       }
     }
 
-    // Check if price/payment fields are being changed when bookings exist
-    if (hasBookings) {
+    // Check if price/payment fields are being changed when active bookings exist
+    if (hasActiveBookings) {
       const restrictedFields = ["ticket_type", "performer_ticket_price", "audience_ticket_price"];
       const hasRestrictedChange = restrictedFields.some(field => {
         const key = field as keyof typeof updates;
@@ -142,8 +147,9 @@ serve(async (req: Request) => {
         return new Response(
           JSON.stringify({
             error: "locked_field",
-            message: "Cannot change pricing after bookings have been made",
-            lockedFields: restrictedFields
+            message: "Cannot change pricing after bookings have been made. All bookings must be refunded first.",
+            lockedFields: restrictedFields,
+            activeBookings: activeBookings.length
           }),
           { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
@@ -163,9 +169,9 @@ serve(async (req: Request) => {
       );
     }
 
-    // Warn if performer slots reduced below current bookings
-    if (updates.performer_slots && hasBookings) {
-      const performerCount = bookings.filter((b: any) => 
+    // Warn if performer slots reduced below current bookings (use active bookings)
+    if (updates.performer_slots && hasActiveBookings) {
+      const performerCount = activeBookings.filter((b: any) => 
         b.role === 'performer'
       ).length;
       
