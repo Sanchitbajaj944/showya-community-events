@@ -45,6 +45,7 @@ export default function EditEvent() {
   const [submitting, setSubmitting] = useState(false);
   const [event, setEvent] = useState<any>(null);
   const [bookingCount, setBookingCount] = useState(0);
+  const [activeBookingCount, setActiveBookingCount] = useState(0);
   const [showDateChangeWarning, setShowDateChangeWarning] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -68,6 +69,7 @@ export default function EditEvent() {
     poster_url: "",
     meeting_url: "",
     performer_slots: 1,
+    performer_ticket_price: 20,
     audience_enabled: false,
     audience_slots: 0,
     audience_ticket_price: undefined as number | undefined,
@@ -175,13 +177,18 @@ export default function EditEvent() {
       setRestrictedMinutes(editableMinutes);
       setIsWithinRestrictedWindow(minutesUntilEvent <= editableMinutes);
 
-      // Get booking count
+      // Get booking count (total)
       const { data: bookings } = await supabase
         .from("event_participants")
-        .select("id")
+        .select("id, payment_status")
         .eq("event_id", eventId);
 
-      setBookingCount(bookings?.length || 0);
+      const totalBookings = bookings?.length || 0;
+      // Active bookings are those not refunded
+      const activeBookings = bookings?.filter(b => b.payment_status !== 'refunded')?.length || 0;
+      
+      setBookingCount(totalBookings);
+      setActiveBookingCount(activeBookings);
 
       // Fetch promo codes
       const { data: promoCodesData } = await supabase
@@ -211,6 +218,7 @@ export default function EditEvent() {
         poster_url: eventData.poster_url || "",
         meeting_url: eventData.meeting_url || "",
         performer_slots: eventData.performer_slots || 1,
+        performer_ticket_price: eventData.performer_ticket_price || 20,
         audience_enabled: eventData.audience_enabled || false,
         audience_slots: eventData.audience_slots || 0,
         audience_ticket_price: eventData.audience_ticket_price || undefined,
@@ -297,6 +305,7 @@ export default function EditEvent() {
         poster_url: formData.poster_url,
         meeting_url: formData.meeting_url,
         performer_slots: formData.performer_slots,
+        performer_ticket_price: formData.performer_ticket_price,
         audience_enabled: formData.audience_enabled,
         audience_slots: formData.audience_slots,
         audience_ticket_price: formData.audience_ticket_price,
@@ -361,7 +370,8 @@ export default function EditEvent() {
   };
 
   const isFieldLocked = (field: string) => {
-    if (bookingCount === 0) return false;
+    // Use activeBookingCount for pricing fields - allow editing if all bookings are refunded
+    if (activeBookingCount === 0) return false;
     
     const lockedFieldsWithBookings = ["ticket_type", "performer_ticket_price", "audience_ticket_price"];
     return lockedFieldsWithBookings.includes(field);
@@ -630,6 +640,31 @@ export default function EditEvent() {
                 className="mt-1"
               />
             </div>
+
+            {/* Performer Ticket Price - only for paid events */}
+            {event?.ticket_type === 'paid' && (
+              <div>
+                <Label htmlFor="performer_ticket_price" className="flex items-center gap-2">
+                  Performer Ticket Price (₹) *
+                  {activeBookingCount > 0 && (
+                    <Badge variant="destructive" className="text-xs">Locked - active bookings</Badge>
+                  )}
+                  {activeBookingCount === 0 && bookingCount > 0 && (
+                    <Badge variant="secondary" className="text-xs">Editable - all refunded</Badge>
+                  )}
+                </Label>
+                <Input
+                  id="performer_ticket_price"
+                  type="number"
+                  value={formData.performer_ticket_price}
+                  onChange={(e) => setFormData({ ...formData, performer_ticket_price: parseFloat(e.target.value) || 20 })}
+                  disabled={isFieldLocked("performer_ticket_price") || isFieldDisabled("performer_ticket_price")}
+                  min="20"
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Minimum ₹20</p>
+              </div>
+            )}
 
             {/* Audience Toggle */}
             <div className="flex items-center justify-between">
