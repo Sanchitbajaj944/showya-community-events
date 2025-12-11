@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, LayoutDashboard, Share2, Flag, ChevronDown } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, LayoutDashboard, Share2, Flag, ChevronDown, Video } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format, isPast, differenceInHours } from "date-fns";
 import { toast } from "sonner";
@@ -475,23 +475,24 @@ export default function EventDetails() {
           {event.meeting_url && (
             <Card>
               <CardContent className="p-4 sm:p-6">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="p-2 sm:p-3 rounded-lg bg-primary/10">
-                    <ExternalLink className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="p-2 sm:p-3 rounded-lg bg-green-500/10">
+                    <Video className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold mb-1 text-sm sm:text-base">Online Event</p>
+                    <p className="font-semibold text-sm sm:text-base">Online Event</p>
                     {userBooking ? (
                       <a 
                         href={event.meeting_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary hover:underline text-xs sm:text-sm truncate block"
+                        className="inline-flex items-center gap-1.5 text-green-600 hover:text-green-700 text-xs sm:text-sm font-medium mt-1"
                       >
-                        Join Meeting
+                        <span>Join Meeting</span>
+                        <ExternalLink className="h-3 w-3" />
                       </a>
                     ) : (
-                      <p className="text-xs sm:text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                         Meeting link will be shared after booking
                       </p>
                     )}
