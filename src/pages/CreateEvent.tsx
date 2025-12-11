@@ -252,7 +252,7 @@ export default function CreateEvent() {
   };
 
   const canProceedToStep2 = formData.title && formData.categories.length > 0 && formData.event_date && posterFile;
-  const canProceedToStep3 = formData.performer_slots >= 1 && formData.performer_ticket_price >= 20 && formData.meeting_url;
+  const canProceedToStep3 = formData.performer_slots >= 1 && formData.performer_ticket_price >= 20 && formData.meeting_url && (!formData.audience_enabled || (formData.audience_ticket_price && formData.audience_ticket_price >= 20));
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-8">
@@ -479,16 +479,17 @@ export default function CreateEvent() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="audience_price">Audience Ticket Price (₹)</Label>
+                        <Label htmlFor="audience_price">Audience Ticket Price (₹) *</Label>
                         <Input
                           id="audience_price"
                           type="number"
-                          placeholder="Optional"
+                          placeholder="Minimum ₹20"
                           value={formData.audience_ticket_price || ""}
                           onChange={(e) => setFormData(prev => ({ ...prev, audience_ticket_price: e.target.value ? parseFloat(e.target.value) : undefined }))}
                           min="20"
+                          required
                         />
-                        <p className="text-xs text-muted-foreground">Minimum ₹20 if set</p>
+                        <p className="text-xs text-muted-foreground">Required - Minimum ₹20</p>
                       </div>
                     </div>
                   )}
