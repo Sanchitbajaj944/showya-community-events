@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.meta-conversion-api]
 verify_jwt = false
+
+[functions.sync-razorpay-payments]
+verify_jwt = false
