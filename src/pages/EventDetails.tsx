@@ -488,20 +488,15 @@ export default function EventDetails() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold mb-1 text-sm sm:text-base">Online Event</p>
-                    <Button 
-                      asChild
-                      size="sm"
-                      className="mt-2"
+                    <a 
+                      href={event.meeting_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 mt-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
                     >
-                      <a 
-                        href={extractUrl(event.meeting_url) || event.meeting_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Join Meeting
-                      </a>
-                    </Button>
+                      <ExternalLink className="h-4 w-4" />
+                      Join Meeting
+                    </a>
                   </div>
                 </div>
               </CardContent>
