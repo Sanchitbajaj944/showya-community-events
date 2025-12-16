@@ -481,14 +481,20 @@ export default function EventDetails() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold mb-1 text-sm sm:text-base">Online Event</p>
-                    <a 
-                      href={event.meeting_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline text-xs sm:text-sm truncate block"
+                    <Button 
+                      asChild
+                      size="sm"
+                      className="mt-2"
                     >
-                      Join Meeting
-                    </a>
+                      <a 
+                        href={event.meeting_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Join Meeting
+                      </a>
+                    </Button>
                   </div>
                 </div>
               </CardContent>
