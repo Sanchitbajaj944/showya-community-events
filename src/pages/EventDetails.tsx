@@ -35,6 +35,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+// Helper to extract URL from meeting_url text
+const extractUrl = (text: string): string | null => {
+  const urlRegex = /(https?:\/\/[^\s]+)/i;
+  const match = text.match(urlRegex);
+  return match ? match[1] : null;
+};
+
 export default function EventDetails() {
   const { eventId } = useParams();
   const { user } = useAuth();
@@ -487,7 +494,7 @@ export default function EventDetails() {
                       className="mt-2"
                     >
                       <a 
-                        href={event.meeting_url}
+                        href={extractUrl(event.meeting_url) || event.meeting_url}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
