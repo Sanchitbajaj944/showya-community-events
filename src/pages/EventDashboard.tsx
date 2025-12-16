@@ -292,7 +292,14 @@ export default function EventDashboard() {
                     <div>
                       <p className="text-sm font-medium">Meeting Link</p>
                       <a 
-                        href={event.meeting_url} 
+                        href={(() => {
+                          const raw = event.meeting_url.trim();
+                          return /^https?:\/\//i.test(raw)
+                            ? raw
+                            : raw.startsWith("//")
+                              ? `https:${raw}`
+                              : `https://${raw}`;
+                        })()} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-sm text-primary hover:underline truncate block max-w-[200px]"
