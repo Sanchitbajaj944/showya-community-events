@@ -489,7 +489,14 @@ export default function EventDetails() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold mb-1 text-sm sm:text-base">Online Event</p>
                     <a 
-                      href={event.meeting_url}
+                      href={(() => {
+                        const raw = event.meeting_url.trim();
+                        return /^https?:\/\//i.test(raw)
+                          ? raw
+                          : raw.startsWith("//")
+                            ? `https:${raw}`
+                            : `https://${raw}`;
+                      })()}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 mt-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
