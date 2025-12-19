@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, CheckCircle, Clock, Flag, Shield, User, Users, UserPlus, DollarSign, Percent } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Flag, Shield, User, Users, UserPlus, DollarSign, Percent, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -56,6 +56,14 @@ export default function Admin() {
   const [updatingFees, setUpdatingFees] = useState<Set<string>>(new Set());
   const [bulkFeeValue, setBulkFeeValue] = useState<string>("5");
   const [updatingAllFees, setUpdatingAllFees] = useState(false);
+  const [syncingPayments, setSyncingPayments] = useState(false);
+  const [syncResult, setSyncResult] = useState<{
+    total_orders: number;
+    synced: number;
+    skipped: number;
+    errors: number;
+    timestamp: string;
+  } | null>(null);
 
   useEffect(() => {
     checkAdminStatus();
@@ -254,6 +262,32 @@ export default function Admin() {
       toast.error("Failed to update platform fees");
     } finally {
       setUpdatingAllFees(false);
+    }
+  };
+
+  const handleSyncPayments = async () => {
+    setSyncingPayments(true);
+    setSyncResult(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-razorpay-payments');
+
+      if (error) throw error;
+
+      setSyncResult(data);
+      
+      if (data.synced > 0) {
+        toast.success(`Successfully synced ${data.synced} missing payment(s)`);
+      } else if (data.errors > 0) {
+        toast.warning(`Sync completed with ${data.errors} error(s)`);
+      } else {
+        toast.info("No missing payments found - all bookings are up to date");
+      }
+    } catch (error: any) {
+      console.error("Error syncing payments:", error);
+      toast.error(error.message || "Failed to sync payments");
+    } finally {
+      setSyncingPayments(false);
     }
   };
 
@@ -462,6 +496,67 @@ export default function Admin() {
 
           {/* Platform Settings Tab */}
           <TabsContent value="platform" className="space-y-6">
+            {/* Payment Sync */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5" />
+                  Payment Sync
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Manually sync Razorpay payments with database bookings. This will check for any captured payments 
+                  in the last 24 hours that may have been missed and create the corresponding booking records.
+                </p>
+                
+                <Button 
+                  onClick={handleSyncPayments}
+                  disabled={syncingPayments}
+                  className="w-full sm:w-auto"
+                >
+                  {syncingPayments ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Syncing Payments...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Sync Missing Payments
+                    </>
+                  )}
+                </Button>
+
+                {syncResult && (
+                  <div className="mt-4 p-4 border rounded-lg bg-muted/30 space-y-2">
+                    <h4 className="font-medium">Sync Results</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                      <div className="p-2 bg-background rounded border">
+                        <p className="text-muted-foreground">Total Orders</p>
+                        <p className="text-lg font-semibold">{syncResult.total_orders}</p>
+                      </div>
+                      <div className="p-2 bg-green-500/10 rounded border border-green-500/20">
+                        <p className="text-muted-foreground">Synced</p>
+                        <p className="text-lg font-semibold text-green-600">{syncResult.synced}</p>
+                      </div>
+                      <div className="p-2 bg-background rounded border">
+                        <p className="text-muted-foreground">Skipped</p>
+                        <p className="text-lg font-semibold">{syncResult.skipped}</p>
+                      </div>
+                      <div className={`p-2 rounded border ${syncResult.errors > 0 ? 'bg-red-500/10 border-red-500/20' : 'bg-background'}`}>
+                        <p className="text-muted-foreground">Errors</p>
+                        <p className={`text-lg font-semibold ${syncResult.errors > 0 ? 'text-red-600' : ''}`}>{syncResult.errors}</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Last synced: {new Date(syncResult.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Grant Admin Access */}
             <Card>
               <CardHeader>
