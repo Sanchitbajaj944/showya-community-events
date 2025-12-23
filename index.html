@@ -6,10 +6,17 @@
     <title>Showya - Discover Indian Creative Communities &amp; Events</title>
     <meta name="description" content="Join events and build your community">
     <meta name="author" content="Showya" />
+    <!-- Preconnect to critical domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://checkout.razorpay.com">
+    <link rel="preconnect" href="https://loitjamnkuvgcpovfkpf.supabase.co">
+    
+    <!-- Fonts with display=swap for non-blocking -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
+    <!-- Defer Razorpay to prevent render blocking -->
+    <script defer src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <!-- Meta Pixel Code -->
     <script>
