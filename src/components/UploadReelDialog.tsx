@@ -59,33 +59,32 @@ export function UploadReelDialog({
 
   const fetchPerformers = async () => {
     try {
-      const { data: participants, error } = await supabase
-        .from("event_participants")
-        .select("user_id")
-        .eq("event_id", eventId)
-        .eq("role", "performer");
+      const { data, error } = await supabase.rpc(
+        "get_event_participants_with_profiles",
+        {
+          _event_id: eventId,
+          _role: "performer",
+        }
+      );
 
       if (error) throw error;
 
-      if (participants && participants.length > 0) {
-        const userIds = participants.map(p => p.user_id);
-        const { data: profiles, error: profileError } = await supabase
-          .from("profiles")
-          .select("user_id, name, display_name")
-          .in("user_id", userIds);
+      const performersData: Performer[] =
+        data?.map((p: any) => ({
+          user_id: p.user_id,
+          name: p.name,
+          display_name: p.display_name,
+        })) ?? [];
 
-        if (profileError) throw profileError;
+      setPerformers(performersData);
 
-        const performersData = profiles?.map(profile => ({
-          user_id: profile.user_id,
-          name: profile.name,
-          display_name: profile.display_name,
-        })) || [];
-
-        setPerformers(performersData);
+      if (performersData.length === 0) {
+        // Not an error: event may have no performers yet.
+        // Keep it quiet to avoid noisy toasts on every open.
       }
     } catch (error) {
       console.error("Error fetching performers:", error);
+      setPerformers([]);
       toast.error("Failed to load performers");
     }
   };
