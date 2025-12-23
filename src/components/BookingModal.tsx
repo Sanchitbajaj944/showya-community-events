@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -27,6 +27,21 @@ interface BookingModalProps {
   kycStatus?: string | null;
 }
 
+// Load Razorpay script dynamically
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if ((window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export function BookingModal({ 
   open, 
   onOpenChange, 
@@ -44,6 +59,13 @@ export function BookingModal({
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<any>(null);
   const [applyingPromo, setApplyingPromo] = useState(false);
+
+  // Preload Razorpay when modal opens for paid events
+  useEffect(() => {
+    if (open && event?.ticket_type === 'paid') {
+      loadRazorpayScript();
+    }
+  }, [open, event?.ticket_type]);
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) {
@@ -195,6 +217,14 @@ export function BookingModal({
 
     try {
       setLoading(true);
+
+      // Ensure Razorpay is loaded
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        toast.error("Failed to load payment gateway. Please try again.");
+        setLoading(false);
+        return;
+      }
 
       const finalPrice = calculateFinalPrice();
 
