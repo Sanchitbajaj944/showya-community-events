@@ -26,26 +26,30 @@ function isDevEnvironment(req: Request): boolean {
 }
 
 // Get Razorpay credentials based on environment
+// NOTE: For Route (Connected Accounts) feature, TEST credentials often don't have this enabled.
+// We now default to LIVE credentials which have Route enabled.
 function getRazorpayCredentials(req: Request): { keyId: string; keySecret: string; isTestMode: boolean } {
-  const isDev = isDevEnvironment(req);
+  // Always use LIVE credentials for Route/Linked Accounts as TEST mode typically doesn't support this feature
+  // The Route feature must be enabled on the Razorpay account, which is usually only available in LIVE mode
+  const liveKeyId = Deno.env.get('RAZORPAY_KEY_ID');
+  const liveKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
   
-  if (isDev) {
-    const keyId = Deno.env.get('RAZORPAY_KEY_ID_TEST');
-    const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET_TEST');
-    
-    if (keyId && keySecret) {
-      console.log('Using Razorpay TEST credentials (dev environment)');
-      return { keyId, keySecret, isTestMode: true };
-    }
-    console.log('Test credentials not found, falling back to live');
+  if (liveKeyId && liveKeySecret) {
+    console.log('Using Razorpay LIVE credentials (Route feature requires LIVE mode)');
+    return { keyId: liveKeyId, keySecret: liveKeySecret, isTestMode: false };
   }
   
-  console.log('Using Razorpay LIVE credentials');
-  return {
-    keyId: Deno.env.get('RAZORPAY_KEY_ID') || '',
-    keySecret: Deno.env.get('RAZORPAY_KEY_SECRET') || '',
-    isTestMode: false
-  };
+  // Fallback to test credentials if live not available (will likely fail for Route feature)
+  const testKeyId = Deno.env.get('RAZORPAY_KEY_ID_TEST');
+  const testKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET_TEST');
+  
+  if (testKeyId && testKeySecret) {
+    console.log('WARNING: Using TEST credentials - Route feature may not work');
+    return { keyId: testKeyId, keySecret: testKeySecret, isTestMode: true };
+  }
+  
+  console.error('No Razorpay credentials found');
+  return { keyId: '', keySecret: '', isTestMode: false };
 }
 
 // Input validation schemas
