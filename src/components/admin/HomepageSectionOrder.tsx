@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, LayoutGrid, Film, Calendar, Users } from "lucide-react";
@@ -25,13 +25,17 @@ const SECTION_CONFIG: Record<SectionId, { label: string; icon: React.ElementType
 
 export function HomepageSectionOrder() {
   const { sectionOrder, loading, updateSectionOrder } = useHomepageSectionOrder();
-  const [localOrder, setLocalOrder] = useState<SectionId[]>(sectionOrder);
+  const [localOrder, setLocalOrder] = useState<SectionId[]>([]);
   const [saving, setSaving] = useState(false);
+  const initializedRef = useRef(false);
 
-  // Sync local state when data loads
-  if (!loading && localOrder.join(",") !== sectionOrder.join(",") && !saving) {
-    setLocalOrder(sectionOrder);
-  }
+  // Sync local state only once when data first loads
+  useEffect(() => {
+    if (!loading && !initializedRef.current && sectionOrder.length > 0) {
+      setLocalOrder(sectionOrder);
+      initializedRef.current = true;
+    }
+  }, [loading, sectionOrder]);
 
   const moveSection = (index: number, direction: "up" | "down") => {
     const newOrder = [...localOrder];
