@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, LayoutDashboard, Share2, Flag, ChevronDown } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, LayoutDashboard, Share2, Flag, ChevronDown, Video } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format, isPast, differenceInHours } from "date-fns";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import { BookingModal } from "@/components/BookingModal";
 import { ShareDialog } from "@/components/ShareDialog";
 import { ReportDialog } from "@/components/ReportDialog";
 import { CollapsibleDescription } from "@/components/CollapsibleDescription";
+import { JaasMeeting } from "@/components/JaasMeeting";
 import {
   Drawer,
   DrawerClose,
@@ -64,6 +65,7 @@ export default function EventDetails() {
   const [spotlight, setSpotlight] = useState<any>(null);
   const [performers, setPerformers] = useState<any[]>([]);
   const [performersOpen, setPerformersOpen] = useState(true);
+  const [showJaasMeeting, setShowJaasMeeting] = useState(false);
 
   useEffect(() => {
     fetchEventDetails();
@@ -478,16 +480,50 @@ export default function EventDetails() {
             </Card>
           )}
 
-          {/* Meeting URL - Only for registered participants */}
-          {event.meeting_url && userBooking && (
+          {/* JaaS Meeting - For registered participants */}
+          {userBooking && !isEventPast && (
+            <Card className="sm:col-span-2">
+              <CardContent className="p-4 sm:p-6">
+                {showJaasMeeting ? (
+                  <JaasMeeting 
+                    eventId={eventId!} 
+                    eventTitle={event.title}
+                    onClose={() => setShowJaasMeeting(false)}
+                  />
+                ) : (
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <div className="p-2 sm:p-3 rounded-lg bg-primary/10">
+                      <Video className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold mb-1 text-sm sm:text-base">Video Meeting</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-3">
+                        Join the in-app video meeting with noise cancellation
+                      </p>
+                      <Button 
+                        onClick={() => setShowJaasMeeting(true)}
+                        className="gap-2"
+                      >
+                        <Video className="h-4 w-4" />
+                        Join Meeting
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* External Meeting URL - Only for registered participants (fallback) */}
+          {event.meeting_url && userBooking && !showJaasMeeting && (
             <Card>
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="p-2 sm:p-3 rounded-lg bg-primary/10">
-                    <ExternalLink className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                  <div className="p-2 sm:p-3 rounded-lg bg-muted">
+                    <ExternalLink className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold mb-1 text-sm sm:text-base">Online Event</p>
+                    <p className="font-semibold mb-1 text-sm sm:text-base">External Meeting Link</p>
                     <a 
                       href={(() => {
                         const raw = event.meeting_url.trim();
@@ -499,10 +535,10 @@ export default function EventDetails() {
                       })()}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 mt-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
+                      className="inline-flex items-center gap-2 mt-2 px-4 py-2 border border-border rounded-md text-sm font-medium hover:bg-accent transition-colors"
                     >
                       <ExternalLink className="h-4 w-4" />
-                      Join Meeting
+                      Open External Link
                     </a>
                   </div>
                 </div>
@@ -511,17 +547,17 @@ export default function EventDetails() {
           )}
 
           {/* Online Event info - Only for non-participants */}
-          {event.meeting_url && !userBooking && (
+          {!userBooking && !isEventPast && (
             <Card>
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-start gap-3 sm:gap-4">
                   <div className="p-2 sm:p-3 rounded-lg bg-primary/10">
-                    <ExternalLink className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                    <Video className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold mb-1 text-sm sm:text-base">Online Event</p>
                     <p className="text-xs sm:text-sm text-muted-foreground">
-                      Meeting link will be provided to registered participants
+                      Video meeting with noise cancellation will be available to registered participants
                     </p>
                   </div>
                 </div>

@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.sync-razorpay-payments]
 verify_jwt = false
+
+[functions.generate-jaas-token]
+verify_jwt = false
