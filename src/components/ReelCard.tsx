@@ -55,7 +55,9 @@ export function ReelCard({
     const video = videoRef.current;
     if (!video) return;
     
-    const handleWaiting = () => setIsLoading(true);
+    const handleWaiting = () => {
+      if (isActive) setIsLoading(true);
+    };
     const handleCanPlay = () => setIsLoading(false);
     const handlePlaying = () => setIsLoading(false);
     const handleLoadedData = () => setIsLoading(false);
@@ -75,10 +77,12 @@ export function ReelCard({
       video.currentTime = 0;
       video.muted = false;
       setIsMuted(false);
-      setIsLoading(true);
       
-      // Load the video first, then play
-      video.load();
+      // Only show loading if video isn't ready
+      if (video.readyState < 3) {
+        setIsLoading(true);
+      }
+      
       const playPromise = video.play();
       
       if (playPromise !== undefined) {
@@ -100,12 +104,12 @@ export function ReelCard({
         });
       }
     } else {
-      // Stop, mute, and reset when scrolling away
+      // Stop, mute, and reset when scrolling away - don't show loading
       video.pause();
       video.currentTime = 0;
       video.muted = true;
       setIsMuted(true);
-      setIsLoading(true);
+      setIsLoading(false);
     }
     
     return () => {
