@@ -114,7 +114,7 @@ export function ShowClipsRow() {
         
         <div 
           ref={scrollContainerRef}
-          className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4"
+          className="flex gap-4 sm:gap-5 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4"
           style={{ 
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
