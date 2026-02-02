@@ -74,7 +74,7 @@ export function ShowClipsRow() {
 
   if (loading) {
     return (
-      <section className="py-8 sm:py-12">
+      <section className="pt-4 sm:pt-6 pb-8 sm:pb-12">
         <div className="container px-4 md:px-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
@@ -97,7 +97,7 @@ export function ShowClipsRow() {
   }
 
   return (
-    <section className="py-8 sm:py-12">
+    <section className="pt-4 sm:pt-6 pb-8 sm:pb-12">
       <div className="container px-4 md:px-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">

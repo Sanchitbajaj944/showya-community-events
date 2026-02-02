@@ -13,15 +13,12 @@ export function CommunitiesSection({ communities }: CommunitiesSectionProps) {
   const { t } = useTranslation();
 
   return (
-    <section id="communities" className="py-12 sm:py-16 md:py-24 lg:py-32 bg-muted/30">
+    <section id="communities" className="pt-4 sm:pt-6 md:pt-8 pb-12 sm:pb-16 md:pb-24 lg:pb-32 bg-muted/30">
       <div className="container px-4 md:px-6">
-        <div className="max-w-3xl mb-10 sm:mb-12 md:mb-16 space-y-3 sm:space-y-4 md:space-y-5">
+        <div className="max-w-3xl mb-8 sm:mb-10 md:mb-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight">
             {t('home.communitiesYouLove')} <span className="text-gradient">{t('home.communitiesYouLoveGradient')}</span>
           </h2>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed">
-            {t('home.communitiesDescription')}
-          </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
           {communities.length === 0 ? (
