@@ -15,7 +15,6 @@ import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import Events from "./pages/Events";
 import Reels from "./pages/Reels";
-import ShowClipsViewer from "./pages/ShowClipsViewer";
 import Communities from "./pages/Communities";
 import CommunityDashboard from "./pages/CommunityDashboard";
 import CommunityMemberView from "./pages/CommunityMemberView";
@@ -51,7 +50,6 @@ const App = () => (
             <Route path="/events/:eventId/edit" element={<EditEvent />} />
             <Route path="/events/:eventId/dashboard" element={<EventDashboard />} />
             <Route path="/reels" element={<Reels />} />
-            <Route path="/showclips" element={<ShowClipsViewer />} />
             <Route path="/communities" element={<Communities />} />
             <Route path="/community/:communityId" element={<CommunityDashboard />} />
             <Route path="/community/:communityId/create-event" element={<CreateEvent />} />

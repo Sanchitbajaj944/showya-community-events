@@ -69,7 +69,7 @@ export function ShowClipsRow() {
   };
 
   const handleClipClick = (clipId: string, index: number) => {
-    navigate(`/showclips?start=${clipId}&index=${index}`);
+    navigate(`/reels?start=${clipId}&index=${index}`);
   };
 
   if (loading) {
@@ -104,7 +104,7 @@ export function ShowClipsRow() {
             <Play className="h-5 w-5 text-primary fill-primary" />
             <h2 className="text-xl sm:text-2xl font-bold">ShowClips</h2>
           </div>
-          <Link to="/showclips">
+          <Link to="/reels">
             <Button variant="ghost" size="sm" className="gap-1">
               See all
               <ArrowRight className="h-4 w-4" />
