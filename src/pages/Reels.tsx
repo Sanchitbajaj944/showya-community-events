@@ -249,7 +249,6 @@ export default function Reels() {
           >
             <ReelCard
               reel={reel}
-              onUpdate={() => fetchReels(0)}
               isActive={index === currentIndex}
             />
           </div>
