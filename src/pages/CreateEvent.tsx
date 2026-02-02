@@ -162,29 +162,42 @@ export default function CreateEvent() {
   };
 
   const handlePublish = async () => {
-    if (!user || !communityId) return;
+    console.log('handlePublish called', { user, communityId, formData, posterFile });
+    
+    if (!user || !communityId) {
+      console.log('Missing user or communityId', { user, communityId });
+      toast.error("Please sign in to create an event");
+      return;
+    }
 
     // Only validate KYC for paid events (not free events)
     const isPaidEvent = formData.performer_ticket_price > 0 || (formData.audience_enabled && formData.audience_ticket_price && formData.audience_ticket_price > 0);
     
     if (isPaidEvent && community?.kyc_status !== "ACTIVATED") {
+      console.log('KYC not activated for paid event');
       toast.error("Complete KYC verification in Payouts section to create paid events. Free events don't require KYC.");
       return;
     }
 
     // Validate required fields
     if (!formData.title || formData.categories.length === 0 || !formData.event_date || !posterFile) {
+      console.log('Missing required fields', { title: formData.title, categories: formData.categories, event_date: formData.event_date, posterFile: !!posterFile });
       toast.error("Please fill in all required fields");
       setStep(1);
       return;
     }
 
+    console.log('Starting publish process...');
+
     setLoading(true);
 
     try {
       // Upload poster
+      console.log('Uploading poster...');
       const posterUrl = await uploadPoster();
+      console.log('Poster upload result:', posterUrl);
       if (!posterUrl) {
+        toast.error("Failed to upload poster");
         setLoading(false);
         return;
       }
@@ -196,6 +209,13 @@ export default function CreateEvent() {
 
       // Generate unique JaaS room name for internal conferencing
       const jaasRoomName = `showya-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`;
+      
+      console.log('Creating event with data:', {
+        title: formData.title,
+        community_id: communityId,
+        created_by: user.id,
+        jaasRoomName
+      });
 
       // Create event
       const { data: event, error: eventError } = await supabase
@@ -223,6 +243,8 @@ export default function CreateEvent() {
         })
         .select()
         .single();
+
+      console.log('Event creation result:', { event, eventError });
 
       if (eventError) throw eventError;
 
