@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, CheckCircle, Clock, Flag, Shield, User, Users, UserPlus, DollarSign, Percent, RefreshCw } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Flag, Shield, User, Users, UserPlus, DollarSign, Percent, RefreshCw, LayoutGrid } from "lucide-react";
+import { HomepageSectionOrder } from "@/components/admin/HomepageSectionOrder";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -385,14 +386,18 @@ export default function Admin() {
 
         {/* Main Tabs */}
         <Tabs defaultValue="reports" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="reports">
               <Flag className="h-4 w-4 mr-2" />
               Reports
             </TabsTrigger>
+            <TabsTrigger value="homepage">
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Homepage
+            </TabsTrigger>
             <TabsTrigger value="platform">
               <DollarSign className="h-4 w-4 mr-2" />
-              Platform Settings
+              Platform
             </TabsTrigger>
           </TabsList>
 
@@ -492,6 +497,11 @@ export default function Admin() {
             />
           </TabsContent>
             </Tabs>
+          </TabsContent>
+
+          {/* Homepage Settings Tab */}
+          <TabsContent value="homepage" className="space-y-6">
+            <HomepageSectionOrder />
           </TabsContent>
 
           {/* Platform Settings Tab */}
