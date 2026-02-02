@@ -348,6 +348,7 @@ export type Database = {
           event_date: string
           id: string
           is_cancelled: boolean | null
+          jaas_room_name: string | null
           location: string | null
           meeting_link_last_updated_at: string | null
           meeting_url: string | null
@@ -375,6 +376,7 @@ export type Database = {
           event_date: string
           id?: string
           is_cancelled?: boolean | null
+          jaas_room_name?: string | null
           location?: string | null
           meeting_link_last_updated_at?: string | null
           meeting_url?: string | null
@@ -402,6 +404,7 @@ export type Database = {
           event_date?: string
           id?: string
           is_cancelled?: boolean | null
+          jaas_room_name?: string | null
           location?: string | null
           meeting_link_last_updated_at?: string | null
           meeting_url?: string | null

@@ -193,6 +193,9 @@ export default function CreateEvent() {
       const localDate = new Date(formData.event_date);
       const eventDateISO = localDate.toISOString();
 
+      // Generate unique JaaS room name for internal conferencing
+      const jaasRoomName = `showya-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`;
+
       // Create event
       const { data: event, error: eventError } = await supabase
         .from("events")
@@ -216,6 +219,7 @@ export default function CreateEvent() {
           community_id: communityId,
           community_name: community?.name || "",
           created_by: user.id,
+          jaas_room_name: jaasRoomName,
         })
         .select()
         .single();
