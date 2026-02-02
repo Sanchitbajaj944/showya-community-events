@@ -30,15 +30,12 @@ export function EventsSection({ events }: EventsSectionProps) {
   }, [events.length]);
 
   return (
-    <section id="events" className="py-12 sm:py-16 md:py-24 lg:py-32">
+    <section id="events" className="pt-4 sm:pt-6 md:pt-8 pb-12 sm:pb-16 md:pb-24 lg:pb-32">
       <div className="container px-4 md:px-6">
-        <div className="max-w-3xl mb-10 sm:mb-12 md:mb-16 space-y-3 sm:space-y-4 md:space-y-5">
+        <div className="max-w-3xl mb-8 sm:mb-10 md:mb-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight">
             {t('home.whatsHappening')} <span className="text-gradient">{t('home.whatsHappeningGradient')}</span>
           </h2>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed">
-            {t('home.whatsHappeningDescription')}
-          </p>
         </div>
         {events.length === 0 ? (
           <div className="w-full text-center py-8 text-muted-foreground">
