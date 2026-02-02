@@ -185,7 +185,7 @@ export default function CreateEvent() {
       // Upload poster
       const posterUrl = await uploadPoster();
       if (!posterUrl) {
-        toast.error("Failed to upload poster");
+        setLoading(false);
         return;
       }
 
@@ -214,7 +214,6 @@ export default function CreateEvent() {
           audience_enabled: formData.audience_enabled,
           audience_slots: formData.audience_slots,
           audience_ticket_price: formData.audience_ticket_price,
-          meeting_url: null,
           ticket_type: "paid",
           price: formData.performer_ticket_price,
           community_id: communityId,
