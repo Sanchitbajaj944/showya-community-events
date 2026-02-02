@@ -26,8 +26,12 @@ export function CommunitiesSection({ communities }: CommunitiesSectionProps) {
               <p>{t('home.noCommunities')}</p>
             </div>
           ) : (
-            communities.map((community) => (
-              <Link key={community.id} to={`/community/${community.id}/public`}>
+            communities.slice(0, 6).map((community, index) => (
+              <Link 
+                key={community.id} 
+                to={`/community/${community.id}/public`}
+                className={index >= 3 ? "hidden sm:block" : ""}
+              >
                 <Card className="group overflow-hidden hover:shadow-glow transition-all duration-300 cursor-pointer border-2 hover:border-primary/30 h-full flex flex-col">
                   {/* Banner Image */}
                   <div className="relative h-48 flex-shrink-0 overflow-hidden bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20">
