@@ -12,7 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Ticket, Eye } from "lucide-react";
+import { ArrowLeft, Upload, Ticket, Eye, Video, Info } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CollapsibleDescription } from "@/components/CollapsibleDescription";
 import { Badge } from "@/components/ui/badge";
 import imageCompression from "browser-image-compression";
@@ -48,7 +49,7 @@ export default function CreateEvent() {
     audience_enabled: false,
     audience_slots: undefined as number | undefined,
     audience_ticket_price: undefined as number | undefined,
-    meeting_url: "",
+    
     location: "",
     city: "",
   });
@@ -172,7 +173,7 @@ export default function CreateEvent() {
     }
 
     // Validate required fields
-    if (!formData.title || formData.categories.length === 0 || !formData.event_date || !posterFile || !formData.meeting_url) {
+    if (!formData.title || formData.categories.length === 0 || !formData.event_date || !posterFile) {
       toast.error("Please fill in all required fields");
       setStep(1);
       return;
@@ -213,7 +214,7 @@ export default function CreateEvent() {
           audience_enabled: formData.audience_enabled,
           audience_slots: formData.audience_slots,
           audience_ticket_price: formData.audience_ticket_price,
-          meeting_url: formData.meeting_url,
+          meeting_url: null,
           ticket_type: "paid",
           price: formData.performer_ticket_price,
           community_id: communityId,
@@ -256,7 +257,7 @@ export default function CreateEvent() {
   };
 
   const canProceedToStep2 = formData.title && formData.categories.length > 0 && formData.event_date && posterFile;
-  const canProceedToStep3 = formData.performer_slots >= 1 && formData.performer_ticket_price >= 20 && formData.meeting_url && (!formData.audience_enabled || (formData.audience_ticket_price && formData.audience_ticket_price >= 20));
+  const canProceedToStep3 = formData.performer_slots >= 1 && formData.performer_ticket_price >= 20 && (!formData.audience_enabled || (formData.audience_ticket_price && formData.audience_ticket_price >= 20));
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-8">
@@ -499,18 +500,12 @@ export default function CreateEvent() {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="meeting_url">Online Meeting Link *</Label>
-                  <Input
-                    id="meeting_url"
-                    type="url"
-                    placeholder="https://meet.google.com/xxx or https://zoom.us/j/xxx"
-                    value={formData.meeting_url}
-                    onChange={(e) => setFormData(prev => ({ ...prev, meeting_url: e.target.value }))}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">Only visible to registered performers and audience</p>
-                </div>
+                <Alert className="border-primary/20 bg-primary/5">
+                  <Video className="h-4 w-4 text-primary" />
+                  <AlertDescription className="text-sm">
+                    <span className="font-medium">Built-in Video Meetings:</span> A meeting room with noise cancellation will be automatically created when you publish this event. Registered participants can join directly from the event page.
+                  </AlertDescription>
+                </Alert>
 
                 <div className="space-y-4 p-4 border rounded-lg">
                   <h3 className="font-semibold">Promo Codes (Optional)</h3>
