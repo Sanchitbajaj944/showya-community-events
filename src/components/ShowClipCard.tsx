@@ -24,8 +24,8 @@ export function ShowClipCard({ clip, onClick }: ShowClipCardProps) {
       onClick={onClick}
       className="relative flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(50%-10px)] md:w-52 lg:w-56 cursor-pointer group snap-start"
     >
-      {/* Thumbnail Container - 4:5 aspect ratio */}
-      <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-muted">
+      {/* Thumbnail Container - 9:16 aspect ratio (standard shorts ratio) */}
+      <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-muted">
         {thumbnailUrl ? (
           <video
             src={thumbnailUrl}
