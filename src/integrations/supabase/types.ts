@@ -819,6 +819,38 @@ export type Database = {
         }
         Relationships: []
       }
+      showclip_views: {
+        Row: {
+          created_at: string
+          id: string
+          session_id: string | null
+          showclip_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          session_id?: string | null
+          showclip_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          session_id?: string | null
+          showclip_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "showclip_views_showclip_id_fkey"
+            columns: ["showclip_id"]
+            isOneToOne: false
+            referencedRelation: "spotlights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       spotlight_likes: {
         Row: {
           created_at: string
@@ -851,41 +883,60 @@ export type Database = {
       spotlights: {
         Row: {
           caption: string | null
+          community_id: string | null
           community_name: string
           created_at: string | null
           event_id: string | null
           feature_text: string
           id: string
+          is_winner_spotlight: boolean | null
           like_count: number | null
+          reward_text: string | null
+          thumbnail_url: string | null
           user_id: string
           video_url: string | null
           view_count: number | null
         }
         Insert: {
           caption?: string | null
+          community_id?: string | null
           community_name: string
           created_at?: string | null
           event_id?: string | null
           feature_text: string
           id?: string
+          is_winner_spotlight?: boolean | null
           like_count?: number | null
+          reward_text?: string | null
+          thumbnail_url?: string | null
           user_id: string
           video_url?: string | null
           view_count?: number | null
         }
         Update: {
           caption?: string | null
+          community_id?: string | null
           community_name?: string
           created_at?: string | null
           event_id?: string | null
           feature_text?: string
           id?: string
+          is_winner_spotlight?: boolean | null
           like_count?: number | null
+          reward_text?: string | null
+          thumbnail_url?: string | null
           user_id?: string
           video_url?: string | null
           view_count?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "spotlights_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "spotlights_event_id_fkey"
             columns: ["event_id"]
@@ -1022,6 +1073,26 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_ranked_showclips: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          caption: string
+          community_id: string
+          community_name: string
+          created_at: string
+          event_id: string
+          feature_text: string
+          id: string
+          is_winner_spotlight: boolean
+          like_count: number
+          reward_text: string
+          score: number
+          thumbnail_url: string
+          user_id: string
+          video_url: string
+          view_count: number
+        }[]
+      }
       get_reports_admin: {
         Args: { p_limit?: number; p_offset?: number; p_status?: string }
         Returns: {
@@ -1069,6 +1140,14 @@ export type Database = {
       mark_notification_read: {
         Args: { notification_id: string }
         Returns: undefined
+      }
+      record_showclip_view: {
+        Args: {
+          p_session_id?: string
+          p_showclip_id: string
+          p_user_id?: string
+        }
+        Returns: boolean
       }
     }
     Enums: {

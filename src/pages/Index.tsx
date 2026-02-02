@@ -9,6 +9,7 @@ import EventCard from "@/components/EventCard";
 import CommunityCard from "@/components/CommunityCard";
 import FeatureCard from "@/components/FeatureCard";
 import { BottomNav } from "@/components/BottomNav";
+import { ShowClipsRow } from "@/components/ShowClipsRow";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast } from "date-fns";
@@ -211,6 +212,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* ShowClips Section */}
+      <ShowClipsRow />
 
       {/* Upcoming Events Section */}
       <section id="events" className="py-12 sm:py-16 md:py-24 lg:py-32">
