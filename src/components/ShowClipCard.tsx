@@ -22,7 +22,7 @@ export function ShowClipCard({ clip, onClick }: ShowClipCardProps) {
   return (
     <div
       onClick={onClick}
-      className="relative flex-shrink-0 w-[45vw] max-w-[200px] sm:w-56 md:w-64 cursor-pointer group snap-start"
+      className="relative flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(50%-10px)] md:w-52 lg:w-56 cursor-pointer group snap-start"
     >
       {/* Thumbnail Container - 4:5 aspect ratio */}
       <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-muted">
