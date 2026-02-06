@@ -160,7 +160,7 @@ export function JaasMeeting({ eventId, eventTitle, onClose }: JaasMeetingProps) 
         height: '100%',
         configOverwrite: {
           subject: eventTitle,
-          prejoinPageEnabled: false,
+          prejoinConfig: { enabled: false },
           startWithAudioMuted: shouldStartMuted,
           startWithVideoMuted: false,
           enableNoisyMicDetection: true,
@@ -168,7 +168,6 @@ export function JaasMeeting({ eventId, eventTitle, onClose }: JaasMeetingProps) 
           disableDeepLinking: true,
           hideConferenceSubject: false,
           hideConferenceTimer: false,
-          hiddenPremeetingButtons: ['microphone', 'camera', 'select-background', 'invite', 'settings'],
         },
         interfaceConfigOverwrite: {
           SHOW_JITSI_WATERMARK: false,
@@ -181,9 +180,11 @@ export function JaasMeeting({ eventId, eventTitle, onClose }: JaasMeetingProps) 
 
       apiRef.current = api;
 
+      // Hide loading overlay immediately - Jitsi handles its own UI
+      setLoading(false);
+
       api.addListener('videoConferenceJoined', () => {
         setIsJoined(true);
-        setLoading(false);
       });
 
       api.addListener('participantJoined', () => {
@@ -287,11 +288,11 @@ export function JaasMeeting({ eventId, eventTitle, onClose }: JaasMeetingProps) 
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col w-full h-full">
       {/* Host mic request panel */}
       {isHost && isJoined && <MicRequestPanel eventId={eventId} />}
 
-      <div className={`relative bg-background rounded-lg overflow-hidden ${isFullscreen ? 'fixed inset-0 z-50' : 'aspect-video'}`}>
+      <div className="relative flex-1 bg-background overflow-hidden">
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-muted/80 z-10">
             <div className="text-center">
@@ -303,8 +304,7 @@ export function JaasMeeting({ eventId, eventTitle, onClose }: JaasMeetingProps) 
         
         <div 
           ref={containerRef} 
-          className="w-full h-full min-h-[400px]"
-          style={{ height: isFullscreen ? '100vh' : '100%' }}
+          className="w-full h-full"
         />
 
         {isJoined && (
