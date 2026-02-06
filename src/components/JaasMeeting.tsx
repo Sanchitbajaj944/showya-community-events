@@ -37,7 +37,7 @@ export function JaasMeeting({ eventId, eventTitle, onClose }: JaasMeetingProps) 
   const containerRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<any>(null);
 
-  const loadJitsiScript = useCallback((): Promise<void> => {
+  const loadJitsiScript = useCallback((appId: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       if (window.JitsiMeetExternalAPI) {
         resolve();
@@ -45,7 +45,7 @@ export function JaasMeeting({ eventId, eventTitle, onClose }: JaasMeetingProps) 
       }
 
       const script = document.createElement('script');
-      script.src = 'https://8x8.vc/vpaas-magic-cookie-ef5ce88c523d41a599c8b1dc5b3ab765/external_api.js';
+      script.src = `https://8x8.vc/${appId}/external_api.js`;
       script.async = true;
       script.onload = () => resolve();
       script.onerror = () => reject(new Error('Failed to load Jitsi script'));
@@ -120,7 +120,7 @@ export function JaasMeeting({ eventId, eventTitle, onClose }: JaasMeetingProps) 
       setMicPolicy(tokenMicPolicy || 'open');
       setIsHost(tokenIsHost || false);
 
-      await loadJitsiScript();
+      await loadJitsiScript(appId);
 
       if (!containerRef.current || !window.JitsiMeetExternalAPI) {
         setError('Failed to initialize meeting');
