@@ -280,18 +280,19 @@ export default function JoinEvent() {
 
   if (showMeeting) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-4 max-w-5xl">
+      <div className="fixed inset-0 bg-background z-50 flex flex-col">
+        <div className="flex items-center justify-between px-4 py-2 bg-card border-b">
+          <h2 className="text-sm font-medium truncate">{event.title}</h2>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowMeeting(false)}
-            className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Join Page
+            Exit Meeting
           </Button>
+        </div>
+        <div className="flex-1 min-h-0">
           <JaasMeeting
             eventId={eventId!}
             eventTitle={event.title}

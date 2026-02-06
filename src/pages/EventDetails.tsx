@@ -65,7 +65,7 @@ export default function EventDetails() {
   const [spotlight, setSpotlight] = useState<any>(null);
   const [performers, setPerformers] = useState<any[]>([]);
   const [performersOpen, setPerformersOpen] = useState(true);
-  const [showJaasMeeting, setShowJaasMeeting] = useState(false);
+  // showJaasMeeting state removed - meeting now opens in new tab
 
   useEffect(() => {
     fetchEventDetails();
@@ -480,42 +480,35 @@ export default function EventDetails() {
             </Card>
           )}
 
-          {/* JaaS Meeting - For registered participants */}
+          {/* Join Meeting - For registered participants */}
           {userBooking && !isEventPast && (
             <Card className="sm:col-span-2">
               <CardContent className="p-4 sm:p-6">
-                {showJaasMeeting ? (
-                  <JaasMeeting 
-                    eventId={eventId!} 
-                    eventTitle={event.title}
-                    onClose={() => setShowJaasMeeting(false)}
-                  />
-                ) : (
-                  <div className="flex items-start gap-3 sm:gap-4">
-                    <div className="p-2 sm:p-3 rounded-lg bg-primary/10">
-                      <Video className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold mb-1 text-sm sm:text-base">Video Meeting</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground mb-3">
-                        Join the in-app video meeting with noise cancellation
-                      </p>
-                      <Button 
-                        onClick={() => setShowJaasMeeting(true)}
-                        className="gap-2"
-                      >
-                        <Video className="h-4 w-4" />
-                        Join Meeting
-                      </Button>
-                    </div>
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="p-2 sm:p-3 rounded-lg bg-primary/10">
+                    <Video className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
-                )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold mb-1 text-sm sm:text-base">Video Meeting</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-3">
+                      Join the full-screen video meeting with noise cancellation
+                    </p>
+                    <Button 
+                      onClick={() => window.open(`/events/${eventId}/join`, '_blank')}
+                      className="gap-2"
+                    >
+                      <Video className="h-4 w-4" />
+                      Join Meeting
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
 
           {/* External Meeting URL - Only for registered participants (fallback) */}
-          {event.meeting_url && userBooking && !showJaasMeeting && (
+          {event.meeting_url && userBooking && (
             <Card>
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-start gap-3 sm:gap-4">
