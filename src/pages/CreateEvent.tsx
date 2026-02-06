@@ -47,8 +47,9 @@ export default function CreateEvent() {
     performer_slots: 1,
     performer_ticket_price: 20,
     audience_enabled: false,
-    audience_slots: undefined as number | undefined,
-    audience_ticket_price: undefined as number | undefined,
+    audience_slots: 50 as number | undefined,
+    audience_ticket_price: 0 as number | undefined,
+    allow_paid_audience_mic: true,
     
     location: "",
     city: "",
@@ -232,15 +233,17 @@ export default function CreateEvent() {
           performer_slots: formData.performer_slots,
           performer_ticket_price: formData.performer_ticket_price,
           audience_enabled: formData.audience_enabled,
-          audience_slots: formData.audience_slots,
-          audience_ticket_price: formData.audience_ticket_price,
+          audience_slots: formData.audience_enabled ? (formData.audience_slots || 50) : null,
+          audience_ticket_price: formData.audience_enabled ? (formData.audience_ticket_price ?? 0) : null,
           ticket_type: "paid",
           price: formData.performer_ticket_price,
           community_id: communityId,
           community_name: community?.name || "",
           created_by: user.id,
           jaas_room_name: jaasRoomName,
-        })
+          allow_paid_audience_mic: formData.allow_paid_audience_mic,
+          allow_free_audience_mic: false,
+        } as any)
         .select()
         .single();
 
@@ -278,7 +281,7 @@ export default function CreateEvent() {
   };
 
   const canProceedToStep2 = formData.title && formData.categories.length > 0 && formData.event_date && posterFile;
-  const canProceedToStep3 = formData.performer_slots >= 1 && formData.performer_ticket_price >= 20 && (!formData.audience_enabled || (formData.audience_ticket_price && formData.audience_ticket_price >= 20));
+  const canProceedToStep3 = formData.performer_slots >= 1 && formData.performer_ticket_price >= 20 && (!formData.audience_enabled || formData.audience_ticket_price !== undefined);
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-8">
@@ -487,36 +490,70 @@ export default function CreateEvent() {
                     </h3>
                     <Switch
                       checked={formData.audience_enabled}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, audience_enabled: checked }))}
+                      onCheckedChange={(checked) => setFormData(prev => ({
+                        ...prev,
+                        audience_enabled: checked,
+                        audience_slots: checked ? (prev.audience_slots || 50) : prev.audience_slots,
+                        audience_ticket_price: checked ? (prev.audience_ticket_price ?? 0) : prev.audience_ticket_price,
+                      }))}
                     />
                   </div>
 
                   {formData.audience_enabled && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="audience_slots">Number of Audience Slots</Label>
-                        <Input
-                          id="audience_slots"
-                          type="number"
-                          placeholder="Leave blank for unlimited"
-                          value={formData.audience_slots || ""}
-                          onChange={(e) => setFormData(prev => ({ ...prev, audience_slots: e.target.value ? parseInt(e.target.value) : undefined }))}
-                          min="1"
-                        />
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="audience_slots">Audience Capacity</Label>
+                          <Input
+                            id="audience_slots"
+                            type="number"
+                            value={formData.audience_slots || 50}
+                            onChange={(e) => setFormData(prev => ({ ...prev, audience_slots: e.target.value ? parseInt(e.target.value) : 50 }))}
+                            min="1"
+                          />
+                          <p className="text-xs text-muted-foreground">Default: 50 spots</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="audience_price">Audience Ticket Price (₹)</Label>
+                          <Input
+                            id="audience_price"
+                            type="number"
+                            placeholder="0 for free"
+                            value={formData.audience_ticket_price ?? 0}
+                            onChange={(e) => setFormData(prev => ({ ...prev, audience_ticket_price: e.target.value ? parseFloat(e.target.value) : 0 }))}
+                            min="0"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {formData.audience_ticket_price === 0 ? 'Free audience (listen-only)' : 'Min ₹20 for paid tickets'}
+                          </p>
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="audience_price">Audience Ticket Price (₹) *</Label>
-                        <Input
-                          id="audience_price"
-                          type="number"
-                          placeholder="Minimum ₹20"
-                          value={formData.audience_ticket_price || ""}
-                          onChange={(e) => setFormData(prev => ({ ...prev, audience_ticket_price: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                          min="20"
-                          required
-                        />
-                        <p className="text-xs text-muted-foreground">Required - Minimum ₹20</p>
-                      </div>
+
+                      {/* Mic permission toggle - only shown for paid audience */}
+                      {(formData.audience_ticket_price ?? 0) > 0 && (
+                        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium">Allow paid audience to request mic</p>
+                              <p className="text-xs text-muted-foreground">Paid audience can request to speak; you approve in-meeting</p>
+                            </div>
+                          </div>
+                          <Switch
+                            checked={formData.allow_paid_audience_mic}
+                            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, allow_paid_audience_mic: checked }))}
+                          />
+                        </div>
+                      )}
+
+                      {formData.audience_ticket_price === 0 && (
+                        <Alert className="border-muted">
+                          <Info className="h-4 w-4" />
+                          <AlertDescription className="text-xs">
+                            Free audience members join in listen-only mode and cannot request mic access.
+                          </AlertDescription>
+                        </Alert>
+                      )}
                     </div>
                   )}
                 </div>
@@ -667,11 +704,11 @@ export default function CreateEvent() {
                           <div>
                             <p className="font-medium">Audience Slots</p>
                             <p className="text-sm text-muted-foreground">
-                              {formData.audience_slots ? `${formData.audience_slots} slots` : "Unlimited"}
+                              {formData.audience_slots || 50} spots
                             </p>
                           </div>
                           <p className="text-lg font-bold">
-                            {formData.audience_ticket_price ? `₹${formData.audience_ticket_price}` : "Free"}
+                            {(formData.audience_ticket_price ?? 0) > 0 ? `₹${formData.audience_ticket_price}` : "Free"}
                           </p>
                         </div>
                       )}
