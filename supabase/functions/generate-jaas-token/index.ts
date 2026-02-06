@@ -128,13 +128,20 @@ serve(async (req) => {
 
   try {
     const JAAS_APP_ID = Deno.env.get('JAAS_APP_ID');
-    const JAAS_KEY_ID = Deno.env.get('JAAS_KEY_ID');
+    const JAAS_KEY_ID_RAW = Deno.env.get('JAAS_KEY_ID');
     const JAAS_PRIVATE_KEY = Deno.env.get('JAAS_PRIVATE_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
 
     if (!JAAS_APP_ID) throw new Error('JAAS_APP_ID is not configured');
-    if (!JAAS_KEY_ID) throw new Error('JAAS_KEY_ID is not configured');
+    if (!JAAS_KEY_ID_RAW) throw new Error('JAAS_KEY_ID is not configured');
+
+    // Strip appId prefix if user entered the full path (e.g. "appId/keyId" → "keyId")
+    const JAAS_KEY_ID = JAAS_KEY_ID_RAW.includes('/')
+      ? JAAS_KEY_ID_RAW.split('/').pop()!
+      : JAAS_KEY_ID_RAW;
+    
+    console.log('Using kid:', `${JAAS_APP_ID}/${JAAS_KEY_ID}`);
     if (!JAAS_PRIVATE_KEY) throw new Error('JAAS_PRIVATE_KEY is not configured');
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error('Supabase configuration missing');
 
