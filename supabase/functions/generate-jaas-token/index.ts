@@ -3,16 +3,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-// Base64URL encoding for JWT
 function base64UrlEncode(str: string): string {
   const base64 = btoa(str);
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
-// Convert ArrayBuffer to Base64URL
 function arrayBufferToBase64Url(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';
@@ -22,7 +20,6 @@ function arrayBufferToBase64Url(buffer: ArrayBuffer): string {
   return base64UrlEncode(binary);
 }
 
-// Parse PEM private key
 function parsePemKey(pem: string): string {
   return pem
     .replace(/-----BEGIN PRIVATE KEY-----/g, '')
@@ -32,7 +29,6 @@ function parsePemKey(pem: string): string {
     .replace(/\s/g, '');
 }
 
-// Generate JWT token for JaaS
 async function generateJaasToken(
   appId: string,
   privateKey: string,
@@ -49,7 +45,7 @@ async function generateJaasToken(
   };
 
   const now = Math.floor(Date.now() / 1000);
-  const exp = now + (3 * 60 * 60); // 3 hours
+  const exp = now + (3 * 60 * 60);
 
   const payload = {
     aud: 'jitsi',
@@ -80,22 +76,17 @@ async function generateJaasToken(
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   const signingInput = `${encodedHeader}.${encodedPayload}`;
 
-  // Import the private key
   const pemContents = parsePemKey(privateKey);
   const binaryDer = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
   
   const cryptoKey = await crypto.subtle.importKey(
     'pkcs8',
     binaryDer,
-    {
-      name: 'RSASSA-PKCS1-v1_5',
-      hash: 'SHA-256',
-    },
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
     false,
     ['sign']
   );
 
-  // Sign the token
   const signature = await crypto.subtle.sign(
     'RSASSA-PKCS1-v1_5',
     cryptoKey,
@@ -103,8 +94,30 @@ async function generateJaasToken(
   );
 
   const encodedSignature = arrayBufferToBase64Url(signature);
-  
   return `${signingInput}.${encodedSignature}`;
+}
+
+function determineMicPolicy(
+  isCreator: boolean,
+  participantRole: string | null,
+  paymentStatus: string | null,
+  allowPaidAudienceMic: boolean,
+  allowFreeAudienceMic: boolean
+): 'open' | 'request-only' | 'listen-only' {
+  // Host and performers always have open mic
+  if (isCreator || participantRole === 'performer') {
+    return 'open';
+  }
+
+  // Audience members
+  if (participantRole === 'audience') {
+    const isPaid = paymentStatus === 'captured';
+    if (isPaid && allowPaidAudienceMic) return 'request-only';
+    if (!isPaid && allowFreeAudienceMic) return 'request-only';
+    return 'listen-only';
+  }
+
+  return 'open';
 }
 
 serve(async (req) => {
@@ -118,17 +131,10 @@ serve(async (req) => {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
 
-    if (!JAAS_APP_ID) {
-      throw new Error('JAAS_APP_ID is not configured');
-    }
-    if (!JAAS_PRIVATE_KEY) {
-      throw new Error('JAAS_PRIVATE_KEY is not configured');
-    }
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      throw new Error('Supabase configuration missing');
-    }
+    if (!JAAS_APP_ID) throw new Error('JAAS_APP_ID is not configured');
+    if (!JAAS_PRIVATE_KEY) throw new Error('JAAS_PRIVATE_KEY is not configured');
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error('Supabase configuration missing');
 
-    // Verify auth token
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
@@ -141,7 +147,6 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } }
     });
 
-    // Get the authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return new Response(
@@ -159,10 +164,10 @@ serve(async (req) => {
       );
     }
 
-    // Get event details and check if user is registered
+    // Get event details including mic settings
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('id, title, jaas_room_name, created_by, community_id')
+      .select('id, title, jaas_room_name, created_by, community_id, allow_paid_audience_mic, allow_free_audience_mic')
       .eq('id', eventId)
       .single();
 
@@ -173,15 +178,14 @@ serve(async (req) => {
       );
     }
 
-    // Check if user is registered for the event
+    // Check if user is registered
     const { data: participant, error: participantError } = await supabase
       .from('event_participants')
-      .select('id, role')
+      .select('id, role, payment_status')
       .eq('event_id', eventId)
       .eq('user_id', user.id)
       .single();
 
-    // Check if user is the event creator
     const isCreator = event.created_by === user.id;
 
     if (!isCreator && (!participant || participantError)) {
@@ -205,8 +209,6 @@ serve(async (req) => {
     let roomName = event.jaas_room_name;
     if (!roomName) {
       roomName = `showya-event-${eventId.replace(/-/g, '').substring(0, 16)}`;
-      
-      // Update event with room name (only creator can do this)
       if (isCreator) {
         await supabase
           .from('events')
@@ -215,10 +217,17 @@ serve(async (req) => {
       }
     }
 
-    // Determine if user is moderator (event creator or performer)
     const isModerator = isCreator || participant?.role === 'performer';
 
-    // Generate JWT token
+    // Determine mic policy
+    const micPolicy = determineMicPolicy(
+      isCreator,
+      participant?.role || null,
+      participant?.payment_status || null,
+      (event as any).allow_paid_audience_mic ?? true,
+      (event as any).allow_free_audience_mic ?? false
+    );
+
     const token = await generateJaasToken(
       JAAS_APP_ID,
       JAAS_PRIVATE_KEY,
@@ -234,7 +243,9 @@ serve(async (req) => {
         token, 
         roomName,
         appId: JAAS_APP_ID,
-        isModerator 
+        isModerator,
+        isHost: isCreator,
+        micPolicy,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

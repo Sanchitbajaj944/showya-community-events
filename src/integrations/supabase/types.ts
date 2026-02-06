@@ -290,6 +290,7 @@ export type Database = {
           event_id: string
           id: string
           joined_at: string | null
+          mic_permission: string
           payment_status: string | null
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
@@ -302,6 +303,7 @@ export type Database = {
           event_id: string
           id?: string
           joined_at?: string | null
+          mic_permission?: string
           payment_status?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
@@ -314,6 +316,7 @@ export type Database = {
           event_id?: string
           id?: string
           joined_at?: string | null
+          mic_permission?: string
           payment_status?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
@@ -333,6 +336,8 @@ export type Database = {
       }
       events: {
         Row: {
+          allow_free_audience_mic: boolean
+          allow_paid_audience_mic: boolean
           audience_enabled: boolean | null
           audience_slots: number | null
           audience_ticket_price: number | null
@@ -361,6 +366,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          allow_free_audience_mic?: boolean
+          allow_paid_audience_mic?: boolean
           audience_enabled?: boolean | null
           audience_slots?: number | null
           audience_ticket_price?: number | null
@@ -389,6 +396,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          allow_free_audience_mic?: boolean
+          allow_paid_audience_mic?: boolean
           audience_enabled?: boolean | null
           audience_slots?: number | null
           audience_ticket_price?: number | null
