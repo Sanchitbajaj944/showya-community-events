@@ -238,8 +238,15 @@ export default function EventDashboard() {
           <Card className="lg:col-span-2">
             <CardHeader>
               <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
                 <CardTitle>Event Overview</CardTitle>
-                <Badge variant={statusColor}>{status}</Badge>
+                {event.meeting_status === 'live' && (
+                  <Badge className="bg-red-500 text-white animate-pulse text-xs">
+                    🔴 Live
+                  </Badge>
+                )}
+              </div>
+              <Badge variant={statusColor}>{status}</Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">

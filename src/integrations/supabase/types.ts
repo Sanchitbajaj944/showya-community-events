@@ -355,7 +355,10 @@ export type Database = {
           is_cancelled: boolean | null
           jaas_room_name: string | null
           location: string | null
+          meeting_ended_at: string | null
           meeting_link_last_updated_at: string | null
+          meeting_started_at: string | null
+          meeting_status: string
           meeting_url: string | null
           performer_slots: number
           performer_ticket_price: number
@@ -385,7 +388,10 @@ export type Database = {
           is_cancelled?: boolean | null
           jaas_room_name?: string | null
           location?: string | null
+          meeting_ended_at?: string | null
           meeting_link_last_updated_at?: string | null
+          meeting_started_at?: string | null
+          meeting_status?: string
           meeting_url?: string | null
           performer_slots?: number
           performer_ticket_price?: number
@@ -415,7 +421,10 @@ export type Database = {
           is_cancelled?: boolean | null
           jaas_room_name?: string | null
           location?: string | null
+          meeting_ended_at?: string | null
           meeting_link_last_updated_at?: string | null
+          meeting_started_at?: string | null
+          meeting_status?: string
           meeting_url?: string | null
           performer_slots?: number
           performer_ticket_price?: number

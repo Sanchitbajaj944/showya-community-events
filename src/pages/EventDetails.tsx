@@ -48,6 +48,7 @@ export default function EventDetails() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [event, setEvent] = useState<any>(null);
+  const [meetingStatus, setMeetingStatus] = useState<string>('scheduled');
   const [community, setCommunity] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -215,6 +216,15 @@ export default function EventDetails() {
       
       setPerformers(performersData || []);
 
+      // Fetch meeting status separately (not in RPC)
+      const { data: meetingData } = await supabase
+        .from("events")
+        .select("meeting_status")
+        .eq("id", eventId)
+        .single();
+      
+      if (meetingData) setMeetingStatus(meetingData.meeting_status);
+
       // Fetch spotlight video if event has passed
       const { data: spotlightData } = await supabase
         .from("spotlights")
@@ -348,6 +358,11 @@ export default function EventDetails() {
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <Badge variant="secondary" className="text-xs">{event.category || 'Event'}</Badge>
+                {meetingStatus === 'live' && (
+                  <Badge className="bg-red-500 text-white animate-pulse text-xs">
+                    🔴 Live
+                  </Badge>
+                )}
                 {isEventPast && <Badge variant="outline" className="text-xs">Past Event</Badge>}
                 {isSlotsFull && !isEventPast && <Badge variant="destructive" className="text-xs">Sold Out</Badge>}
                 <div className="ml-auto flex items-center gap-1">

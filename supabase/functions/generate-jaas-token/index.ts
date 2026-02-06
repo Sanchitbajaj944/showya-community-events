@@ -229,6 +229,18 @@ serve(async (req) => {
 
     const isModerator = isCreator || participant?.role === 'performer';
 
+    // Set meeting_status to 'live' when host joins
+    if (isCreator) {
+      await supabase
+        .from('events')
+        .update({ 
+          meeting_status: 'live', 
+          meeting_started_at: new Date().toISOString() 
+        })
+        .eq('id', eventId)
+        .eq('meeting_status', 'scheduled');
+    }
+
     // Determine mic policy
     const micPolicy = determineMicPolicy(
       isCreator,
