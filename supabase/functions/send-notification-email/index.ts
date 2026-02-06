@@ -88,7 +88,7 @@ const handler = async (req: Request): Promise<Response> => {
                 You're receiving this because you're a member of Showya.
               </p>
               <p style="color: #9ca3af; font-size: 14px; margin: 10px 0 0 0;">
-                <a href="https://showya.app" style="color: #667eea; text-decoration: none;">Visit Showya</a>
+                <a href="https://showya.in" style="color: #667eea; text-decoration: none;">Visit Showya</a>
               </p>
             </div>
           </div>

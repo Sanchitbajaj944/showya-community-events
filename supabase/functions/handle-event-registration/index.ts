@@ -92,6 +92,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Processing registration for user:", user_id, "event:", event_id, "role:", role);
 
+    const APP_BASE_URL = Deno.env.get("APP_BASE_URL") || "https://showya.in";
+
     // Get event details
     const { data: event, error: eventError } = await supabaseClient
       .from("events")
@@ -109,6 +111,11 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
+
+    // Construct meeting link dynamically
+    const meetingLink = `${APP_BASE_URL}/events/${event_id}/join`;
+    const eventPageLink = `${APP_BASE_URL}/events/${event_id}`;
+    const dashboardLink = `${APP_BASE_URL}/events/${event_id}/dashboard`;
 
     // Get community owner
     const { data: community } = await supabaseClient
@@ -136,14 +143,27 @@ const handler = async (req: Request): Promise<Response> => {
         action_url: `/events/${event_id}`,
       });
 
-      // Send email with meeting link and details
+      // Send email with meeting link
       await supabaseClient.functions.invoke("send-notification-email", {
         body: {
           user_id: user_id,
           title: "Performance Details - Action Required",
-          message: `You're confirmed as a performer for "${event.title}". Meeting link: ${event.meeting_url || "Will be shared soon"}. Please review prerequisites and prepare for your performance.`,
-          action_url: `${Deno.env.get("SUPABASE_URL")}/events/${event_id}`,
+          message: `You're confirmed as a performer for "${event.title}".\n\nMeeting Link: ${meetingLink}\n\nEvent Date: ${new Date(event.event_date).toLocaleString()}\n\nPlease review prerequisites and prepare for your performance.`,
+          action_url: meetingLink,
         },
+      });
+    }
+
+    // Send notification to audience with meeting link
+    if (role === "audience") {
+      await supabaseClient.from("notifications").insert({
+        user_id: user_id,
+        title: "You're In!",
+        message: `You've joined "${event.title}" as audience. Event starts at ${new Date(event.event_date).toLocaleString()}.`,
+        type: "success",
+        category: "event",
+        related_id: event_id,
+        action_url: `/events/${event_id}`,
       });
     }
 
@@ -165,7 +185,7 @@ const handler = async (req: Request): Promise<Response> => {
           user_id: community.owner_id,
           title: "New Event Registration",
           message: `${userProfile?.name || "Someone"} has registered for your event "${event.title}" as a ${role}.`,
-          action_url: `${Deno.env.get("SUPABASE_URL")}/events/${event_id}/dashboard`,
+          action_url: dashboardLink,
         },
       });
     }
