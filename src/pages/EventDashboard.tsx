@@ -16,7 +16,6 @@ import { Calendar, Clock, MapPin, Users, Edit, Trash2, IndianRupee, AlertTriangl
 import { UploadReelDialog } from "@/components/UploadReelDialog";
 import { UserAvatar } from "@/components/UserAvatar";
 import { RefundsTable } from "@/components/RefundsTable";
-import { JaasMeeting } from "@/components/JaasMeeting";
 
 export default function EventDashboard() {
   const { eventId } = useParams();
@@ -29,7 +28,7 @@ export default function EventDashboard() {
   const [deleting, setDeleting] = useState(false);
   const [showUploadReelDialog, setShowUploadReelDialog] = useState(false);
   const [existingReel, setExistingReel] = useState<any>(null);
-  const [showMeeting, setShowMeeting] = useState(false);
+  // showMeeting state removed — meetings only via /events/:eventId/join
 
   useEffect(() => {
     if (user && eventId) {
@@ -346,11 +345,11 @@ export default function EventDashboard() {
 
               <Button
                 className="w-full justify-start"
-                variant={showMeeting ? "secondary" : "outline"}
-                onClick={() => setShowMeeting(!showMeeting)}
+                variant="outline"
+                onClick={() => window.open(`/events/${event.id}/join`, '_blank')}
               >
                 <Video className="h-4 w-4 mr-2" />
-                {showMeeting ? "Close Meeting" : "Test Meeting"}
+                Start Session
               </Button>
 
               <Button
@@ -376,24 +375,7 @@ export default function EventDashboard() {
             </CardContent>
           </Card>
 
-          {/* Meeting Room */}
-          {showMeeting && (
-            <Card className="lg:col-span-3">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Video className="h-5 w-5" />
-                  Meeting Room (Test)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <JaasMeeting
-                  eventId={event.id}
-                  eventTitle={event.title}
-                  onClose={() => setShowMeeting(false)}
-                />
-              </CardContent>
-            </Card>
-          )}
+          {/* Meeting Room section removed — meetings only via /events/:eventId/join */}
 
           {/* Spotlight ShowClip */}
           <Card className="lg:col-span-3">
