@@ -32,3 +32,15 @@ verify_jwt = false
 
 [functions.generate-jaas-token]
 verify_jwt = false
+
+[functions.update-event]
+verify_jwt = false
+
+[functions.get-join-context]
+verify_jwt = false
+
+[functions.request-mic]
+verify_jwt = false
+
+[functions.resolve-mic]
+verify_jwt = false
