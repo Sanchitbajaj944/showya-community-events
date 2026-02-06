@@ -346,7 +346,7 @@ export default function EventDashboard() {
               <Button
                 className="w-full justify-start"
                 variant="outline"
-                onClick={() => window.open(`/events/${event.id}/join`, '_blank')}
+                onClick={() => window.open(`/events/${event.id}/join?as=host`, '_blank')}
               >
                 <Video className="h-4 w-4 mr-2" />
                 Start Session

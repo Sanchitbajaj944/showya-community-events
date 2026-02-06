@@ -15,7 +15,7 @@ import { BookingModal } from "@/components/BookingModal";
 import { ShareDialog } from "@/components/ShareDialog";
 import { ReportDialog } from "@/components/ReportDialog";
 import { CollapsibleDescription } from "@/components/CollapsibleDescription";
-import { JaasMeeting } from "@/components/JaasMeeting";
+
 import {
   Drawer,
   DrawerClose,
