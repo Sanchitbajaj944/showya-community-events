@@ -12,10 +12,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, isPast, differenceInHours } from "date-fns";
-import { Calendar, Clock, MapPin, Users, Edit, Trash2, Link as LinkIcon, IndianRupee, AlertTriangle, MoreVertical, UserX, Flag, Eye, Film } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Edit, Trash2, IndianRupee, AlertTriangle, MoreVertical, UserX, Flag, Eye, Film, Video } from "lucide-react";
 import { UploadReelDialog } from "@/components/UploadReelDialog";
 import { UserAvatar } from "@/components/UserAvatar";
 import { RefundsTable } from "@/components/RefundsTable";
+import { JaasMeeting } from "@/components/JaasMeeting";
 
 export default function EventDashboard() {
   const { eventId } = useParams();
@@ -28,6 +29,7 @@ export default function EventDashboard() {
   const [deleting, setDeleting] = useState(false);
   const [showUploadReelDialog, setShowUploadReelDialog] = useState(false);
   const [existingReel, setExistingReel] = useState<any>(null);
+  const [showMeeting, setShowMeeting] = useState(false);
 
   useEffect(() => {
     if (user && eventId) {
@@ -286,29 +288,15 @@ export default function EventDashboard() {
                   </div>
                 )}
 
-                {event.meeting_url && (
-                  <div className="flex items-start gap-3">
-                    <LinkIcon className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium">Meeting Link</p>
-                      <a 
-                        href={(() => {
-                          const raw = event.meeting_url.trim();
-                          return /^https?:\/\//i.test(raw)
-                            ? raw
-                            : raw.startsWith("//")
-                              ? `https:${raw}`
-                              : `https://${raw}`;
-                        })()} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline truncate block max-w-[200px]"
-                      >
-                        {event.meeting_url}
-                      </a>
-                    </div>
+                <div className="flex items-start gap-3">
+                  <Video className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">Meeting Room</p>
+                    <p className="text-sm text-muted-foreground">
+                      Built-in video conferencing (auto-generated)
+                    </p>
                   </div>
-                )}
+                </div>
 
                 <div className="flex items-start gap-3">
                   <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
@@ -357,6 +345,15 @@ export default function EventDashboard() {
               </Button>
 
               <Button
+                className="w-full justify-start"
+                variant={showMeeting ? "secondary" : "outline"}
+                onClick={() => setShowMeeting(!showMeeting)}
+              >
+                <Video className="h-4 w-4 mr-2" />
+                {showMeeting ? "Close Meeting" : "Test Meeting"}
+              </Button>
+
+              <Button
                 className="w-full justify-start" 
                 variant="destructive"
                 onClick={() => setShowDeleteDialog(true)}
@@ -378,6 +375,25 @@ export default function EventDashboard() {
               )}
             </CardContent>
           </Card>
+
+          {/* Meeting Room */}
+          {showMeeting && (
+            <Card className="lg:col-span-3">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Video className="h-5 w-5" />
+                  Meeting Room (Test)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <JaasMeeting
+                  eventId={event.id}
+                  eventTitle={event.title}
+                  onClose={() => setShowMeeting(false)}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Spotlight ShowClip */}
           <Card className="lg:col-span-3">
