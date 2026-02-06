@@ -4,7 +4,7 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 const PaymentOrderSchema = z.object({
@@ -22,7 +22,8 @@ function isDevEnvironment(req: Request): boolean {
     '127.0.0.1',
     'lovableproject.com',
     'lovable.app',
-    'webcontainer.io'
+    'webcontainer.io',
+    'id-preview--'
   ];
   
   return devPatterns.some(pattern => 
@@ -30,10 +31,25 @@ function isDevEnvironment(req: Request): boolean {
   );
 }
 
-// Get Razorpay credentials - always use live since linked accounts are live-only
-function getRazorpayCredentials(): { keyId: string; keySecret: string; isTestMode: boolean } {
-  // Always use live credentials - linked accounts created with live credentials
-  // cannot be accessed with test credentials
+// Get Razorpay credentials based on environment
+function getRazorpayCredentials(req: Request): { keyId: string; keySecret: string; isTestMode: boolean } {
+  const isDev = isDevEnvironment(req);
+  
+  if (isDev) {
+    const testKeyId = Deno.env.get('RAZORPAY_KEY_ID_TEST');
+    const testKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET_TEST');
+    
+    if (testKeyId && testKeySecret) {
+      console.log('Using Razorpay TEST credentials (dev environment)');
+      return {
+        keyId: testKeyId,
+        keySecret: testKeySecret,
+        isTestMode: true
+      };
+    }
+    console.log('Test credentials not found, falling back to LIVE credentials');
+  }
+
   console.log('Using Razorpay LIVE credentials');
   return {
     keyId: Deno.env.get('RAZORPAY_KEY_ID') || '',
@@ -94,42 +110,58 @@ serve(async (req) => {
       throw new Error('This event has free tickets');
     }
 
-    // Get community details with platform fee
-    const { data: community } = await supabaseClient
-      .from('communities')
-      .select('platform_fee_percentage')
-      .eq('id', event.community_id)
-      .single();
+    // Get Razorpay credentials based on environment
+    const { keyId: razorpayKeyId, keySecret: razorpayKeySecret, isTestMode } = getRazorpayCredentials(req);
+    
+    if (!razorpayKeyId || !razorpayKeySecret) {
+      throw new Error('Razorpay credentials not configured');
+    }
 
-    // Get community Razorpay account
-    const { data: razorpayAccount } = await supabaseClient
-      .from('razorpay_accounts')
-      .select('razorpay_account_id, kyc_status')
-      .eq('community_id', event.community_id)
-      .single();
+    let razorpayAccountId: string | null = null;
+    let platformFeePercentage = 5;
 
-    if (!razorpayAccount || razorpayAccount.kyc_status !== 'ACTIVATED') {
-      throw new Error('Community KYC not approved for payments');
+    if (!isTestMode) {
+      // In live mode, require community KYC and linked account
+      const { data: community } = await supabaseClient
+        .from('communities')
+        .select('platform_fee_percentage')
+        .eq('id', event.community_id)
+        .single();
+
+      const { data: razorpayAccount } = await supabaseClient
+        .from('razorpay_accounts')
+        .select('razorpay_account_id, kyc_status')
+        .eq('community_id', event.community_id)
+        .single();
+
+      if (!razorpayAccount || razorpayAccount.kyc_status !== 'ACTIVATED') {
+        throw new Error('Community KYC not approved for payments');
+      }
+
+      razorpayAccountId = razorpayAccount.razorpay_account_id;
+      platformFeePercentage = community?.platform_fee_percentage || 5;
+    } else {
+      // In test mode, skip KYC validation - just get platform fee if available
+      const { data: community } = await supabaseClient
+        .from('communities')
+        .select('platform_fee_percentage')
+        .eq('id', event.community_id)
+        .single();
+
+      platformFeePercentage = community?.platform_fee_percentage || 5;
+      console.log('Test mode: Skipping KYC validation');
     }
 
     // Ensure minimum amount after platform fees
-    const platformFeePercentage = community?.platform_fee_percentage || 5;
     const transferAmount = amount * (1 - platformFeePercentage / 100);
     
     if (transferAmount < 1) {
       throw new Error(`Minimum payment amount is ₹${Math.ceil(1 / (1 - platformFeePercentage / 100))} after platform fees`);
     }
-
-    // Create Razorpay order with live credentials
-    const { keyId: razorpayKeyId, keySecret: razorpayKeySecret, isTestMode } = getRazorpayCredentials();
-    
-    if (!razorpayKeyId || !razorpayKeySecret) {
-      throw new Error('Razorpay credentials not configured');
-    }
     
     const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
-    // Build order payload - skip route transfers in test mode as linked accounts are live-only
+    // Build order payload
     const orderPayload: Record<string, unknown> = {
       amount: Math.round(amount * 100), // Convert to paise
       currency: 'INR',
@@ -141,16 +173,16 @@ serve(async (req) => {
       }
     };
 
-    // Only add transfers for live mode - test mode linked accounts don't work with live accounts
-    if (!isTestMode) {
+    // Only add transfers for live mode with a valid linked account
+    if (!isTestMode && razorpayAccountId) {
       orderPayload.transfers = [{
-        account: razorpayAccount.razorpay_account_id,
-        amount: Math.round(amount * 100 * (1 - (community?.platform_fee_percentage || 5) / 100)),
+        account: razorpayAccountId,
+        amount: Math.round(amount * 100 * (1 - platformFeePercentage / 100)),
         currency: 'INR',
         notes: {
           event_id,
           community_id: event.community_id,
-          platform_fee_percentage: community?.platform_fee_percentage || 5
+          platform_fee_percentage: platformFeePercentage
         }
       }];
     }
