@@ -31,6 +31,7 @@ function parsePemKey(pem: string): string {
 
 async function generateJaasToken(
   appId: string,
+  keyId: string,
   privateKey: string,
   roomName: string,
   userName: string,
@@ -41,7 +42,7 @@ async function generateJaasToken(
   const header = {
     alg: 'RS256',
     typ: 'JWT',
-    kid: appId + '/default'
+    kid: `${appId}/${keyId}`
   };
 
   const now = Math.floor(Date.now() / 1000);
@@ -127,11 +128,13 @@ serve(async (req) => {
 
   try {
     const JAAS_APP_ID = Deno.env.get('JAAS_APP_ID');
+    const JAAS_KEY_ID = Deno.env.get('JAAS_KEY_ID');
     const JAAS_PRIVATE_KEY = Deno.env.get('JAAS_PRIVATE_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
 
     if (!JAAS_APP_ID) throw new Error('JAAS_APP_ID is not configured');
+    if (!JAAS_KEY_ID) throw new Error('JAAS_KEY_ID is not configured');
     if (!JAAS_PRIVATE_KEY) throw new Error('JAAS_PRIVATE_KEY is not configured');
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error('Supabase configuration missing');
 
@@ -230,6 +233,7 @@ serve(async (req) => {
 
     const token = await generateJaasToken(
       JAAS_APP_ID,
+      JAAS_KEY_ID,
       JAAS_PRIVATE_KEY,
       roomName,
       userName,
