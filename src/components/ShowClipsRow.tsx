@@ -59,7 +59,26 @@ export function ShowClipsRow() {
           thumbnail_url: clip.thumbnail_url || null
         })));
       } else {
-        setClips(data || []);
+        // Fetch blue tick status for communities in these clips
+        const communityIds = [...new Set((data || []).map((c: any) => c.community_id).filter(Boolean))];
+        let blueTickMap: Record<string, boolean> = {};
+        
+        if (communityIds.length > 0) {
+          const { data: btData } = await supabase
+            .from("communities")
+            .select("id, is_blue_tick")
+            .in("id", communityIds)
+            .eq("is_blue_tick", true);
+          
+          (btData || []).forEach((c: any) => {
+            blueTickMap[c.id] = true;
+          });
+        }
+
+        setClips((data || []).map((clip: any) => ({
+          ...clip,
+          is_blue_tick: blueTickMap[clip.community_id] || false,
+        })));
       }
     } catch (error) {
       console.error("Error fetching showclips:", error);

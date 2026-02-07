@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Calendar, MessageCircle, LogOut, Info, CheckCircle, MapPin, Clock, Flag } from "lucide-react";
+import { BlueTick } from "@/components/BlueTick";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -151,7 +152,10 @@ export default function CommunityMemberView() {
             <div className="space-y-3 sm:space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <h1 className="text-2xl sm:text-3xl font-bold mb-2">{community.name}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center gap-2">
+                    {community.name}
+                    {community.is_blue_tick && <BlueTick size="lg" />}
+                  </h1>
                   <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
                     Hosted by @{ownerName}
                   </p>

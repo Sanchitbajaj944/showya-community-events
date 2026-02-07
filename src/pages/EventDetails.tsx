@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, LayoutDashboard, Share2, Flag, ChevronDown, Video } from "lucide-react";
+import { BlueTick } from "@/components/BlueTick";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format, isPast, differenceInHours } from "date-fns";
 import { toast } from "sonner";
@@ -391,6 +392,7 @@ export default function EventDetails() {
                   className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
                 >
                   Hosted by {community.name}
+                  {community.is_blue_tick && <BlueTick size="sm" />}
                   <ExternalLink className="h-3 w-3" />
                 </Link>
               )}

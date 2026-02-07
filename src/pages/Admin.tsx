@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, CheckCircle, Clock, Flag, Shield, User, Users, UserPlus, DollarSign, Percent, RefreshCw, LayoutGrid } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Flag, Shield, User, Users, UserPlus, DollarSign, Percent, RefreshCw, LayoutGrid, BadgeCheck } from "lucide-react";
 import { HomepageSectionOrder } from "@/components/admin/HomepageSectionOrder";
+import { BlueTickManagement } from "@/components/admin/BlueTickManagement";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -386,10 +387,14 @@ export default function Admin() {
 
         {/* Main Tabs */}
         <Tabs defaultValue="reports" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="reports">
               <Flag className="h-4 w-4 mr-2" />
               Reports
+            </TabsTrigger>
+            <TabsTrigger value="bluetick">
+              <BadgeCheck className="h-4 w-4 mr-2" />
+              Blue Tick
             </TabsTrigger>
             <TabsTrigger value="homepage">
               <LayoutGrid className="h-4 w-4 mr-2" />
@@ -497,6 +502,11 @@ export default function Admin() {
             />
           </TabsContent>
             </Tabs>
+          </TabsContent>
+
+          {/* Blue Tick Tab */}
+          <TabsContent value="bluetick" className="space-y-6">
+            <BlueTickManagement />
           </TabsContent>
 
           {/* Homepage Settings Tab */}

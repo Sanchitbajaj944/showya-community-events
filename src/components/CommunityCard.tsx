@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { BlueTick } from "@/components/BlueTick";
 
 interface CommunityCardProps {
   community: any;
@@ -54,12 +55,13 @@ export const CommunityCard = ({ community, variant = "default", showManage = fal
       }`}>
         <div className={isFeatured ? "space-y-4" : "space-y-2 sm:space-y-3"}>
           <div>
-            <h3 className={`font-semibold mb-2 group-hover:text-primary transition-colors ${
+            <h3 className={`font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-1.5 ${
               isFeatured 
                 ? "text-xl sm:text-2xl font-bold mb-3" 
                 : "text-base sm:text-lg line-clamp-1"
             }`}>
-              {community.name}
+              <span className="truncate">{community.name}</span>
+              {community.is_blue_tick && <BlueTick size={isFeatured ? "md" : "sm"} />}
             </h3>
             <div className={`flex flex-wrap mb-2 ${isFeatured ? "gap-2 mb-3" : "gap-1"}`}>
               {community.categories?.map((cat: string) => (

@@ -1,5 +1,6 @@
 import { Eye, Trophy, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { BlueTick } from "@/components/BlueTick";
 
 interface ShowClipCardProps {
   clip: {
@@ -11,6 +12,7 @@ interface ShowClipCardProps {
     community_name: string;
     is_winner_spotlight: boolean;
     reward_text: string | null;
+    is_blue_tick?: boolean;
   };
   onClick: () => void;
 }
@@ -72,8 +74,9 @@ export function ShowClipCard({ clip, onClick }: ShowClipCardProps) {
 
         {/* Bottom info */}
         <div className="absolute bottom-0 left-0 right-0 p-2 space-y-1">
-          <p className="text-white text-xs font-medium truncate">
+          <p className="text-white text-xs font-medium truncate flex items-center gap-1">
             {clip.community_name}
+            {clip.is_blue_tick && <BlueTick size="sm" className="text-blue-400 fill-blue-400/20" />}
           </p>
           <div className="flex items-center gap-1 text-white/80">
             <Eye className="h-3 w-3" />
