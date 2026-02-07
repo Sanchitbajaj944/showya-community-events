@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { BlueTick } from "@/components/BlueTick";
 
 interface CommunitiesSectionProps {
   communities: any[];
@@ -54,8 +55,9 @@ export function CommunitiesSection({ communities }: CommunitiesSectionProps) {
                   <CardContent className="p-5 flex-1 flex flex-col">
                     <div className="flex-1 space-y-3">
                       <div>
-                        <h3 className="font-bold text-lg mb-2 line-clamp-1 group-hover:text-gradient transition-all">
-                          {community.name}
+                        <h3 className="font-bold text-lg mb-2 line-clamp-1 group-hover:text-gradient transition-all flex items-center gap-1.5">
+                          <span className="truncate">{community.name}</span>
+                          {community.is_blue_tick && <BlueTick size="sm" />}
                         </h3>
                         <div className="flex flex-wrap gap-1.5 mb-3">
                           {community.categories?.slice(0, 3).map((cat: string) => (

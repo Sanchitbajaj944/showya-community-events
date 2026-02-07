@@ -47,10 +47,13 @@ export type Database = {
       communities: {
         Row: {
           banner_url: string | null
+          blue_tick_granted_at: string | null
+          blue_tick_note: string | null
           categories: string[]
           created_at: string
           description: string | null
           id: string
+          is_blue_tick: boolean
           kyc_status: Database["public"]["Enums"]["kyc_status"]
           name: string
           owner_id: string
@@ -59,10 +62,13 @@ export type Database = {
         }
         Insert: {
           banner_url?: string | null
+          blue_tick_granted_at?: string | null
+          blue_tick_note?: string | null
           categories?: string[]
           created_at?: string
           description?: string | null
           id?: string
+          is_blue_tick?: boolean
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           name: string
           owner_id: string
@@ -71,10 +77,13 @@ export type Database = {
         }
         Update: {
           banner_url?: string | null
+          blue_tick_granted_at?: string | null
+          blue_tick_note?: string | null
           categories?: string[]
           created_at?: string
           description?: string | null
           id?: string
+          is_blue_tick?: boolean
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           name?: string
           owner_id?: string

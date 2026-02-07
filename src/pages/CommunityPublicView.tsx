@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Calendar, UserPlus, CheckCircle, MoreVertical, Flag } from "lucide-react";
+import { BlueTick } from "@/components/BlueTick";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ReportDialog } from "@/components/ReportDialog";
 import { ShareDialog } from "@/components/ShareDialog";
@@ -149,7 +150,10 @@ export default function CommunityPublicView() {
             <div className="space-y-3 sm:space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-2xl sm:text-3xl font-bold mb-2 break-words">{community.name}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-2 break-words flex items-center gap-2">
+                    {community.name}
+                    {community.is_blue_tick && <BlueTick size="lg" />}
+                  </h1>
                   {community.categories && community.categories.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">
                       {community.categories.map((cat: string) => (

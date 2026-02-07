@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Heart, Volume2, VolumeX, Share2, MoreVertical, Loader2 } from "lucide-react";
+import { BlueTick } from "@/components/BlueTick";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ export function ReelCard({
   const [localLikes, setLocalLikes] = useState(reel.like_count);
   const [communityId, setCommunityId] = useState<string | null>(null);
   const [communityBanner, setCommunityBanner] = useState<string | null>(null);
+  const [isBlueTick, setIsBlueTick] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [performerData, setPerformerData] = useState<{
@@ -131,10 +133,11 @@ export function ReelCard({
     try {
       const {
         data
-      } = await supabase.from("communities").select("id, banner_url").eq("name", reel.community_name).maybeSingle();
+      } = await supabase.from("communities").select("id, banner_url, is_blue_tick").eq("name", reel.community_name).maybeSingle();
       if (data) {
         setCommunityId(data.id);
         setCommunityBanner(data.banner_url);
+        setIsBlueTick(data.is_blue_tick || false);
 
         // Check if user is a member
         if (user) {
@@ -248,7 +251,10 @@ export function ReelCard({
                   </span>}
               </div>
               <div>
-                <p className="font-semibold text-white text-xs">{reel.community_name}</p>
+                <p className="font-semibold text-white text-xs flex items-center gap-1">
+                  {reel.community_name}
+                  {isBlueTick && <BlueTick size="sm" className="text-blue-400 fill-blue-400/20" />}
+                </p>
                 <p className="text-[10px] text-white/80">Community</p>
               </div>
             </Link>

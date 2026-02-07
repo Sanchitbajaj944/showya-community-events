@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, CheckCircle, Clock, XCircle, Plus } from "lucide-react";
 import { CreateCommunityDialog } from "./CreateCommunityDialog";
+import { BlueTick } from "@/components/BlueTick";
 
 interface CommunityManagementCardProps {
   community: any;
@@ -95,7 +96,10 @@ export const CommunityManagementCard = ({ community, onCommunityCreated }: Commu
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <div>
-                  <h3 className="font-semibold text-lg">{community.name}</h3>
+                  <h3 className="font-semibold text-lg flex items-center gap-1.5">
+                    {community.name}
+                    {community.is_blue_tick && <BlueTick size="sm" />}
+                  </h3>
                   <p className="text-xs text-muted-foreground">Your Community</p>
                 </div>
               </div>
