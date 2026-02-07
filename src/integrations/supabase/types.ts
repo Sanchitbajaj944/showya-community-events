@@ -489,6 +489,65 @@ export type Database = {
           },
         ]
       }
+      message_queue: {
+        Row: {
+          channel: string
+          created_at: string
+          error: string | null
+          event_id: string | null
+          id: string
+          payload: Json
+          provider_message_id: string | null
+          retry_count: number
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          template_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          error?: string | null
+          event_id?: string | null
+          id?: string
+          payload?: Json
+          provider_message_id?: string | null
+          retry_count?: number
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          template_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error?: string | null
+          event_id?: string | null
+          id?: string
+          payload?: Json
+          provider_message_id?: string | null
+          retry_count?: number
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          template_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_queue_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           action_url: string | null
@@ -585,39 +644,57 @@ export type Database = {
           city: string | null
           created_at: string
           display_name: string | null
+          dob: string | null
+          gender: string | null
           id: string
           name: string
+          phone: string | null
           preferred_language: string | null
           profile_picture_url: string | null
           skills: string[] | null
           updated_at: string | null
           user_id: string
+          whatsapp_number: string | null
+          whatsapp_opt_in: boolean
+          whatsapp_opt_in_at: string | null
         }
         Insert: {
           bio?: string | null
           city?: string | null
           created_at?: string
           display_name?: string | null
+          dob?: string | null
+          gender?: string | null
           id?: string
           name: string
+          phone?: string | null
           preferred_language?: string | null
           profile_picture_url?: string | null
           skills?: string[] | null
           updated_at?: string | null
           user_id: string
+          whatsapp_number?: string | null
+          whatsapp_opt_in?: boolean
+          whatsapp_opt_in_at?: string | null
         }
         Update: {
           bio?: string | null
           city?: string | null
           created_at?: string
           display_name?: string | null
+          dob?: string | null
+          gender?: string | null
           id?: string
           name?: string
+          phone?: string | null
           preferred_language?: string | null
           profile_picture_url?: string | null
           skills?: string[] | null
           updated_at?: string | null
           user_id?: string
+          whatsapp_number?: string | null
+          whatsapp_opt_in?: boolean
+          whatsapp_opt_in_at?: string | null
         }
         Relationships: []
       }
