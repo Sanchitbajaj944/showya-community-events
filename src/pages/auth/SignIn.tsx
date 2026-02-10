@@ -50,17 +50,12 @@ export default function SignIn() {
       setIsLoading(true);
       setOtpEmail(data.email);
 
-      const { error } = await supabase.auth.signInWithOtp({
-        email: data.email,
-        options: { shouldCreateUser: false },
+      const { data: result, error } = await supabase.functions.invoke("send-otp", {
+        body: { email: data.email, purpose: "signin" },
       });
 
-      if (error) {
-        if (error.message.includes("Signups not allowed")) {
-          toast.error("No account found with this email. Please sign up first.");
-        } else {
-          toast.error(error.message || "Something went wrong.");
-        }
+      if (error || result?.error) {
+        toast.error(result?.error || "Something went wrong.");
         return;
       }
 
@@ -77,15 +72,25 @@ export default function SignIn() {
     try {
       setIsLoading(true);
 
-      const { error } = await supabase.auth.verifyOtp({
-        email: otpEmail,
-        token: data.otp,
-        type: "email",
+      const { data: result, error } = await supabase.functions.invoke("verify-otp", {
+        body: { email: otpEmail, otp: data.otp, purpose: "signin" },
       });
 
-      if (error) {
-        toast.error("Invalid or expired OTP. Please try again.");
+      if (error || result?.error) {
+        toast.error(result?.error || "Invalid or expired OTP.");
         return;
+      }
+
+      if (result?.token_hash) {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: result.token_hash,
+          type: "magiclink",
+        });
+
+        if (verifyError) {
+          toast.error("Verification failed. Please try again.");
+          return;
+        }
       }
 
       toast.success("Signed in successfully!");
@@ -133,12 +138,11 @@ export default function SignIn() {
   const handleResendOtp = async () => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signInWithOtp({
-        email: otpEmail,
-        options: { shouldCreateUser: false },
+      const { data: result, error } = await supabase.functions.invoke("send-otp", {
+        body: { email: otpEmail, purpose: "signin" },
       });
-      if (error) {
-        toast.error("Failed to resend OTP.");
+      if (error || result?.error) {
+        toast.error(result?.error || "Failed to resend OTP.");
       } else {
         toast.success("OTP resent! Check your inbox.");
       }

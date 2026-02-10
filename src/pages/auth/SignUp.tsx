@@ -42,19 +42,16 @@ export default function SignUp() {
   const [step1Data, setStep1Data] = useState<SignUpStep1FormData | null>(null);
   const { t, i18n } = useTranslation();
 
-  // Step 1 form
   const step1Form = useForm<SignUpStep1FormData>({
     resolver: zodResolver(signUpStep1Schema),
     mode: "onChange",
   });
 
-  // OTP form
   const otpForm = useForm<OtpFormData>({
     resolver: zodResolver(otpSchema),
     mode: "onChange",
   });
 
-  // Step 2 form
   const step2Form = useForm<SignUpStep2FormData>({
     resolver: zodResolver(signUpStep2Schema),
     mode: "onChange",
@@ -66,11 +63,11 @@ export default function SignUp() {
       setIsLoading(true);
       setStep1Data(data);
 
-      const { error } = await supabase.auth.signInWithOtp({
-        email: data.email,
-        options: {
-          shouldCreateUser: true,
-          data: {
+      const { data: result, error } = await supabase.functions.invoke("send-otp", {
+        body: {
+          email: data.email,
+          purpose: "signup",
+          metadata: {
             name: data.name,
             phone: data.phone,
             preferred_language: i18n.language,
@@ -78,12 +75,8 @@ export default function SignUp() {
         },
       });
 
-      if (error) {
-        if (error.message.includes("already registered") || error.message.includes("already been registered")) {
-          toast.error("This email is already registered. Please sign in instead.");
-        } else {
-          toast.error(error.message || "Something went wrong. Please try again.");
-        }
+      if (error || result?.error) {
+        toast.error(result?.error || "Failed to send OTP. Please try again.");
         return;
       }
 
@@ -101,14 +94,38 @@ export default function SignUp() {
     try {
       setIsLoading(true);
 
-      const { error } = await supabase.auth.verifyOtp({
-        email: step1Data.email,
-        token: data.otp,
-        type: "email",
+      const { data: result, error } = await supabase.functions.invoke("verify-otp", {
+        body: {
+          email: step1Data.email,
+          otp: data.otp,
+          purpose: "signup",
+        },
       });
 
-      if (error) {
-        toast.error("Invalid or expired OTP. Please try again.");
+      if (error || result?.error) {
+        toast.error(result?.error || "Invalid or expired OTP. Please try again.");
+        return;
+      }
+
+      // Use the token_hash to verify and create session
+      if (result?.token_hash) {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: result.token_hash,
+          type: "magiclink",
+        });
+
+        if (verifyError) {
+          console.error("Session creation error:", verifyError);
+          toast.error("Verification succeeded but session failed. Please try signing in.");
+          return;
+        }
+      }
+
+      if (result?.already_exists) {
+        toast.success("Signed in successfully!");
+        const postAuthRedirect = sessionStorage.getItem("postAuthRedirect");
+        sessionStorage.removeItem("postAuthRedirect");
+        navigate(postAuthRedirect || "/");
         return;
       }
 
@@ -125,11 +142,11 @@ export default function SignUp() {
     if (!step1Data) return;
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signInWithOtp({
-        email: step1Data.email,
-        options: {
-          shouldCreateUser: true,
-          data: {
+      const { data: result, error } = await supabase.functions.invoke("send-otp", {
+        body: {
+          email: step1Data.email,
+          purpose: "signup",
+          metadata: {
             name: step1Data.name,
             phone: step1Data.phone,
             preferred_language: i18n.language,
@@ -137,8 +154,8 @@ export default function SignUp() {
         },
       });
 
-      if (error) {
-        toast.error("Failed to resend OTP. Please try again.");
+      if (error || result?.error) {
+        toast.error(result?.error || "Failed to resend OTP.");
       } else {
         toast.success("OTP resent! Check your inbox.");
       }
@@ -154,7 +171,6 @@ export default function SignUp() {
     try {
       setIsLoading(true);
 
-      // Update user metadata with step 2 data
       const { error: updateError } = await supabase.auth.updateUser({
         data: {
           gender: data.gender,
@@ -169,7 +185,6 @@ export default function SignUp() {
         return;
       }
 
-      // Also update profile directly
       const { data: session } = await supabase.auth.getSession();
       if (session?.session?.user) {
         await supabase
@@ -186,7 +201,6 @@ export default function SignUp() {
       }
 
       toast.success("Account created successfully!");
-
       const postAuthRedirect = sessionStorage.getItem("postAuthRedirect");
       sessionStorage.removeItem("postAuthRedirect");
       navigate(postAuthRedirect || "/");
@@ -298,7 +312,7 @@ export default function SignUp() {
           </>
         )}
 
-        {/* Step OTP: Verify email */}
+        {/* Step OTP */}
         {step === "otp" && (
           <>
             <button
