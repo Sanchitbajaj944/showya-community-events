@@ -217,6 +217,42 @@ export type Database = {
           },
         ]
       }
+      email_otps: {
+        Row: {
+          attempts: number
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          metadata: Json | null
+          otp_code: string
+          purpose: string
+          verified: boolean
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          metadata?: Json | null
+          otp_code: string
+          purpose?: string
+          verified?: boolean
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          metadata?: Json | null
+          otp_code?: string
+          purpose?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       event_audit_log: {
         Row: {
           action: string
@@ -1141,6 +1177,7 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_expired_otps: { Args: never; Returns: undefined }
       event_has_bookings: { Args: { _event_id: string }; Returns: boolean }
       get_community_member_count: {
         Args: { p_community_id: string }
