@@ -301,6 +301,67 @@ serve(async (req: Request) => {
         
         console.log(`Sent ${notifications.length} notifications with emails`);
       }
+
+      // --- WhatsApp dispatch for opted-in attendees ---
+      const APP_BASE_URL = Deno.env.get('APP_BASE_URL') || 'https://showya.app';
+      const eventLink = `${APP_BASE_URL}/events/${eventId}/join`;
+
+      // Get unique user IDs from bookings
+      const uniqueUserIds = [...new Set(bookings.map((b: any) => b.user_id))];
+
+      // Fetch profiles with WhatsApp opt-in
+      const { data: waProfiles } = await supabase
+        .from('profiles')
+        .select('user_id, phone, whatsapp_opt_in, whatsapp_number')
+        .in('user_id', uniqueUserIds)
+        .eq('whatsapp_opt_in', true);
+
+      if (waProfiles && waProfiles.length > 0) {
+        for (const profile of waProfiles) {
+          const phone = profile.whatsapp_number || profile.phone;
+          if (!phone) continue;
+
+          // Determine template and parameters based on change type
+          let templateName = 'event_updated';
+          const templateParams: string[] = [event.title, eventLink];
+
+          if (isDateChanged) {
+            templateParams.push(`New date: ${new Date(updates.event_date!).toLocaleString()}`);
+          }
+          if (updates.duration && updates.duration !== event.duration) {
+            templateParams.push(`Duration: ${updates.duration} min`);
+          }
+
+          try {
+            // Queue in message_queue
+            const { data: queueEntry } = await supabase
+              .from('message_queue')
+              .insert({
+                user_id: profile.user_id,
+                event_id: eventId,
+                channel: 'whatsapp',
+                template_name: templateName,
+                payload: { to: phone, template_parameters: templateParams },
+                status: 'queued',
+              })
+              .select('id')
+              .single();
+
+            // Send via WhatsApp
+            await supabase.functions.invoke('send-whatsapp', {
+              body: {
+                to: phone,
+                template_name: templateName,
+                template_parameters: templateParams,
+                message_queue_id: queueEntry?.id,
+              },
+            });
+          } catch (waError) {
+            console.error('WhatsApp send failed for user:', profile.user_id, waError);
+          }
+        }
+        console.log(`Sent WhatsApp to ${waProfiles.length} opted-in attendees`);
+      }
     }
 
     console.log(`Event ${eventId} updated successfully by user ${user.id}`);
