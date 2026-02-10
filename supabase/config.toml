@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.resolve-mic]
 verify_jwt = false
+
+[functions.send-whatsapp]
+verify_jwt = false
