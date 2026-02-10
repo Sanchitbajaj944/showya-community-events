@@ -91,10 +91,9 @@ serve(async (req) => {
         // If user already exists, treat as signin
         if (signUpError.message?.includes("already been registered") || signUpError.message?.includes("already exists")) {
           // Generate session for existing user
-          const { data: users } = await supabase.auth.admin.listUsers();
-          const existingUser = users?.users?.find((u: any) => u.email === email.toLowerCase());
+          const { data: existingUserData } = await supabase.auth.admin.getUserByEmail(email.toLowerCase());
           
-          if (existingUser) {
+          if (existingUserData?.user) {
             const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
               type: "magiclink",
               email: email.toLowerCase(),

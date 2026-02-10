@@ -37,9 +37,8 @@ serve(async (req) => {
 
     // For signin, check if user exists
     if (purpose === "signin") {
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const userExists = users?.users?.some((u: any) => u.email === email.toLowerCase());
-      if (!userExists) {
+      const { data: userData, error: userError } = await supabase.auth.admin.getUserByEmail(email.toLowerCase());
+      if (userError || !userData?.user) {
         return new Response(JSON.stringify({ error: "No account found with this email. Please sign up first." }), {
           status: 404,
           headers: { "Content-Type": "application/json", ...corsHeaders },
