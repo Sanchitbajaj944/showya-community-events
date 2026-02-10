@@ -3,77 +3,195 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
-import { signUpSchema, type SignUpFormData } from "@/lib/validations/auth";
+import {
+  signUpStep1Schema,
+  signUpStep2Schema,
+  otpSchema,
+  type SignUpStep1FormData,
+  type SignUpStep2FormData,
+  type OtpFormData,
+} from "@/lib/validations/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SkillsSelect } from "@/components/SkillsSelect";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { MetaEvents } from "@/lib/metaConversions";
+import { ArrowLeft, Mail } from "lucide-react";
+
+type Step = "info" | "otp" | "details";
 
 export default function SignUp() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState<Step>("info");
+  const [step1Data, setStep1Data] = useState<SignUpStep1FormData | null>(null);
   const { t, i18n } = useTranslation();
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors, isValid },
-  } = useForm<SignUpFormData>({
-    resolver: zodResolver(signUpSchema),
+
+  // Step 1 form
+  const step1Form = useForm<SignUpStep1FormData>({
+    resolver: zodResolver(signUpStep1Schema),
     mode: "onChange",
-    defaultValues: {
-      skills: [],
-    },
   });
 
-  const onSubmit = async (data: SignUpFormData) => {
+  // OTP form
+  const otpForm = useForm<OtpFormData>({
+    resolver: zodResolver(otpSchema),
+    mode: "onChange",
+  });
+
+  // Step 2 form
+  const step2Form = useForm<SignUpStep2FormData>({
+    resolver: zodResolver(signUpStep2Schema),
+    mode: "onChange",
+    defaultValues: { skills: [] },
+  });
+
+  const handleStep1Submit = async (data: SignUpStep1FormData) => {
     try {
       setIsLoading(true);
-      const redirectUrl = `${window.location.origin}/`;
-      const currentLanguage = i18n.language;
+      setStep1Data(data);
 
-      const { error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signInWithOtp({
         email: data.email,
-        password: data.password,
         options: {
-          emailRedirectTo: redirectUrl,
+          shouldCreateUser: true,
           data: {
             name: data.name,
-            skills: data.skills,
-            preferred_language: currentLanguage,
+            phone: data.phone,
+            preferred_language: i18n.language,
           },
         },
       });
 
       if (error) {
-        if (error.message.includes("already registered")) {
-          toast.error(t('auth.accountExists'));
-        } else if (error.message.includes("Password")) {
-          toast.error(t('auth.passwordRequirement'));
+        if (error.message.includes("already registered") || error.message.includes("already been registered")) {
+          toast.error("This email is already registered. Please sign in instead.");
         } else {
-          toast.error(t('auth.somethingWrong'));
+          toast.error(error.message || "Something went wrong. Please try again.");
         }
         return;
       }
 
-      toast.success(t('auth.accountCreated'));
-      
-      // Track registration with Meta
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData?.session?.user) {
-        MetaEvents.completeRegistration(sessionData.session.user.id, data.email);
+      toast.success("OTP sent to your email! Check your inbox.");
+      setStep("otp");
+    } catch (error) {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOtpSubmit = async (data: OtpFormData) => {
+    if (!step1Data) return;
+    try {
+      setIsLoading(true);
+
+      const { error } = await supabase.auth.verifyOtp({
+        email: step1Data.email,
+        token: data.otp,
+        type: "email",
+      });
+
+      if (error) {
+        toast.error("Invalid or expired OTP. Please try again.");
+        return;
       }
-      
-      // Redirect to home or postAuthRedirect
+
+      toast.success("Email verified! Complete your profile.");
+      setStep("details");
+    } catch (error) {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (!step1Data) return;
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithOtp({
+        email: step1Data.email,
+        options: {
+          shouldCreateUser: true,
+          data: {
+            name: step1Data.name,
+            phone: step1Data.phone,
+            preferred_language: i18n.language,
+          },
+        },
+      });
+
+      if (error) {
+        toast.error("Failed to resend OTP. Please try again.");
+      } else {
+        toast.success("OTP resent! Check your inbox.");
+      }
+    } catch {
+      toast.error("Something went wrong.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStep2Submit = async (data: SignUpStep2FormData) => {
+    if (!step1Data) return;
+    try {
+      setIsLoading(true);
+
+      // Update user metadata with step 2 data
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          gender: data.gender,
+          dob: data.dob,
+          city: data.city,
+          skills: data.skills,
+        },
+      });
+
+      if (updateError) {
+        toast.error("Failed to save profile. Please try again.");
+        return;
+      }
+
+      // Also update profile directly
+      const { data: session } = await supabase.auth.getSession();
+      if (session?.session?.user) {
+        await supabase
+          .from("profiles")
+          .update({
+            gender: data.gender,
+            dob: data.dob,
+            city: data.city,
+            skills: data.skills,
+          })
+          .eq("user_id", session.session.user.id);
+
+        MetaEvents.completeRegistration(session.session.user.id, step1Data.email);
+      }
+
+      toast.success("Account created successfully!");
+
       const postAuthRedirect = sessionStorage.getItem("postAuthRedirect");
       sessionStorage.removeItem("postAuthRedirect");
       navigate(postAuthRedirect || "/");
     } catch (error) {
-      toast.error(t('auth.somethingWrong'));
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -82,109 +200,262 @@ export default function SignUp() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">{t('auth.signUpTitle')}</h1>
-          <p className="text-muted-foreground mt-2">{t('auth.signUpSubtitle')}</p>
+        {/* Step indicator */}
+        <div className="flex items-center justify-center gap-2">
+          {["info", "otp", "details"].map((s, i) => (
+            <div
+              key={s}
+              className={`h-2 rounded-full transition-all ${
+                s === step
+                  ? "w-8 bg-primary"
+                  : i < ["info", "otp", "details"].indexOf(step)
+                  ? "w-8 bg-primary/50"
+                  : "w-8 bg-muted"
+              }`}
+            />
+          ))}
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="name">{t('auth.name')}</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder={t('auth.name')}
-              {...register("name")}
-              disabled={isLoading}
-            />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
+        {/* Step 1: Basic Info */}
+        {step === "info" && (
+          <>
+            <div className="text-center">
+              <h1 className="text-3xl font-bold">{t("auth.signUpTitle", "Create account")}</h1>
+              <p className="text-muted-foreground mt-2">
+                {t("auth.signUpSubtitle", "Join the community")}
+              </p>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">{t('auth.email')}</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder={t('auth.email')}
-              {...register("email")}
-              disabled={isLoading}
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">{t('auth.password')}</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder={t('auth.password')}
-              {...register("password")}
-              disabled={isLoading}
-            />
-            {errors.password && (
-              <p className="text-sm text-destructive">{errors.password.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>{t('auth.skills')}</Label>
-            <Controller
-              name="skills"
-              control={control}
-              render={({ field }) => (
-                <SkillsSelect
-                  value={field.value}
-                  onChange={field.onChange}
+            <form onSubmit={step1Form.handleSubmit(handleStep1Submit)} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">{t("auth.name", "Name")}</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Enter your name"
+                  {...step1Form.register("name")}
                   disabled={isLoading}
                 />
+                {step1Form.formState.errors.name && (
+                  <p className="text-sm text-destructive">{step1Form.formState.errors.name.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">{t("auth.email", "Email")}</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  {...step1Form.register("email")}
+                  disabled={isLoading}
+                />
+                {step1Form.formState.errors.email && (
+                  <p className="text-sm text-destructive">{step1Form.formState.errors.email.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+91 98765 43210"
+                  {...step1Form.register("phone")}
+                  disabled={isLoading}
+                />
+                {step1Form.formState.errors.phone && (
+                  <p className="text-sm text-destructive">{step1Form.formState.errors.phone.message}</p>
+                )}
+              </div>
+
+              <LanguageSelector disabled={isLoading} />
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || !step1Form.formState.isValid}
+              >
+                {isLoading ? "Sending OTP..." : "Continue with Email OTP"}
+              </Button>
+            </form>
+
+            <p className="text-center text-xs text-muted-foreground">
+              By signing up, you agree to our{" "}
+              <Link to="/terms" className="text-primary hover:underline">Terms & Conditions</Link>,{" "}
+              <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link>,{" "}
+              <Link to="/cookie-policy" className="text-primary hover:underline">Cookie Policy</Link>
+              {" "}and{" "}
+              <Link to="/refund-policy" className="text-primary hover:underline">Refund Policy</Link>.
+            </p>
+
+            <p className="text-center text-sm text-muted-foreground">
+              {t("auth.alreadyHaveAccount", "Already have an account?")}{" "}
+              <Link to="/auth/signin" className="text-primary hover:underline font-medium">
+                {t("common.signIn", "Sign in")}
+              </Link>
+            </p>
+          </>
+        )}
+
+        {/* Step OTP: Verify email */}
+        {step === "otp" && (
+          <>
+            <button
+              onClick={() => setStep("info")}
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back
+            </button>
+
+            <div className="text-center">
+              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Mail className="h-6 w-6 text-primary" />
+              </div>
+              <h1 className="text-3xl font-bold">Verify your email</h1>
+              <p className="text-muted-foreground mt-2">
+                We sent a 6-digit code to <span className="font-medium text-foreground">{step1Data?.email}</span>
+              </p>
+            </div>
+
+            <form onSubmit={otpForm.handleSubmit(handleOtpSubmit)} className="space-y-6">
+              <div className="flex justify-center">
+                <Controller
+                  name="otp"
+                  control={otpForm.control}
+                  render={({ field }) => (
+                    <InputOTP
+                      maxLength={6}
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      disabled={isLoading}
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  )}
+                />
+              </div>
+              {otpForm.formState.errors.otp && (
+                <p className="text-sm text-destructive text-center">{otpForm.formState.errors.otp.message}</p>
               )}
-            />
-            {errors.skills && (
-              <p className="text-sm text-destructive">{errors.skills.message}</p>
-            )}
-          </div>
 
-          <LanguageSelector disabled={isLoading} />
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || !otpForm.formState.isValid}
+              >
+                {isLoading ? "Verifying..." : "Verify OTP"}
+              </Button>
+            </form>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading || !isValid}
-          >
-            {isLoading ? t('auth.creatingAccount') : t('auth.signUpTitle')}
-          </Button>
-        </form>
+            <p className="text-center text-sm text-muted-foreground">
+              Didn't receive the code?{" "}
+              <button
+                onClick={handleResendOtp}
+                disabled={isLoading}
+                className="text-primary hover:underline font-medium"
+              >
+                Resend OTP
+              </button>
+            </p>
+          </>
+        )}
 
-        <p className="text-center text-xs text-muted-foreground mb-4">
-          By signing up, you agree to our{" "}
-          <Link to="/terms" className="text-primary hover:underline">
-            Terms & Conditions
-          </Link>
-          ,{" "}
-          <Link to="/privacy-policy" className="text-primary hover:underline">
-            Privacy Policy
-          </Link>
-          ,{" "}
-          <Link to="/cookie-policy" className="text-primary hover:underline">
-            Cookie Policy
-          </Link>
-          {" "}and{" "}
-          <Link to="/refund-policy" className="text-primary hover:underline">
-            Refund Policy
-          </Link>
-          .
-        </p>
+        {/* Step 2: Profile details */}
+        {step === "details" && (
+          <>
+            <div className="text-center">
+              <h1 className="text-3xl font-bold">Complete your profile</h1>
+              <p className="text-muted-foreground mt-2">Just a few more details</p>
+            </div>
 
-        <p className="text-center text-sm text-muted-foreground">
-          {t('auth.alreadyHaveAccount')}{" "}
-          <Link to="/auth/signin" className="text-primary hover:underline font-medium">
-            {t('common.signIn')}
-          </Link>
-        </p>
+            <form onSubmit={step2Form.handleSubmit(handleStep2Submit)} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Gender</Label>
+                <Controller
+                  name="gender"
+                  control={step2Form.control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="non-binary">Non-binary</SelectItem>
+                        <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {step2Form.formState.errors.gender && (
+                  <p className="text-sm text-destructive">{step2Form.formState.errors.gender.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dob">Date of Birth</Label>
+                <Input
+                  id="dob"
+                  type="date"
+                  {...step2Form.register("dob")}
+                  disabled={isLoading}
+                />
+                {step2Form.formState.errors.dob && (
+                  <p className="text-sm text-destructive">{step2Form.formState.errors.dob.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  type="text"
+                  placeholder="Enter your city"
+                  {...step2Form.register("city")}
+                  disabled={isLoading}
+                />
+                {step2Form.formState.errors.city && (
+                  <p className="text-sm text-destructive">{step2Form.formState.errors.city.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("auth.skills", "Skills")}</Label>
+                <Controller
+                  name="skills"
+                  control={step2Form.control}
+                  render={({ field }) => (
+                    <SkillsSelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={isLoading}
+                    />
+                  )}
+                />
+                {step2Form.formState.errors.skills && (
+                  <p className="text-sm text-destructive">{step2Form.formState.errors.skills.message}</p>
+                )}
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || !step2Form.formState.isValid}
+              >
+                {isLoading ? "Creating account..." : "Complete Sign Up"}
+              </Button>
+            </form>
+          </>
+        )}
       </div>
     </div>
   );
