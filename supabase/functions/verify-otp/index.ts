@@ -90,10 +90,10 @@ serve(async (req) => {
       if (signUpError) {
         // If user already exists, treat as signin
         if (signUpError.message?.includes("already been registered") || signUpError.message?.includes("already exists")) {
-          // Generate session for existing user
-          const { data: existingUserData } = await supabase.auth.admin.getUserByEmail(email.toLowerCase());
+          // User exists already — just generate a session link
+          const existingUserExists = true; // we know they exist from the error
           
-          if (existingUserData?.user) {
+          if (existingUserExists) {
             const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
               type: "magiclink",
               email: email.toLowerCase(),

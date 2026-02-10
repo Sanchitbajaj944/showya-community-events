@@ -35,10 +35,24 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // For signin, check if user exists
+    // For signin, check if user exists using GoTrue Admin REST API
     if (purpose === "signin") {
-      const { data: userData, error: userError } = await supabase.auth.admin.getUserByEmail(email.toLowerCase());
-      if (userError || !userData?.user) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      
+      const res = await fetch(
+        `${supabaseUrl}/auth/v1/admin/users?page=1&per_page=1&filter=${encodeURIComponent(email.toLowerCase())}`,
+        {
+          headers: {
+            "Authorization": `Bearer ${serviceKey}`,
+            "apikey": serviceKey,
+          },
+        }
+      );
+      const data = await res.json();
+      const userExists = data?.users?.some((u: any) => u.email === email.toLowerCase());
+      
+      if (!userExists) {
         return new Response(JSON.stringify({ error: "No account found with this email. Please sign up first." }), {
           status: 404,
           headers: { "Content-Type": "application/json", ...corsHeaders },
