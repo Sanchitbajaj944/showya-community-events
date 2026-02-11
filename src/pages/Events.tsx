@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Users, Clock } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, CheckCircle2, Ticket } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast } from "date-fns";
 import { useTranslation } from "react-i18next";
+import { useUserBookings } from "@/hooks/useUserBookings";
 export default function Events() {
   const {
     t
@@ -53,7 +54,12 @@ export default function Events() {
   };
   const upcomingEvents = events.filter(event => !isPast(new Date(event.event_date)));
   const pastEvents = events.filter(event => isPast(new Date(event.event_date)));
+
+  const eventIds = useMemo(() => events.map(e => e.id), [events]);
+  const { bookings } = useUserBookings(eventIds);
+
   const renderEventCard = (event: any, isPastEvent: boolean = false) => {
+    const userBooking = bookings[event.id];
     const counts = participantCounts[event.id] || {
       performer_count: 0,
       audience_count: 0
@@ -105,9 +111,22 @@ export default function Events() {
             </div>}
         </div>
 
-        <Button className="w-full mt-4 text-xs sm:text-sm" variant="outline">
-          {isPastEvent ? 'View Event' : isFull ? 'View Event' : event.ticket_type === 'paid' ? `Book Now • ₹${event.performer_ticket_price}` : 'Register'}
-        </Button>
+        {userBooking ? (
+          <div className="flex items-center gap-2 mt-4">
+            <Badge variant="secondary" className="flex-1 justify-center gap-1.5 py-2 text-xs sm:text-sm">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              You're Booked ({userBooking.role})
+            </Badge>
+            <Button size="sm" variant="outline" className="gap-1 text-xs sm:text-sm shrink-0">
+              <Ticket className="h-3.5 w-3.5" />
+              View Ticket
+            </Button>
+          </div>
+        ) : (
+          <Button className="w-full mt-4 text-xs sm:text-sm" variant="outline">
+            {isPastEvent ? 'View Event' : isFull ? 'View Event' : event.ticket_type === 'paid' ? `Book Now • ₹${event.performer_ticket_price}` : 'Register'}
+          </Button>
+        )}
       </div>
     </Link>;
   };

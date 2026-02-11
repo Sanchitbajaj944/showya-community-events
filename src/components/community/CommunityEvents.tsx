@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Plus, MapPin, Users, Clock } from "lucide-react";
+import { Calendar, Plus, MapPin, Users, Clock, CheckCircle2, Ticket } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast } from "date-fns";
+import { useUserBookings } from "@/hooks/useUserBookings";
 
 interface CommunityEventsProps {
   community: any;
@@ -44,7 +45,12 @@ export const CommunityEvents = ({ community, userRole }: CommunityEventsProps) =
   const upcomingEvents = events.filter(event => !isPast(new Date(event.event_date)));
   const pastEvents = events.filter(event => isPast(new Date(event.event_date)));
 
-  const renderEventCard = (event: any) => (
+  const eventIds = useMemo(() => events.map(e => e.id), [events]);
+  const { bookings } = useUserBookings(eventIds);
+
+  const renderEventCard = (event: any) => {
+    const userBooking = bookings[event.id];
+    return (
     <Card key={event.id} className="hover:shadow-lg transition-shadow">
       <CardContent className="p-4">
         {event.poster_url && (
@@ -102,18 +108,34 @@ export const CommunityEvents = ({ community, userRole }: CommunityEventsProps) =
         
         {/* Action Buttons */}
         <div className="flex gap-2 pt-4 border-t mt-4">
-          <Link to={`/events/${event.id}`} className="flex-1">
-            <Button variant="outline" className="w-full">View</Button>
-          </Link>
+          {userBooking ? (
+            <>
+              <Badge variant="secondary" className="flex-1 justify-center gap-1.5 py-2 text-xs">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Booked ({userBooking.role})
+              </Badge>
+              <Link to={`/events/${event.id}`} className="shrink-0">
+                <Button size="sm" variant="outline" className="gap-1 text-xs">
+                  <Ticket className="h-3.5 w-3.5" />
+                  View Ticket
+                </Button>
+              </Link>
+            </>
+          ) : (
+            <Link to={`/events/${event.id}`} className="flex-1">
+              <Button variant="outline" className="w-full">Book Now</Button>
+            </Link>
+          )}
           {userRole === 'owner' && (
-            <Link to={`/events/${event.id}/dashboard`} className="flex-1">
-              <Button className="w-full">Manage</Button>
+            <Link to={`/events/${event.id}/dashboard`} className="shrink-0">
+              <Button size="sm">Manage</Button>
             </Link>
           )}
         </div>
       </CardContent>
     </Card>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6">

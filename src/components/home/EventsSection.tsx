@@ -4,7 +4,8 @@ import { Link } from "react-router-dom";
 import EventCard from "@/components/EventCard";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
+import { useUserBookings } from "@/hooks/useUserBookings";
 
 interface EventsSectionProps {
   events: any[];
@@ -14,6 +15,8 @@ export function EventsSection({ events }: EventsSectionProps) {
   const { t } = useTranslation();
   const [activeEventIndex, setActiveEventIndex] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const eventIds = useMemo(() => events.map(e => e.id), [events]);
+  const { bookings } = useUserBookings(eventIds);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -68,6 +71,8 @@ export function EventsSection({ events }: EventsSectionProps) {
                     attendees={event.performer_slots + (event.audience_enabled ? event.audience_slots : 0)}
                     category={event.category || "Event"}
                     image={event.poster_url}
+                    isBooked={!!bookings[event.id]}
+                    bookedRole={bookings[event.id]?.role}
                   />
                 </Link>
               ))}
