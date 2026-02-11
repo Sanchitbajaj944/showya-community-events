@@ -1,4 +1,4 @@
-import { Calendar, MapPin, Users } from "lucide-react";
+import { Calendar, MapPin, Users, CheckCircle2, Ticket } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ interface EventCardProps {
   attendees: number;
   category: string;
   image?: string;
+  isBooked?: boolean;
+  bookedRole?: string;
 }
 
 const EventCard = ({
@@ -21,6 +23,8 @@ const EventCard = ({
   attendees,
   category,
   image,
+  isBooked = false,
+  bookedRole,
 }: EventCardProps) => {
   return (
     <Card className="w-full max-w-[340px] h-[440px] overflow-hidden cursor-pointer border-2 flex flex-col">
@@ -60,9 +64,22 @@ const EventCard = ({
             <span className="font-semibold">{attendees} attending</span>
           </div>
         </div>
-        <Button className="w-full mt-auto">
-          View Event
-        </Button>
+        {isBooked ? (
+          <div className="flex items-center gap-2 mt-auto">
+            <Badge variant="secondary" className="flex-1 justify-center gap-1.5 py-2 text-xs">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Booked{bookedRole ? ` (${bookedRole})` : ''}
+            </Badge>
+            <Button size="sm" variant="outline" className="gap-1 text-xs shrink-0">
+              <Ticket className="h-3.5 w-3.5" />
+              View
+            </Button>
+          </div>
+        ) : (
+          <Button className="w-full mt-auto">
+            View Event
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
