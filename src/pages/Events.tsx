@@ -113,9 +113,9 @@ export default function Events() {
 
         {userBooking ? (
           <div className="flex items-center gap-2 mt-4">
-            <div className="flex-1 flex items-center justify-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs sm:text-sm font-medium text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Booked · {userBooking.role}
+            <div className="flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-3 w-3 shrink-0" />
+              <span className="truncate capitalize">{userBooking.role}</span>
             </div>
             <Button size="sm" variant="outline" className="gap-1 text-xs sm:text-sm shrink-0">
               <Ticket className="h-3.5 w-3.5" />
