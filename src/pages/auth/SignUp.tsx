@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SkillsSelect } from "@/components/SkillsSelect";
+import { CitySelect } from "@/components/CitySelect";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import {
   Select,
@@ -429,13 +430,17 @@ export default function SignUp() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  type="text"
-                  placeholder="Enter your city"
-                  {...step2Form.register("city")}
-                  disabled={isLoading}
+                <Label>City</Label>
+                <Controller
+                  name="city"
+                  control={step2Form.control}
+                  render={({ field }) => (
+                    <CitySelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={isLoading}
+                    />
+                  )}
                 />
                 {step2Form.formState.errors.city && (
                   <p className="text-sm text-destructive">{step2Form.formState.errors.city.message}</p>

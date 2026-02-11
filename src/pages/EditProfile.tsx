@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/UserAvatar";
 import { SkillsSelect } from "@/components/SkillsSelect";
+import { CitySelect } from "@/components/CitySelect";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import Header from "@/components/Header";
 import { ArrowLeft, Camera, Loader2 } from "lucide-react";
@@ -325,12 +326,17 @@ export default function EditProfile() {
 
           {/* City */}
           <div className="space-y-2">
-            <Label htmlFor="city">City / Location</Label>
-            <Input
-              id="city"
-              placeholder="e.g., Mumbai, Bangalore"
-              {...register("city")}
-              disabled={loading}
+            <Label>City / Location</Label>
+            <Controller
+              name="city"
+              control={control}
+              render={({ field }) => (
+                <CitySelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  disabled={loading}
+                />
+              )}
             />
             {errors.city && (
               <p className="text-sm text-destructive">{errors.city.message}</p>
