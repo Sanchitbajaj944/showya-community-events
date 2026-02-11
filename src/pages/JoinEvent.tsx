@@ -125,17 +125,24 @@ export default function JoinEvent() {
     try {
       const ticketCode = `TKT-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-      const { error } = await supabase.from('event_participants').insert({
-        event_id: eventId,
-        user_id: user.id,
-        role: 'audience' as any,
-        ticket_code: ticketCode,
-        payment_status: 'free',
-        amount_paid: 0,
-        mic_permission: 'none',
+      const { data: bookResult, error } = await supabase.rpc('book_event_participant', {
+        p_event_id: eventId,
+        p_user_id: user.id,
+        p_role: 'audience',
+        p_ticket_code: ticketCode,
+        p_payment_status: 'free',
+        p_amount_paid: 0,
+        p_mic_permission: 'none',
       });
 
       if (error) throw error;
+      const result = bookResult as unknown as { success: boolean; error?: string };
+      if (!result?.success) {
+        toast.error(result?.error || 'Booking failed');
+        setAutoBooked(false);
+        setActionLoading(false);
+        return;
+      }
 
       // Send registration notification
       await supabase.functions.invoke('handle-event-registration', {
@@ -205,19 +212,25 @@ export default function JoinEvent() {
 
             const ticketCode = `TKT-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-            const { error: bookingError } = await supabase.from('event_participants').insert({
-              event_id: eventId,
-              user_id: user.id,
-              role: 'audience' as any,
-              ticket_code: ticketCode,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              payment_status: 'captured',
-              amount_paid: price,
-              mic_permission: 'none',
+            const { data: bookResult, error: bookingError } = await supabase.rpc('book_event_participant', {
+              p_event_id: eventId,
+              p_user_id: user.id,
+              p_role: 'audience',
+              p_ticket_code: ticketCode,
+              p_payment_status: 'captured',
+              p_amount_paid: price,
+              p_razorpay_payment_id: response.razorpay_payment_id,
+              p_razorpay_order_id: response.razorpay_order_id,
+              p_mic_permission: 'none',
             });
 
             if (bookingError) throw bookingError;
+            const result = bookResult as unknown as { success: boolean; error?: string };
+            if (!result?.success) {
+              toast.dismiss('booking-confirm');
+              toast.error(result?.error || 'Booking failed');
+              return;
+            }
 
             await supabase.functions.invoke('handle-event-registration', {
               body: { event_id: eventId, user_id: user.id, role: 'audience' },
