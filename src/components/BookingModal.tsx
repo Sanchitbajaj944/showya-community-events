@@ -234,8 +234,7 @@ export function BookingModal({
         {
           body: {
             event_id: event.id,
-            amount: finalPrice,
-            mode: 'test'
+            amount: finalPrice
           }
         }
       );

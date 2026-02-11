@@ -9,9 +9,54 @@ const corsHeaders = {
 
 const PaymentOrderSchema = z.object({
   event_id: z.string().uuid('Invalid event ID format'),
-  amount: z.number().min(1, 'Minimum amount is ₹1').max(1000000, 'Amount exceeds maximum'),
-  mode: z.enum(['test', 'live']).optional().default('test'),
+  amount: z.number().min(1, 'Minimum amount is ₹1').max(1000000, 'Amount exceeds maximum')
 });
+
+// Helper to detect if request is from development environment
+function isDevEnvironment(req: Request): boolean {
+  const origin = req.headers.get('origin') || '';
+  const referer = req.headers.get('referer') || '';
+  
+  const devPatterns = [
+    'localhost',
+    '127.0.0.1',
+    'lovableproject.com',
+    'lovable.app',
+    'webcontainer.io',
+    'id-preview--'
+  ];
+  
+  return devPatterns.some(pattern => 
+    origin.includes(pattern) || referer.includes(pattern)
+  );
+}
+
+// Get Razorpay credentials based on environment
+function getRazorpayCredentials(req: Request): { keyId: string; keySecret: string; isTestMode: boolean } {
+  const isDev = isDevEnvironment(req);
+  
+  if (isDev) {
+    const testKeyId = Deno.env.get('RAZORPAY_KEY_ID_TEST');
+    const testKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET_TEST');
+    
+    if (testKeyId && testKeySecret) {
+      console.log('Using Razorpay TEST credentials (dev environment)');
+      return {
+        keyId: testKeyId,
+        keySecret: testKeySecret,
+        isTestMode: true
+      };
+    }
+    console.log('Test credentials not found, falling back to LIVE credentials');
+  }
+
+  console.log('Using Razorpay LIVE credentials');
+  return {
+    keyId: Deno.env.get('RAZORPAY_KEY_ID') || '',
+    keySecret: Deno.env.get('RAZORPAY_KEY_SECRET') || '',
+    isTestMode: false
+  };
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -50,44 +95,6 @@ serve(async (req) => {
 
     const { event_id, amount } = validationResult.data;
 
-    // Determine effective mode
-    let isTestMode: boolean;
-    const requestedMode = validationResult.data.mode;
-
-    if (requestedMode === 'live') {
-      const { data: adminRole } = await supabaseClient
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .maybeSingle();
-
-      const isProduction = Deno.env.get('ENVIRONMENT') === 'production';
-
-      if (!isProduction && !adminRole) {
-        return new Response(
-          JSON.stringify({ error: 'Live payments are disabled in non-production.' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      isTestMode = false;
-    } else {
-      isTestMode = true;
-    }
-
-    const razorpayKeyId = isTestMode
-      ? Deno.env.get('RAZORPAY_KEY_ID_TEST') || ''
-      : Deno.env.get('RAZORPAY_KEY_ID') || '';
-    const razorpayKeySecret = isTestMode
-      ? Deno.env.get('RAZORPAY_KEY_SECRET_TEST') || ''
-      : Deno.env.get('RAZORPAY_KEY_SECRET') || '';
-
-    console.log(`Using Razorpay ${isTestMode ? 'TEST' : 'LIVE'} credentials (mode: ${requestedMode})`);
-
-    if (!razorpayKeyId || !razorpayKeySecret) {
-      throw new Error('Razorpay credentials not configured');
-    }
-
     // Verify event exists and is paid
     const { data: event, error: eventError } = await supabaseClient
       .from('events')
@@ -101,6 +108,13 @@ serve(async (req) => {
 
     if (event.ticket_type !== 'paid') {
       throw new Error('This event has free tickets');
+    }
+
+    // Get Razorpay credentials based on environment
+    const { keyId: razorpayKeyId, keySecret: razorpayKeySecret, isTestMode } = getRazorpayCredentials(req);
+    
+    if (!razorpayKeyId || !razorpayKeySecret) {
+      throw new Error('Razorpay credentials not configured');
     }
 
     let razorpayAccountId: string | null = null;
@@ -149,7 +163,7 @@ serve(async (req) => {
 
     // Build order payload
     const orderPayload: Record<string, unknown> = {
-      amount: Math.round(amount * 100),
+      amount: Math.round(amount * 100), // Convert to paise
       currency: 'INR',
       notes: {
         event_id,
