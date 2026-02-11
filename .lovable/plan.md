@@ -1,79 +1,104 @@
 
 
-# Event-Related WhatsApp Notifications
+## Fix Razorpay Credential Selection for React Native Compatibility
 
-Now that WhatsApp is working, we need to wire it into all event flows. Here's what needs to happen:
+### Problem
+The `create-payment-order` edge function uses HTTP `origin`/`referer` headers to decide between test and live Razorpay credentials. React Native doesn't send these headers, so it always defaults to live credentials -- dangerous during development.
 
-## What Already Works
-- In-app notifications + Email for: registration, event update, cancellation, deletion
-- WhatsApp `send-whatsapp` edge function is tested and working
-- `profiles` table has `phone` and `whatsapp_opt_in` fields
-- `message_queue` table exists for tracking delivery
+### Solution
+Replace header-based detection with an explicit `mode` field in the request body, plus server-side safety guards.
 
-## What We'll Build
+---
 
-### 1. Helper: WhatsApp dispatch logic in edge functions
-A reusable helper pattern added to each edge function that:
-- Looks up the user's `phone` and `whatsapp_opt_in` from `profiles`
-- Only sends WhatsApp if opted in and phone exists
-- Queues the message in `message_queue` for tracking
-- Calls `send-whatsapp` with the appropriate template
+### Changes
 
-### 2. Wire WhatsApp into `handle-event-registration`
-- **Performer registration**: Send `performer_confirmed` template with event name, date, and meeting link
-- **Audience registration**: No WhatsApp (low priority, email + in-app sufficient)
+#### 1. Edge Function: `supabase/functions/create-payment-order/index.ts`
 
-### 3. Wire WhatsApp into `update-event`
-- When date/time or meeting link changes and attendees exist, send `event_updated` template to all opted-in attendees with the updated details
+- Add `mode` (optional, `"test"` | `"live"`) to the Zod schema
+- Remove `isDevEnvironment()` and `getRazorpayCredentials()` helper functions
+- New credential selection logic:
+  - If `mode` is not provided, default to `"test"` (safe default)
+  - If `mode="test"` -- use `RAZORPAY_KEY_ID_TEST` / `RAZORPAY_KEY_SECRET_TEST`
+  - If `mode="live"` -- check the authenticated user's email against an admin allowlist fetched from the `user_roles` table (users with `admin` role). If the caller is not an admin, also check if an `ENVIRONMENT` env var is set to `"production"`. If neither condition is met, reject with: `"Live payments are disabled in non-production."`
+  - If `mode="live"` is allowed, use `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET`
+- Everything downstream (KYC check, transfers, order creation, response shape) stays identical -- `isTestMode` boolean is still derived from the resolved mode
 
-### 4. Wire WhatsApp into `cancel-event`
-- Send `event_cancelled` template to all opted-in attendees with event name and refund info
+#### 2. Web Client: `src/components/BookingModal.tsx`
 
-### 5. Wire WhatsApp into `delete-event`
-- Same as cancellation -- send `event_cancelled` template to all opted-in participants
+- Update the `supabase.functions.invoke('create-payment-order', ...)` call to include `mode: "test"` in the body (since the web app runs on the Lovable preview/dev domain, it should use test mode; for production published builds, this can later be switched to `"live"`)
 
-### 6. Event Reminders (T-24h and T-1h)
-- Create a new `process-event-reminders` edge function that:
-  - Queries events starting in the next 24h or 1h window
-  - Checks if reminders were already sent (via `message_queue`)
-  - Sends `event_reminder_24h` or `event_reminder_1h` WhatsApp templates to opted-in attendees
-  - Also sends in-app notifications + email for T-1h
-- Set up a **pg_cron** job that runs every 15 minutes calling this function
+#### 3. Web Client: `src/pages/JoinEvent.tsx`
 
-## Technical Details
+- Same change: add `mode: "test"` to the request body
 
-### Edge function changes (5 files)
+#### 4. Response -- No Changes
 
-| File | Change |
-|------|--------|
-| `handle-event-registration/index.ts` | Add WhatsApp dispatch for performer role |
-| `update-event/index.ts` | Add WhatsApp dispatch for date/meeting link changes |
-| `cancel-event/index.ts` | Add WhatsApp dispatch to all attendees |
-| `delete-event/index.ts` | Add WhatsApp dispatch to all participants |
-| **NEW** `process-event-reminders/index.ts` | Cron-triggered reminder function |
+The response remains: `{ order_id, amount, currency, key_id }` -- fully backward compatible.
 
-### WhatsApp dispatch pattern (added to each function)
-```text
-1. Query profiles for user's phone + whatsapp_opt_in
-2. If opted in + phone exists:
-   a. Insert into message_queue (status: 'queued')
-   b. Call send-whatsapp with template + parameters
-   c. message_queue status updated by send-whatsapp automatically
+---
+
+### Technical Details
+
+**Updated Zod schema:**
+```typescript
+const PaymentOrderSchema = z.object({
+  event_id: z.string().uuid('Invalid event ID format'),
+  amount: z.number().min(1, 'Minimum amount is 1').max(1000000, 'Amount exceeds maximum'),
+  mode: z.enum(['test', 'live']).optional().default('test')
+});
 ```
 
-### Cron job setup
-A SQL statement to schedule `process-event-reminders` every 15 minutes using `pg_cron` + `pg_net`.
+**Credential resolution (replaces both helper functions):**
+```typescript
+// Determine effective mode
+let isTestMode: boolean;
+const requestedMode = validationResult.data.mode; // "test" | "live"
 
-### Config updates
-- Add `process-event-reminders` to `supabase/config.toml` with `verify_jwt = false`
+if (requestedMode === 'live') {
+  // Check if user is admin
+  const { data: adminRole } = await supabaseClient
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('role', 'admin')
+    .maybeSingle();
 
-### Meta Template Requirement
-The following WhatsApp templates must be pre-approved in your Meta Business dashboard:
-- `performer_confirmed` -- parameters: event name, date
-- `event_updated` -- parameters: event name, change details
-- `event_cancelled` -- parameters: event name
-- `event_reminder_24h` -- parameters: event name, date/time
-- `event_reminder_1h` -- parameters: event name, meeting link
+  const isProduction = Deno.env.get('ENVIRONMENT') === 'production';
 
-Until these templates are approved, you can test with `hello_world`. The code will gracefully handle template send failures without breaking the main flow.
+  if (!isProduction && !adminRole) {
+    return new Response(
+      JSON.stringify({ error: 'Live payments are disabled in non-production.' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  isTestMode = false;
+} else {
+  isTestMode = true;
+}
+
+const razorpayKeyId = isTestMode
+  ? Deno.env.get('RAZORPAY_KEY_ID_TEST') || ''
+  : Deno.env.get('RAZORPAY_KEY_ID') || '';
+const razorpayKeySecret = isTestMode
+  ? Deno.env.get('RAZORPAY_KEY_SECRET_TEST') || ''
+  : Deno.env.get('RAZORPAY_KEY_SECRET') || '';
+```
+
+**Client call update (both files):**
+```typescript
+body: { event_id: eventId, amount: price, mode: 'test' }
+```
+
+### Files Modified
+| File | Change |
+|------|--------|
+| `supabase/functions/create-payment-order/index.ts` | Replace header-based detection with explicit `mode` field + admin guard |
+| `src/components/BookingModal.tsx` | Add `mode: 'test'` to request body |
+| `src/pages/JoinEvent.tsx` | Add `mode: 'test'` to request body |
+
+### No Changes To
+- Booking logic (`book_event_participant` RPC)
+- Razorpay webhook flow
+- Payment sync function
+- Response format
 
