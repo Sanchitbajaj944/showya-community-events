@@ -180,7 +180,7 @@ export default function JoinEvent() {
 
       const { data: orderData, error: orderError } = await supabase.functions.invoke(
         'create-payment-order',
-        { body: { event_id: eventId, amount: price } }
+        { body: { event_id: eventId, amount: price, mode: 'test' } }
       );
 
       if (orderError) throw orderError;
