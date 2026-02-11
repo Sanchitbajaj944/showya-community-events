@@ -1177,6 +1177,20 @@ export type Database = {
       }
     }
     Functions: {
+      book_event_participant: {
+        Args: {
+          p_amount_paid?: number
+          p_event_id: string
+          p_mic_permission?: string
+          p_payment_status?: string
+          p_razorpay_order_id?: string
+          p_razorpay_payment_id?: string
+          p_role: string
+          p_ticket_code: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       cleanup_expired_otps: { Args: never; Returns: undefined }
       event_has_bookings: { Args: { _event_id: string }; Returns: boolean }
       get_community_member_count: {
