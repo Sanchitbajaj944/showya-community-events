@@ -24,7 +24,7 @@ import CreateEvent from "./pages/CreateEvent";
 import EventDetails from "./pages/EventDetails";
 import EditEvent from "./pages/EditEvent";
 import EventDashboard from "./pages/EventDashboard";
-import JoinEvent from "./pages/JoinEvent";
+
 import Admin from "./pages/Admin";
 import Notifications from "./pages/Notifications";
 import TermsAndConditions from "./pages/TermsAndConditions";
@@ -51,7 +51,7 @@ const App = () => (
             <Route path="/events/:eventId" element={<EventDetails />} />
             <Route path="/events/:eventId/edit" element={<EditEvent />} />
             <Route path="/events/:eventId/dashboard" element={<EventDashboard />} />
-            <Route path="/events/:eventId/join" element={<ProtectedRoute><JoinEvent /></ProtectedRoute>} />
+            
             <Route path="/reels" element={<Reels />} />
             <Route path="/communities" element={<Communities />} />
             <Route path="/community/:communityId" element={<CommunityDashboard />} />

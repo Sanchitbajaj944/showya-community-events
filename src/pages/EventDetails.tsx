@@ -7,9 +7,10 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, LayoutDashboard, Share2, Flag, ChevronDown, Video } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, ExternalLink, Ticket, LayoutDashboard, Share2, Flag, ChevronDown, Video, ArrowLeft } from "lucide-react";
 import { BlueTick } from "@/components/BlueTick";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { JaasMeeting } from "@/components/JaasMeeting";
 import { format, isPast, differenceInHours } from "date-fns";
 import { toast } from "sonner";
 import { BookingModal } from "@/components/BookingModal";
@@ -67,7 +68,7 @@ export default function EventDetails() {
   const [spotlight, setSpotlight] = useState<any>(null);
   const [performers, setPerformers] = useState<any[]>([]);
   const [performersOpen, setPerformersOpen] = useState(true);
-  // showJaasMeeting state removed - meeting now opens in new tab
+  const [showMeeting, setShowMeeting] = useState(false);
 
   useEffect(() => {
     fetchEventDetails();
@@ -337,6 +338,31 @@ export default function EventDetails() {
   const canBook = !isEventPast && !isSlotsFull && !userBooking;
   const isEventCreator = user && event.created_by === user.id;
 
+  if (showMeeting) {
+    return (
+      <div className="fixed inset-0 bg-background z-50 flex flex-col">
+        <div className="flex items-center justify-between px-4 py-2 bg-card border-b">
+          <h2 className="text-sm font-medium truncate">{event.title}</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowMeeting(false)}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Exit Meeting
+          </Button>
+        </div>
+        <div className="flex-1 min-h-0">
+          <JaasMeeting
+            eventId={eventId!}
+            eventTitle={event.title}
+            onClose={() => setShowMeeting(false)}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-8">
       <Header />
@@ -511,12 +537,11 @@ export default function EventDetails() {
                       Join the full-screen video meeting with noise cancellation
                     </p>
                     <Button 
-                      onClick={() => window.open(`/events/${eventId}/join`, '_blank')}
+                      onClick={() => setShowMeeting(true)}
                       className="gap-2"
                     >
                       <Video className="h-4 w-4" />
                       Join Meeting
-                      <ExternalLink className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
