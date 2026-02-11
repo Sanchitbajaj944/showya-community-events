@@ -62,7 +62,7 @@ const App = () => (
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/profile/edit" element={<EditProfile />} />
             <Route path="/notifications" element={<Notifications />} />
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/terms" element={<TermsAndConditions />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />

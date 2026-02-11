@@ -170,7 +170,7 @@ const Header = () => {
                   {isAdmin && (
                     <DropdownMenuItem onClick={() => navigate("/admin")} className="cursor-pointer">
                       <Shield className="h-4 w-4 mr-2" />
-                      {t('nav.admin')}
+                      Admin Panel
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
@@ -314,7 +314,7 @@ const Header = () => {
                     <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="ghost" className="w-full">
                         <Shield className="h-4 w-4 mr-2" />
-                        Admin Dashboard
+                        Admin Panel
                       </Button>
                     </Link>
                   )}
