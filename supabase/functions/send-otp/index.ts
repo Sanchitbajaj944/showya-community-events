@@ -99,7 +99,7 @@ serve(async (req) => {
     const APP_BASE_URL = Deno.env.get("APP_BASE_URL") || "https://showya.app";
 
     const { error: emailError } = await resend.emails.send({
-      from: "Showya <noreply@showya.app>",
+      from: "Showya <onboarding@resend.dev>",
       to: [email],
       subject: `${otp} is your Showya verification code`,
       html: `
